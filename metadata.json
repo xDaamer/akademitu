@@ -1,0 +1,6 @@
+{
+  "name": "akademITU",
+  "description": "Derece öğrencilerinden YKS ve LGS için özel ders ve birebir koçluk platformu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
