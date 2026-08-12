@@ -47,14 +47,6 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
           </p>
         </div>
 
-        {/* VURGULU MESAJ BANNERI */}
-        <div className="mb-16 bg-gradient-to-r from-[#191F61] to-[#2a3080] rounded-3xl p-8 sm:p-12 border-l-4 border-[#B6D6CC] shadow-lg">
-          <p className="text-white text-lg sm:text-xl font-bold leading-relaxed">
-            <span className="text-[#B6D6CC] font-black">Sizin hedefinize ulaştığınız yoldan geçmiş öğrenciler</span>
-            {' '}doğrudan hocalarınız. Kendi başarı yolunu bilen mentorlara sahip olmak, en güçlü öğrenme stratejisidir.
-          </p>
-        </div>
-
         {/* 4 ANA ÖZELLİK KARTLARI */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((item, index) => {
