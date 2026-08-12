@@ -133,8 +133,8 @@ export const TeacherTicker: React.FC = () => {
       return (
         <div className="relative h-full overflow-hidden">
           {/* ÇERÇEVE DOKUNUŞU: ÜST VE ALT PERDE GRADIENTI (MASKING FRAME EFFECT - YUMUŞAK GEÇİŞ) */}
-          <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#12164a] via-[#12164a]/60 to-transparent z-20 pointer-events-none" />
-         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#3540a3] via-[#3540a3]/60 to-transparent z-20 pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#12164a] via-[#12164a]/60 to-transparent z-20 pointer-events-none" />
+         <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#3540a3] via-[#3540a3]/60 to-transparent z-20 pointer-events-none" />
 
       {/*a YAN YANA İKİ SÜTUN (TWO PARALLEL STREAMING COLUMNS) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
@@ -228,7 +228,7 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
 
   return (
     <div
-      className="w-full bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white/20 hover:scale-[1.02] group overflow-hidden"
+      className="w-full bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white/20 hover:scale-[1.02] group overflow-hidden"
       style={{
         aspectRatio: aspectRatio ? `${aspectRatio}` : '1 / 1',
       }}
@@ -244,7 +244,11 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
             }
           }}
           onError={handleError}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className={`transition-transform duration-300 group-hover:scale-105 ${
+            item.filename.toLowerCase().includes('logo')
+              ? 'w-4/5 h-4/5 object-contain'
+              : 'w-full h-full object-cover'
+          }`}
         />
       ) : (
         <div className="py-6 px-3 text-center text-slate-300 text-xs font-mono">
