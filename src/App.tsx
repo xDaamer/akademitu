@@ -86,7 +86,7 @@ export default function App() {
       {/* 5. SAĞ TARAF: ARAYALIM BUTONU (SABIT) */}
       <button
         onClick={handleOpenTrialForm}
-        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#191F61] hover:bg-[#0f1436] text-white px-4 py-10 rounded-l-2xl shadow-lg transition-all duration-300 z-40 group hidden sm:flex flex-col items-center justify-center gap-2 hover:scale-100 hover:-translate-x-6"
+        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#191F61] hover:bg-[#0f1436] text-white px-4 py-10 rounded-l-2xl shadow-lg transition-all duration-300 z-40 group hidden sm:flex flex-col items-center justify-center gap-2"
       >
         <Phone className="w-6 h-6" />
         <span className="text-[11px] font-bold whitespace-nowrap writing-mode-vertical" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
