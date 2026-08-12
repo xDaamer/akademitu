@@ -130,13 +130,13 @@ export const TeacherTicker: React.FC = () => {
   const col1Items = buildLoopList(imagesList, 0);
   const col2Items = buildLoopList(imagesList, 1);
 
-  return (
-    <div className="relative h-full overflow-hidden rounded-2xl bg-slate-950/40 border border-white/10 p-2 sm:p-3">
-      {/* ÇERÇEVE DOKUNUŞU: ÜST VE ALT PERDE GRADIENTI (MASKING FRAME EFFECT) */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#191F61] via-[#191F61]/90 to-transparent z-20 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#191F61] via-[#191F61]/90 to-transparent z-20 pointer-events-none" />
+      return (
+        <div className="relative h-full overflow-hidden">
+          {/* ÇERÇEVE DOKUNUŞU: ÜST VE ALT PERDE GRADIENTI (MASKING FRAME EFFECT - YUMUŞAK GEÇİŞ) */}
+          <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#12164a] via-[#12164a]/60 to-transparent z-20 pointer-events-none" />
+         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#3540a3] via-[#3540a3]/60 to-transparent z-20 pointer-events-none" />
 
-      {/* YAN YANA İKİ SÜTUN (TWO PARALLEL STREAMING COLUMNS) */}
+      {/*a YAN YANA İKİ SÜTUN (TWO PARALLEL STREAMING COLUMNS) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
         {/* 1. SÜTUN (AŞAĞI DOĞRU AKAN SÜTUN) */}
         <div className="overflow-hidden h-full relative">
