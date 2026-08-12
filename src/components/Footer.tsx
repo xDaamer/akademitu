@@ -75,15 +75,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
             </h4>
             <div className="flex items-center gap-3 text-sm text-slate-300">
               <Phone className="w-4 h-4 text-[#B6D6CC] shrink-0" />
-              <span>0850 888 00 00</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
-              <Mail className="w-4 h-4 text-[#B6D6CC] shrink-0" />
-              <span>info@akademITU.com</span>
+              <span>05303699539</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-300">
               <MapPin className="w-4 h-4 text-[#B6D6CC] shrink-0" />
-              <span>İTÜ Ayazağa Yerleşkesi, Maslak / İstanbul</span>
+              <span>Katar Caddesi Maslak/İstanbul</span>
             </div>
             
             <div className="pt-2">

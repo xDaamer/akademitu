@@ -70,45 +70,6 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
           })}
         </div>
 
-        {/* VURGULU İSTATİSTİK BANNERI */}
-        <div className="mt-16 bg-[#191F61] rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden shadow-2xl border border-[#c5a059]/30">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-white/10">
-            <div className="pt-4 md:pt-0">
-              <span className="block text-4xl sm:text-5xl font-black text-[#B6D6CC]">
-                %98.4
-              </span>
-              <span className="text-sm font-medium text-slate-200 mt-2 block">
-                Öğrenci & Veli Memnuniyeti
-              </span>
-            </div>
-            <div className="pt-4 md:pt-0">
-              <span className="block text-4xl sm:text-5xl font-black text-[#B6D6CC]">
-                100+
-              </span>
-              <span className="text-sm font-medium text-slate-200 mt-2 block">
-                Derece Hocası Koç
-              </span>
-            </div>
-            <div className="pt-4 md:pt-0">
-              <span className="block text-4xl sm:text-5xl font-black text-[#B6D6CC]">
-                500+
-              </span>
-              <span className="text-sm font-medium text-slate-200 mt-2 block">
-                Dereceye Giren Başarılı Öğrenci
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center pt-6 border-t border-white/10">
-            <button
-              onClick={onOpenTrialForm}
-              className="bg-[#B6D6CC] hover:bg-white text-[#191F61] px-8 py-3.5 rounded-2xl font-extrabold text-sm transition-all duration-300 shadow-lg cursor-pointer border border-[#c5a059]/40"
-            >
-              Sen de Başarı Hikayene Başla (İlk Ders Ücretsiz)
-            </button>
-          </div>
-        </div>
-
       </div>
     </section>
   );
