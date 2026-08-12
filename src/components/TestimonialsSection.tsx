@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Testimonial {
@@ -62,27 +61,43 @@ export function TestimonialsSection() {
           Öğrencilerimiz Ne Diyor?
         </h2>
 
-        {/* YORUMLAR KONTEYNERI - SAĞDAN SOLA AKIŞ, ÜSTÜN ALT BORDER */}
-        <div className="border-t-2 border-b-2 border-[#191F61]/20 py-8 overflow-x-auto scrollbar-hide">
+        {/* YORUMLAR KONTEYNERI - OTOMATİK SAĞDAN SOLA AKIŞ */}
+        <div className="border-t-4 border-b-4 border-[#191F61] py-8 overflow-hidden bg-white/40">
           <div
             dir="rtl"
-            className="flex gap-6 pb-4 min-w-max"
+            className="flex gap-6 animate-scroll"
           >
+            {/* İlk döngü */}
             {testimonials.map((testimonial) => (
               <div
-                key={testimonial.id}
-                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300 shrink-0 w-80 border border-slate-200/50"
+                key={`${testimonial.id}-1`}
+                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300 shrink-0 w-80 border border-slate-100"
               >
-                {/* YILDIZLAR */}
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-4 h-4 fill-[#c5a059] text-[#c5a059]"
-                    />
-                  ))}
-                </div>
+                {/* YORUM METNİ */}
+                <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
+                  "{testimonial.content}"
+                </p>
 
+                {/* ÖĞRENCİ BİLGİSİ */}
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="font-bold text-[#191F61] text-sm">
+                    {testimonial.student_name}
+                  </p>
+                  {testimonial.student_grade && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {testimonial.student_grade}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            {/* İkinci döngü (seamless loop için) */}
+            {testimonials.map((testimonial) => (
+              <div
+                key={`${testimonial.id}-2`}
+                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300 shrink-0 w-80 border border-slate-100"
+              >
                 {/* YORUM METNİ */}
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
@@ -103,11 +118,6 @@ export function TestimonialsSection() {
             ))}
           </div>
         </div>
-
-        {/* SCROLL İPUCU (Mobil için) */}
-        <div className="mt-4 text-center text-xs text-slate-500 sm:hidden">
-          ← Kaydır →
-        </div>
       </div>
 
       <style>{`
@@ -121,4 +131,19 @@ export function TestimonialsSection() {
       `}</style>
     </section>
   );
-}
+}@keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        
+        .animate-scroll {
+          animation: scroll 40s linear infinite;
+          width: max-content;
+        }
+        
+        .animate-scroll:hover {
+          animation-play-state: paused
