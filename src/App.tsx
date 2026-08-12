@@ -87,7 +87,7 @@ export default function App() {
       {/* 5. SAĞ TARAF: ARAYALIM BUTONU (SABIT) */}
       <button
         onClick={handleOpenTrialForm}
-        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#191F61] hover:bg-[#0f1436] text-white px-3 py-8 rounded-l-2xl shadow-lg transition-all duration-300 z-40 group hidden sm:flex flex-col items-center justify-center gap-2"
+        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#191F61] hover:bg-[#0f1436] text-white px-3 py-8 rounded-l-2xl shadow-lg transition-all duration-300 z-40 group hidden sm:flex flex-col items-center justify-center gap-2 animate-pulse hover:animate-none hover:scale-110"
       >
         <Phone className="w-5 h-5" />
         <span className="text-[10px] font-bold whitespace-nowrap writing-mode-vertical" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
@@ -104,7 +104,7 @@ export default function App() {
           <img 
             src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsb1L0gLGLPI8j2cMJ8xc3_11wDVCJJWJch7ZGRWUNlw&s=10" 
             alt="WhatsApp" 
-            className="w-6 h-6"
+            className="w-6 h-6 rounded-full"
           />
         </button>
 

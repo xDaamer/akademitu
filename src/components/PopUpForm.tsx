@@ -587,13 +587,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
             {/* MODE 2: BUTTON CLICK MODAL */}
             {mode === 'button' && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-white">
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={onClose}
-                  className="fixed inset-0 bg-[#191F61]/90 backdrop-blur-xl z-0"
+                  className="fixed inset-0 bg-white/80 backdrop-blur-xl z-0"
                 />
 
                 <motion.div
@@ -601,10 +601,10 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.92, opacity: 0, y: 10 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                  className="relative z-10 w-full max-w-xl bg-white/95 rounded-3xl shadow-2xl border border-white/50 p-6 sm:p-8 backdrop-blur-2xl my-auto text-slate-900 max-h-[90vh] overflow-y-auto"
+                  className="relative z-10 w-full max-w-xl bg-gradient-to-br from-[#191F61] to-[#2a3080] rounded-3xl shadow-2xl border border-[#c5a059]/30 p-6 sm:p-8 my-auto text-white max-h-[90vh] overflow-y-auto"
                 >
                   {/* HEADER */}
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/20">
                     <div className="flex items-center gap-3">
                       <img
                         src={logoWhite}
@@ -612,19 +612,19 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         className="h-12 w-auto object-contain"
                       />
                       <div>
-                        <h3 className="text-xl font-extrabold text-[#191F61] tracking-tight">
+                        <h3 className="text-xl font-extrabold text-white tracking-tight">
                           {currentStep === 1 && 'Ücretsiz Deneme Dersi'}
                           {currentStep === 2 && 'Öğrenci & Ders Detayları'}
                           {currentStep === 3 && 'Talebiniz Alındı!'}
                         </h3>
-                        <p className="text-xs text-slate-500 font-medium">
+                        <p className="text-xs text-slate-200 font-medium">
                           {currentStep === 1 ? 'Adım 1/2' : currentStep === 2 ? 'Adım 2/2' : 'İşlem Tamamlandı'}
                         </p>
                       </div>
                     </div>
                     <button
                       onClick={onClose}
-                      className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
                       aria-label="Kapat"
                     >
                       <X className="w-5 h-5" />
