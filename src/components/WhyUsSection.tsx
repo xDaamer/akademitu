@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, BookOpen, BarChart3, Users, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Award, BarChart3, Users, MessageSquare, Clock } from 'lucide-react';
 
 interface WhyUsSectionProps {
   onOpenTrialForm: () => void;
@@ -18,9 +18,9 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
       description: 'Öğrencinin eksik olduğu konular yapay zeka destekli analiz matrisi ile tespit edilir, zaman boşa harcanmaz.',
     },
     {
-      icon: BookOpen,
-      title: 'Birebir Özel Müfredat',
-      description: 'Ezberci yaklaşımlar yerine mantığı kavratan, YKS ve LGS yeni nesil soru tiplerine tam uyumlu özel içerikler.',
+      icon: Clock,
+      title: 'Esnek Saatler',
+      description: 'İnternet olan her yerde size uygun gün ve saatlerde ders alın.',
     },
     {
       icon: MessageSquare,
