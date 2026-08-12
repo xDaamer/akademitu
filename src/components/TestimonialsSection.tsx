@@ -121,17 +121,7 @@ export function TestimonialsSection() {
       </div>
 
       <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
-    </section>
-  );
-}@keyframes scroll {
+        @keyframes scroll {
           0% {
             transform: translateX(0);
           }
@@ -146,4 +136,9 @@ export function TestimonialsSection() {
         }
         
         .animate-scroll:hover {
-          animation-play-state: paused
+          animation-play-state: paused;
+        }
+      `}</style>
+    </section>
+  );
+}
