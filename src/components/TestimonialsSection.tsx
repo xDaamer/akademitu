@@ -17,17 +17,23 @@ export function TestimonialsSection() {
     fetchTestimonials();
     
     // Real-time subscription to testimonials table
-    const subscription = supabase
-      ?.from('testimonials')
-      .on('*', (payload) => {
-        // When data changes, refetch testimonials
-        fetchTestimonials();
-      })
-      .subscribe();
+    if (supabase) {
+      const subscription = supabase
+        .channel('public:testimonials')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'testimonials' },
+          () => {
+            // When data changes, refetch testimonials
+            fetchTestimonials();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
   }, []);
 
   async function fetchTestimonials() {
