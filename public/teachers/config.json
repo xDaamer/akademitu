@@ -2,7 +2,8 @@
   "speedSeconds": 18,
   "phaseOffsetSeconds": 4.5,
   "activeImages": [
-    "dila.jpeg"
+    "dila.jpeg",
+    "emre.jpg"
     
   ],
   "description": "Bu ayar dosyasından hoca akış hızını (speedSeconds), faz farkı gecikmesini (phaseOffsetSeconds) ve gösterilecek görselleri (activeImages) düzenleyebilirsiniz."
