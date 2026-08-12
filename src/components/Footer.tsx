@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GraduationCap, Mail, Phone, MapPin, Heart } from 'lucide-react';
-import logoWhite from '../assets/logo-white.png';
+import logoBlue from '../assets/logo-blue.png';
 
 interface FooterProps {
   onOpenTrialForm: () => void;
@@ -20,7 +20,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <img 
-                src={logoWhite} 
+                src={logoBlue} 
                 alt="akademITU Logo" 
                 className="h-11 md:h-12 w-auto object-contain"
               />
