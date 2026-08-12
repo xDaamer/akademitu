@@ -16,7 +16,7 @@ export interface TeacherImageItem {
 export const TeacherTicker: React.FC = () => {
   // Config loaded from /teachers/config.json
   const [config, setConfig] = useState<TeacherTickerConfig>({
-    speedSeconds: 18,
+    speedSeconds: 21.6,
     phaseOffsetSeconds: 4,
     activeImages: ['logo-white.png'],
   });
@@ -141,7 +141,7 @@ export const TeacherTicker: React.FC = () => {
         {/* 1. SÜTUN (AŞAĞI DOĞRU AKAN SÜTUN) */}
         <div className="overflow-hidden h-full relative">
           <div
-            className="animate-teacher-scroll-down space-y-3.5 hover:[animation-play-state:paused]"
+            className="animate-teacher-scroll-down space-y-3.5"
             style={{
               animationDuration: `${config.speedSeconds}s`,
               animationDelay: '0s',
@@ -159,7 +159,7 @@ export const TeacherTicker: React.FC = () => {
         {/* 2. SÜTUN (FAZ FARKI İLE AŞAĞI DOĞRU AKAN SÜTUN) */}
         <div className="overflow-hidden h-full relative">
           <div
-            className="animate-teacher-scroll-down space-y-3.5 hover:[animation-play-state:paused]"
+            className="animate-teacher-scroll-down space-y-3.5"
             style={{
               animationDuration: `${config.speedSeconds}s`,
               animationDelay: `-${config.phaseOffsetSeconds}s`, // FAZ FARKI

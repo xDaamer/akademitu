@@ -10,7 +10,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenTrialForm }) => 
   return (
     <section id="ana-sayfa" className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* ANA DİKDÖRTGEN KUTU (YUMUŞATILMIŞ KENARLAR VE MAVİ ARKA PLAN #191F61) */}
-      <div className="bg-gradient-to-br from-[#101442] via-[#1e2777] via-[#3d44c5] to-[#6b7db3] rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-14 text-white shadow-2xl relative overflow-hidden border border-white/10">
+      <div className="bg-gradient-to-br from-[#101442] via-[#1a1f5a] to-[#2a3080] rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-14 text-white shadow-2xl relative overflow-hidden border border-white/10">
         {/* ARKA PLAN DEKORATİF IŞIK/MİNT/GOLD DOKUNUŞLARI */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#B6D6CC]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#c5a059]/10 rounded-full blur-2xl pointer-events-none" />
