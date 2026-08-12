@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GraduationCap, Menu, X } from 'lucide-react';
-import logoBlue from '../assets/logo-blue.png';
+import logoWhite from '../assets/logo-white.png';
 
 interface HeaderProps {
   onOpenTrialForm: () => void;
@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
           className="flex items-center gap-3 group"
         >
           <img 
-            src={logoBlue} 
+            src={logoWhite} 
             alt="akademITU Logo" 
             className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105"
           />

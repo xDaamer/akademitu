@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
 import { KvkkModal } from './KvkkModal';
-import logoBlue from '../assets/logo-blue.png';
+import logoWhite from '../assets/logo-white.png';
 
 interface PopUpFormProps {
   isOpen: boolean;
@@ -234,7 +234,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <div className="flex items-center gap-3">
                         <img
-                          src={logoBlue}
+                          src={logoWhite}
                           alt="akademITU Logo"
                           className="h-10 w-auto object-contain"
                         />
@@ -607,7 +607,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <img
-                        src={logoBlue}
+                        src={logoWhite}
                         alt="akademITU Logo"
                         className="h-12 w-auto object-contain"
                       />
