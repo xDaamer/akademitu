@@ -50,8 +50,8 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
         {/* VURGULU MESAJ BANNERI */}
         <div className="mb-16 bg-gradient-to-r from-[#191F61] to-[#2a3080] rounded-3xl p-8 sm:p-12 border-l-4 border-[#B6D6CC] shadow-lg">
           <p className="text-white text-lg sm:text-xl font-bold leading-relaxed">
-            <span className="text-[#B6D6CC] font-black">YKS zaman yönetimini en iyi derece koçlarımız bilir!</span>
-            {' '}Yakın zamanda aynı yoldan geçmiş ve kendini ispatlamış hocalarımızdan ders alın.
+            <span className="text-[#B6D6CC] font-black">Sizin hedefinize ulaştığınız yoldan geçmiş öğrenciler</span>
+            {' '}doğrudan hocalarınız. Kendi başarı yolunu bilen mentorlara sahip olmak, en güçlü öğrenme stratejisidir.
           </p>
         </div>
 

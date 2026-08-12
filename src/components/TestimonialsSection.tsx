@@ -15,6 +15,19 @@ export function TestimonialsSection() {
 
   useEffect(() => {
     fetchTestimonials();
+    
+    // Real-time subscription to testimonials table
+    const subscription = supabase
+      ?.from('testimonials')
+      .on('*', (payload) => {
+        // When data changes, refetch testimonials
+        fetchTestimonials();
+      })
+      .subscribe();
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   async function fetchTestimonials() {
@@ -58,7 +71,7 @@ export function TestimonialsSection() {
     <section className="py-12 sm:py-16 overflow-hidden bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl sm:text-4xl font-black text-[#191F61] mb-12 text-center">
-          Öğrencilerimiz Ne Diyor?
+          Velilerimizin Görüşleri
         </h2>
 
         {/* YORUMLAR KONTEYNERI - OTOMATİK SAĞDAN SOLA AKIŞ */}
@@ -135,9 +148,7 @@ export function TestimonialsSection() {
           width: max-content;
         }
         
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
+
       `}</style>
     </section>
   );
