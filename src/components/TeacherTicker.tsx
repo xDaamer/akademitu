@@ -228,7 +228,7 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
 
   return (
     <div
-      className="w-full bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white/20 hover:border-[#c5a059]/50 hover:scale-[1.02] group overflow-hidden"
+      className="w-full bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white/20 hover:scale-[1.02] group overflow-hidden"
       style={{
         aspectRatio: aspectRatio ? `${aspectRatio}` : '1 / 1',
       }}
