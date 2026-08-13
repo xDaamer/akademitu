@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
 export interface TeacherTickerConfig {
@@ -133,41 +133,62 @@ export const TeacherTicker: React.FC = () => {
 
       {/*a YAN YANA İKİ SÜTUN (TWO PARALLEL STREAMING COLUMNS) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
-        {/* 1. SÜTUN (AŞAĞI DOĞRU AKAN SÜTUN) */}
-        <div className="overflow-hidden h-full relative">
-          <div
-            className="animate-teacher-scroll-down space-y-3.5"
-            style={{
-              animationDuration: `${config.speedSeconds}s`,
-              animationDelay: '0s',
-            }}
-          >
-            {col1Items.map((item, index) => (
-              <PureImageCard
-                key={`c1-${item.id}-${index}`}
-                item={item}
-              />
-            ))}
-          </div>
-        </div>
+        <ScrollColumn items={col1Items} speedSeconds={config.speedSeconds} phaseRatio={0} />
+        {/* 2. sütun yarım periyot ileride başlar, sekme değişikliğinden etkilenmez */}
+        <ScrollColumn items={col2Items} speedSeconds={config.speedSeconds} phaseRatio={0.5} />
+      </div>
+    </div>
+  );
+};
 
-        {/* 2. SÜTUN (FAZ FARKI İLE AŞAĞI DOĞRU AKAN SÜTUN) */}
-        <div className="overflow-hidden h-full relative">
-          <div
-            className="animate-teacher-scroll-down space-y-3.5"
-            style={{
-              animationDuration: `${config.speedSeconds}s`,
-              animationDelay: `-${config.phaseOffsetSeconds}s`, // FAZ FARKI
-            }}
-          >
-            {col2Items.map((item, index) => (
-              <PureImageCard
-                key={`c2-${item.id}-${index}`}
-                item={item}
-              />
-            ))}
-          </div>
-        </div>
+// =========================================================================
+// JS TABANLI SCROLL SÜTUN — sekme değişikliğinden etkilenmez
+// =========================================================================
+interface ScrollColumnProps {
+  items: TeacherImageItem[];
+  speedSeconds: number;
+  phaseRatio: number; // 0 = baştan, 0.5 = yarı periyot ileride
+}
+
+const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, phaseRatio }) => {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef<number | null>(null);
+  const rafRef = useRef<number>(0);
+  const lastTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const totalHeight = track.scrollHeight / 2; // duplicated list, so half is one cycle
+    const pxPerMs = totalHeight / (speedSeconds * 1000);
+
+    // Start position: phaseRatio * totalHeight into the cycle
+    if (posRef.current === null) {
+      posRef.current = phaseRatio * totalHeight;
+    }
+
+    const step = (timestamp: number) => {
+      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
+      const delta = timestamp - lastTimeRef.current;
+      lastTimeRef.current = timestamp;
+
+      posRef.current = ((posRef.current! + pxPerMs * delta) % totalHeight);
+      if (track) track.style.transform = `translateY(-${posRef.current}px)`;
+
+      rafRef.current = requestAnimationFrame(step);
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [speedSeconds, phaseRatio, items]);
+
+  return (
+    <div className="overflow-hidden h-full relative">
+      <div ref={trackRef} className="space-y-3.5 will-change-transform">
+        {items.map((item, index) => (
+          <PureImageCard key={`col-${item.id}-${index}`} item={item} />
+        ))}
       </div>
     </div>
   );

@@ -20,4 +20,4 @@ Disallow: /src/
 Disallow: /dist/
 
 Crawl-delay: 1
-Sitemap: https://akademitu.vercel.app/sitemap.xml
+Sitemap: https://akademitu.com/sitemap.xml
