@@ -4,7 +4,8 @@
   "activeImages": [
     "dila.jpg",
     "emre.jpg",
-    "nehir.jpg"
+    "nehir.jpg",
+    "dorukhan.jpg"
     
   ],
   "description": "Bu ayar dosyasından hoca akış hızını (speedSeconds), faz farkı gecikmesini (phaseOffsetSeconds) ve gösterilecek görselleri (activeImages) düzenleyebilirsiniz."
