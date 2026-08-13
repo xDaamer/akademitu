@@ -91,8 +91,8 @@ export const TeacherTicker: React.FC = () => {
       {/*a YAN YANA İKİ SÜTUN (TWO PARALLEL STREAMING COLUMNS) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
         <ScrollColumn items={col1Items} speedSeconds={config.speedSeconds} phaseRatio={0} />
-        {/* 2. sütun yarım periyot ileride başlar, sekme değişikliğinden etkilenmez */}
-        <ScrollColumn items={col2Items} speedSeconds={config.speedSeconds} phaseRatio={0.5} />
+        {/* col2 farklı hızda çalışır — asla col1 ile senkronize olmaz */}
+        <ScrollColumn items={col2Items} speedSeconds={config.speedSeconds * 0.78} phaseRatio={0} />
       </div>
     </div>
   );
