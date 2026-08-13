@@ -111,24 +111,25 @@ export const TeacherTicker: React.FC = () => {
     );
   }
 
-  // Duplicate items enough times to ensure smooth infinite loop
-  const buildLoopList = (items: TeacherImageItem[], offsetMultiplier = 0) => {
-    // If only 1 or 2 items, repeat them to fill height
-    let baseList = items;
+  const shuffleWithSeed = (items: TeacherImageItem[], seed: number): TeacherImageItem[] => {
+    const arr = [...items];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = (i * 17 + seed * 31) % (i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+
+  const buildLoopList = (items: TeacherImageItem[], seed: number) => {
+    let baseList = shuffleWithSeed(items, seed);
     while (baseList.length < 6) {
-      baseList = [...baseList, ...items];
+      baseList = [...baseList, ...shuffleWithSeed(items, seed + baseList.length)];
     }
-    // Shift items slightly for column 2 so columns don't look identical
-    if (offsetMultiplier > 0 && baseList.length > 1) {
-      const shift = offsetMultiplier % baseList.length;
-      baseList = [...baseList.slice(shift), ...baseList.slice(0, shift)];
-    }
-    // Repeat for infinite animation loop (0% to -50%)
     return [...baseList, ...baseList];
   };
 
   const col1Items = buildLoopList(imagesList, 0);
-  const col2Items = buildLoopList(imagesList, 1);
+  const col2Items = buildLoopList(imagesList, 7);
 
       return (
         <div className="relative h-full overflow-hidden">
@@ -228,7 +229,7 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
 
   return (
     <div
-      className="w-full bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-white/20 hover:scale-[1.02] group overflow-hidden"
+      className="w-full bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg overflow-hidden"
       style={{
         aspectRatio: aspectRatio ? `${aspectRatio}` : '1 / 1',
       }}
@@ -244,7 +245,7 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
             }
           }}
           onError={handleError}
-          className={`transition-transform duration-300 group-hover:scale-105 ${
+          className={`${
             item.filename.toLowerCase().includes('logo')
               ? 'w-4/5 h-4/5 object-contain'
               : 'w-full h-full object-cover'
