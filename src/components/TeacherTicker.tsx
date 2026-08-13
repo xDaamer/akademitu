@@ -90,9 +90,8 @@ export const TeacherTicker: React.FC = () => {
 
       {/*a YAN YANA İKİ SÜTUN (TWO PARALLEL STREAMING COLUMNS) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
-        <ScrollColumn items={col1Items} speedSeconds={config.speedSeconds} phaseRatio={0} />
-        {/* col2 farklı hızda çalışır — asla col1 ile senkronize olmaz */}
-        <ScrollColumn items={col2Items} speedSeconds={config.speedSeconds * 0.78} phaseRatio={0} />
+        <ScrollColumn items={col1Items} speedSeconds={config.speedSeconds} />
+        <ScrollColumn items={col2Items} speedSeconds={config.speedSeconds} reverse={true} />
       </div>
     </div>
   );
@@ -104,10 +103,10 @@ export const TeacherTicker: React.FC = () => {
 interface ScrollColumnProps {
   items: TeacherImageItem[];
   speedSeconds: number;
-  phaseRatio: number; // 0 = baştan, 0.5 = yarı periyot ileride
+  reverse?: boolean;
 }
 
-const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, phaseRatio }) => {
+const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, reverse = false }) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const posRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
@@ -117,12 +116,12 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, phaseR
     const track = trackRef.current;
     if (!track) return;
 
-    const totalHeight = track.scrollHeight / 2; // duplicated list, so half is one cycle
+    const totalHeight = track.scrollHeight / 2;
     const pxPerMs = totalHeight / (speedSeconds * 1000);
 
-    // Start position: phaseRatio * totalHeight into the cycle
+    // reverse column starts at end of cycle so it flows upward seamlessly
     if (posRef.current === null) {
-      posRef.current = phaseRatio * totalHeight;
+      posRef.current = reverse ? totalHeight - 1 : 0;
     }
 
     const step = (timestamp: number) => {
@@ -130,7 +129,11 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, phaseR
       const delta = timestamp - lastTimeRef.current;
       lastTimeRef.current = timestamp;
 
-      posRef.current = ((posRef.current! + pxPerMs * delta) % totalHeight);
+      if (reverse) {
+        posRef.current = ((posRef.current! - pxPerMs * delta) + totalHeight) % totalHeight;
+      } else {
+        posRef.current = (posRef.current! + pxPerMs * delta) % totalHeight;
+      }
       if (track) track.style.transform = `translateY(-${posRef.current}px)`;
 
       rafRef.current = requestAnimationFrame(step);
@@ -138,7 +141,7 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, phaseR
 
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [speedSeconds, phaseRatio, items]);
+  }, [speedSeconds, reverse, items]);
 
   return (
     <div className="overflow-hidden h-full relative">
