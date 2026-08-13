@@ -111,25 +111,19 @@ export const TeacherTicker: React.FC = () => {
     );
   }
 
-  const shuffleWithSeed = (items: TeacherImageItem[], seed: number): TeacherImageItem[] => {
-    const arr = [...items];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = (i * 17 + seed * 31) % (i + 1);
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  };
-
-  const buildLoopList = (items: TeacherImageItem[], seed: number) => {
-    let baseList = shuffleWithSeed(items, seed);
+  const buildLoopList = (items: TeacherImageItem[], startIndex: number) => {
+    // Rotate list so column starts at the given index
+    const rotated = [...items.slice(startIndex), ...items.slice(0, startIndex)];
+    let baseList = rotated;
     while (baseList.length < 6) {
-      baseList = [...baseList, ...shuffleWithSeed(items, seed + baseList.length)];
+      baseList = [...baseList, ...rotated];
     }
     return [...baseList, ...baseList];
   };
 
+  const col2Start = Math.ceil(imagesList.length / 2);
   const col1Items = buildLoopList(imagesList, 0);
-  const col2Items = buildLoopList(imagesList, 7);
+  const col2Items = buildLoopList(imagesList, col2Start);
 
       return (
         <div className="relative h-full overflow-hidden">
@@ -229,7 +223,7 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
 
   return (
     <div
-      className="w-full bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg overflow-hidden"
+      className="w-full bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 hover:bg-white/20 hover:shadow-xl"
       style={{
         aspectRatio: aspectRatio ? `${aspectRatio}` : '1 / 1',
       }}
