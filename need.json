@@ -1,0 +1,73 @@
+{
+  "site": {
+    "name": "akademITU",
+    "domain": "https://akademitu.vercel.app/",
+    "domainLocal": "akademitu.com",
+    "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
+    "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı ve takip sistemi.",
+    "keywords": "YKS koçluk, LGS koçluk, özel ders, YKS özel ders, LGS özel ders, TYT koçu, AYT koçu, koçluk programı",
+    "language": "tr_TR",
+    "themeColor": "#191F61",
+    "logoUrl": "/logo.png"
+  },
+  "contact": {
+    "phone": "+90-530-369-9539",
+    "phoneFormatted": "05303699539",
+    "address": {
+      "street": "Katar Caddesi",
+      "city": "İstanbul",
+      "region": "İstanbul",
+      "country": "TR"
+    },
+    "whatsapp": "https://wa.me/905303699539?text=Merhaba! AkademITU için bilgi almak istiyorum."
+  },
+  "social": {
+    "instagram": "https://www.instagram.com/akademitu",
+    "youtube": "https://www.youtube.com/@akademitu",
+    "twitter": "https://www.twitter.com/akademitu"
+  },
+  "seo": {
+    "pages": [
+      {
+        "id": "home",
+        "path": "/",
+        "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
+        "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı.",
+        "changefreq": "weekly",
+        "priority": 1.0
+      },
+      {
+        "id": "packages",
+        "path": "#paketler",
+        "title": "Özel Ders Paketleri ve Fiyatları | akademITU",
+        "description": "YKS ve LGS hazırlık için ücretsiz deneme, özel ders ve koçluk paketlerimizi inceleyin.",
+        "changefreq": "monthly",
+        "priority": 0.9
+      },
+      {
+        "id": "why-us",
+        "path": "#neden-biz",
+        "title": "Neden akademITU? | YKS LGS Koçluk Farkı",
+        "description": "Derece hocaları, kişiye özel program, ilerleme analizi ve şeffaf veli bilgilendirmesi ile fark yaratıyoruz.",
+        "changefreq": "monthly",
+        "priority": 0.9
+      },
+      {
+        "id": "testimonials",
+        "path": "#yorumlar",
+        "title": "Velilerimizin Görüşleri | akademITU Yorumları",
+        "description": "Akademitu'dan yararlanmış öğrenci velilerinin görüş ve deneyimlerini okuyun.",
+        "changefreq": "weekly",
+        "priority": 0.8
+      },
+      {
+        "id": "faq",
+        "path": "#sss",
+        "title": "Sıkça Sorulan Sorular | akademITU",
+        "description": "YKS, LGS, özel ders ve koçluk hakkında sık sorulan soruların cevaplarını bulun.",
+        "changefreq": "monthly",
+        "priority": 0.8
+      }
+    ]
+  }
+}

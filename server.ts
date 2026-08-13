@@ -3,6 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { createServer as createViteServer } from "vite";
+import need from "./need.json" with { type: "json" };
 
 dotenv.config();
 
@@ -27,6 +28,75 @@ const supabase =
 // API Routes
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", supabaseConfigured: !!supabase });
+});
+
+// SEO: Dynamic Sitemap from need.json
+app.get("/sitemap.xml", (_req, res) => {
+  res.type("application/xml");
+  
+  const sitemapEntries = need.seo.pages
+    .map(page => `
+  <url>
+    <loc>${need.site.domain}${page.path}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`)
+    .join("");
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:mobile="http://www.mobile.googlebot.org/schemas/mobile/1.0">
+${sitemapEntries}
+</urlset>`;
+
+  res.send(sitemap);
+});
+
+// SEO: Dynamic robots.txt from need.json
+app.get("/robots.txt", (_req, res) => {
+  res.type("text/plain");
+  
+  const robotsTxt = `# robots.txt for ${need.site.name}
+# Allow Google and other search engines to crawl public pages
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /sitemap.xml
+Allow: /public/
+
+# Disallow private/unnecessary routes
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /user/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /.git/
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /dist/
+Disallow: /build/
+
+# Crawl delay
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: ${need.site.domain}/sitemap.xml
+`;
+
+  res.send(robotsTxt);
+});
+
+// API endpoint to get site config (for frontend)
+app.get("/api/config", (_req, res) => {
+  res.json({
+    site: need.site,
+    contact: need.contact,
+    social: need.social
+  });
 });
 
 // Step 1: Lead Submission (Name & Phone)
