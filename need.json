@@ -36,38 +36,6 @@
         "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı.",
         "changefreq": "weekly",
         "priority": 1
-      },
-      {
-        "id": "packages",
-        "path": "#paketler",
-        "title": "Özel Ders Paketleri ve Fiyatları | akademITU",
-        "description": "YKS ve LGS hazırlık için ücretsiz deneme, özel ders ve koçluk paketlerimizi inceleyin.",
-        "changefreq": "monthly",
-        "priority": 0.9
-      },
-      {
-        "id": "why-us",
-        "path": "#neden-biz",
-        "title": "Neden akademITU? | YKS LGS Koçluk Farkı",
-        "description": "Derece hocaları, kişiye özel program, ilerleme analizi ve şeffaf veli bilgilendirmesi ile fark yaratıyoruz.",
-        "changefreq": "monthly",
-        "priority": 0.9
-      },
-      {
-        "id": "testimonials",
-        "path": "#yorumlar",
-        "title": "Velilerimizin Görüşleri | akademITU Yorumları",
-        "description": "Akademitu'dan yararlanmış öğrenci velilerinin görüş ve deneyimlerini okuyun.",
-        "changefreq": "weekly",
-        "priority": 0.8
-      },
-      {
-        "id": "faq",
-        "path": "#sss",
-        "title": "Sıkça Sorulan Sorular | akademITU",
-        "description": "YKS, LGS, özel ders ve koçluk hakkında sık sorulan soruların cevaplarını bulun.",
-        "changefreq": "monthly",
-        "priority": 0.8
       }
     ]
   }
