@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
 export interface TeacherTickerConfig {
@@ -84,6 +84,10 @@ export const TeacherTicker: React.FC = () => {
 
       return (
         <div className="relative h-full overflow-hidden">
+          <style>{`
+            @keyframes teacherScrollDown { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+            @keyframes teacherScrollUp   { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+          `}</style>
           {/* ÇERÇEVE DOKUNUŞU: ÜST VE ALT PERDE GRADIENTI (MASKING FRAME EFFECT - YUMUŞAK GEÇİŞ) */}
           <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#12164a] via-[#12164a]/60 to-transparent z-20 pointer-events-none" />
          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#3540a3] via-[#3540a3]/60 to-transparent z-20 pointer-events-none" />
@@ -98,7 +102,7 @@ export const TeacherTicker: React.FC = () => {
 };
 
 // =========================================================================
-// JS TABANLI SCROLL SÜTUN — sekme değişikliğinden etkilenmez
+// CSS ANIMATION SÜTUN — duration aynı = hız kesinlikle aynı
 // =========================================================================
 interface ScrollColumnProps {
   items: TeacherImageItem[];
@@ -107,45 +111,16 @@ interface ScrollColumnProps {
 }
 
 const ScrollColumn: React.FC<ScrollColumnProps> = ({ items, speedSeconds, reverse = false }) => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const posRef = useRef<number | null>(null);
-  const rafRef = useRef<number>(0);
-  const lastTimeRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-
-    const totalHeight = track.scrollHeight / 2;
-    const pxPerMs = totalHeight / (speedSeconds * 1000);
-
-    // reverse column starts at end of cycle so it flows upward seamlessly
-    if (posRef.current === null) {
-      posRef.current = reverse ? totalHeight - 1 : 0;
-    }
-
-    const step = (timestamp: number) => {
-      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
-      const delta = timestamp - lastTimeRef.current;
-      lastTimeRef.current = timestamp;
-
-      if (reverse) {
-        posRef.current = ((posRef.current! - pxPerMs * delta) + totalHeight) % totalHeight;
-      } else {
-        posRef.current = (posRef.current! + pxPerMs * delta) % totalHeight;
-      }
-      if (track) track.style.transform = `translateY(-${posRef.current}px)`;
-
-      rafRef.current = requestAnimationFrame(step);
-    };
-
-    rafRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [speedSeconds, reverse, items]);
+  const animationStyle: React.CSSProperties = {
+    animationName: reverse ? 'teacherScrollUp' : 'teacherScrollDown',
+    animationDuration: `${speedSeconds}s`,
+    animationTimingFunction: 'linear',
+    animationIterationCount: 'infinite',
+  };
 
   return (
     <div className="overflow-hidden h-full relative">
-      <div ref={trackRef} className="space-y-3.5 will-change-transform">
+      <div style={animationStyle} className="space-y-3.5 will-change-transform">
         {items.map((item, index) => (
           <PureImageCard key={`col-${item.id}-${index}`} item={item} />
         ))}
