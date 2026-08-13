@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GraduationCap, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { GraduationCap, Mail, Phone, MapPin } from 'lucide-react';
 import logoBlue from '../assets/logo-blue.png';
 import need from '../../need.json';
 
@@ -98,11 +98,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
         {/* TELİF HAKKI VE ALT BİLGİ */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 text-center sm:text-left">
           <p>© {new Date().getFullYear()} akademITU. Tüm hakları saklıdır.</p>
-          <p className="flex items-center gap-1 justify-center">
-            <span>Derece Hocalarımız Tarafından</span>
-            <Heart className="w-3.5 h-3.5 text-rose-400 fill-current" />
-            <span>Geliştirildi</span>
-          </p>
           <p className="text-slate-500">v{need.site.version}</p>
         </div>
       </div>
