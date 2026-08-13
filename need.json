@@ -1,7 +1,7 @@
 {
   "site": {
     "name": "akademITU",
-    "domain": "https://akademitu.vercel.app/",
+    "domain": "https://akademitu.vercel.app",
     "domainLocal": "akademitu.com",
     "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
     "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı ve takip sistemi.",
