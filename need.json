@@ -1,6 +1,7 @@
 {
   "site": {
     "name": "akademITU",
+    "version": "1.3.2",
     "domain": "https://akademitu.com",
     "domainLocal": "akademitu.com",
     "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
@@ -34,7 +35,7 @@
         "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
         "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı.",
         "changefreq": "weekly",
-        "priority": 1.0
+        "priority": 1
       },
       {
         "id": "packages",

@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+
+NEED_JSON="./need.json"
+
+# Read current version
+CURRENT=$(node -e "const n=require('$NEED_JSON'); console.log(n.site.version)")
+
+# Split and increment patch
+IFS='.' read -ra PARTS <<< "$CURRENT"
+MAJOR="${PARTS[0]}"
+MINOR="${PARTS[1]}"
+PATCH=$((${PARTS[2]} + 1))
+NEW="$MAJOR.$MINOR.$PATCH"
+
+# Write new version back
+node -e "
+const fs = require('fs');
+const need = JSON.parse(fs.readFileSync('$NEED_JSON', 'utf8'));
+need.site.version = '$NEW';
+fs.writeFileSync('$NEED_JSON', JSON.stringify(need, null, 2) + '\n');
+"
+
+echo "🚀 Version bumped: $CURRENT → $NEW"
+
+# Stage and amend the last commit silently
+git add .
+git commit --amend --no-edit --no-verify

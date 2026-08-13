@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GraduationCap, Mail, Phone, MapPin, Heart } from 'lucide-react';
 import logoBlue from '../assets/logo-blue.png';
+import need from '../../need.json';
 
 interface FooterProps {
   onOpenTrialForm: () => void;
@@ -102,6 +103,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
             <Heart className="w-3.5 h-3.5 text-rose-400 fill-current" />
             <span>Geliştirildi</span>
           </p>
+          <p className="text-slate-500">v{need.site.version}</p>
         </div>
       </div>
     </footer>
