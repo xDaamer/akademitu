@@ -43,59 +43,16 @@ export const TeacherTicker: React.FC = () => {
     loadConfig();
   }, []);
 
-  // 2. Discover files uploaded to /public/teachers/ or listed in config.json
+  // 2. Build image list directly from config.activeImages (public folder, no glob needed)
   useEffect(() => {
-    try {
-      // Vite glob for public/teachers directory
-      const globFiles = import.meta.glob<string>(
-        '/public/teachers/*.{png,jpg,jpeg,webp,svg,PNG,JPG,JPEG,WEBP,SVG}',
-        { eager: true, import: 'default' }
-      );
-
-      const map = new Map<string, TeacherImageItem>();
-
-      // A) Process files found via Vite glob
-      Object.entries(globFiles).forEach(([filePath, url], index) => {
-        const filename = filePath.split('/').pop() || `gorsel-${index}`;
-
-        // Filter based on activeImages in config.json (flexible case & extension matching)
-        const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')).toLowerCase();
-        const isAllowed =
-          config.activeImages.length === 0 ||
-          config.activeImages.includes('*') ||
-          config.activeImages.some((active) => {
-            const activeLower = active.toLowerCase();
-            const activeNoExt = activeLower.substring(0, activeLower.lastIndexOf('.'));
-            return (
-              activeLower === filename.toLowerCase() ||
-              (activeNoExt && activeNoExt === nameWithoutExt)
-            );
-          });
-
-        if (isAllowed) {
-          map.set(filename, {
-            id: `glob-${index}-${filename}`,
-            filename,
-            imageUrl: `/teachers/${filename}`,
-          });
-        }
-      });
-
-      // B) Process files listed in config.json activeImages directly
-      config.activeImages.forEach((filename, idx) => {
-        if (filename && filename !== '*' && !map.has(filename)) {
-          map.set(filename, {
-            id: `config-${idx}-${filename}`,
-            filename,
-            imageUrl: `/teachers/${filename}`,
-          });
-        }
-      });
-
-      setImagesList(Array.from(map.values()));
-    } catch (err) {
-      console.error('Yüklenen hoca fotoğrafları taranırken hata oluştu:', err);
-    }
+    const items: TeacherImageItem[] = config.activeImages
+      .filter((filename) => filename && filename !== '*')
+      .map((filename, idx) => ({
+        id: `config-${idx}-${filename}`,
+        filename,
+        imageUrl: `/teachers/${filename}`,
+      }));
+    setImagesList(items);
   }, [config.activeImages]);
 
   // If no images uploaded or selected in config.json
