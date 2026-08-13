@@ -23,7 +23,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenTrialForm }) => 
             
             {/* BAŞLIK */}
             <h1 className="text-2xl sm:text-3xl md:text-3xl lg:text-5xl font-extrabold text-white leading-[1.18] tracking-tight">
-              Derece hocaları ile sınava hazırlan
+              YKS ve LGS için Derece Hocaları ile Hazırlan
             </h1>
 
 

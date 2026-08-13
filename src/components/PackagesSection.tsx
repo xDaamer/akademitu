@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Check, Gift, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface PackagesSectionProps {
@@ -6,6 +6,80 @@ interface PackagesSectionProps {
 }
 
 export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialForm }) => {
+  // SEO: Add Service Schema for packages
+  useEffect(() => {
+    const serviceSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "Service",
+          "@id": "https://www.akademitu.com/#ozel-ders",
+          "name": "Ücretsiz Deneme Dersi",
+          "description": "Hedefinize ve seviyenize uygun derece koçunuz ile 30-40 dakikalık tanışma seansı. Hiçbir ücret veya taahhüt ödemezsiniz.",
+          "provider": {
+            "@type": "Organization",
+            "name": "akademITU"
+          },
+          "priceCurrency": "TRY",
+          "price": "0"
+        },
+        {
+          "@type": "Service",
+          "@id": "https://www.akademitu.com/#ozel-ders",
+          "name": "Özel Ders Paketi",
+          "description": "Haftalık belirlenmiş saatlerde derece hocalarımızdan online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.",
+          "provider": {
+            "@type": "Organization",
+            "name": "akademITU"
+          },
+          "priceCurrency": "TRY",
+          "price": "950",
+          "priceSpecification": {
+            "@type": "PriceSpecification",
+            "price": "950",
+            "priceCurrency": "TRY",
+            "eligibleQuantity": {
+              "@type": "QuantitativeValue",
+              "unitCode": "H27",
+              "value": "1"
+            }
+          }
+        },
+        {
+          "@type": "Service",
+          "@id": "https://www.akademitu.com/#kocluk",
+          "name": "Koçluk Programı",
+          "description": "Haftalık revizyon ve planlama görüşmesi ile kişiye özel çalışma planı. Farklı teknikler ile en verimli çalışma yolunu keşfet.",
+          "provider": {
+            "@type": "Organization",
+            "name": "akademITU"
+          },
+          "priceCurrency": "TRY",
+          "price": "3150",
+          "priceSpecification": {
+            "@type": "PriceSpecification",
+            "price": "3150",
+            "priceCurrency": "TRY",
+            "eligibleQuantity": {
+              "@type": "QuantitativeValue",
+              "unitCode": "MON",
+              "value": "1"
+            }
+          }
+        }
+      ]
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(serviceSchema);
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
   return (
     <section id="paketler" className="py-16 sm:py-24 bg-slate-50 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

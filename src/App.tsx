@@ -14,6 +14,57 @@ export default function App() {
   const [hasScrolledTriggered, setHasScrolledTriggered] = useState(false);
   const [activeSection, setActiveSection] = useState('ana-sayfa');
 
+  // SEO: Add Organization & WebSite Schema to document head
+  useEffect(() => {
+    const organizationSchema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "akademITU",
+      "url": "https://www.akademitu.com",
+      "logo": "https://www.akademitu.com/logo.png",
+      "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders",
+      "telephone": "+90-530-369-9539",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "İstanbul",
+        "addressRegion": "İstanbul",
+        "addressCountry": "TR"
+      },
+      "sameAs": ["https://www.instagram.com/akademitu", "https://www.youtube.com/@akademitu"]
+    };
+
+    const websiteSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "akademITU",
+      "url": "https://www.akademitu.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.akademitu.com/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    };
+
+    // Create script tags
+    const orgScript = document.createElement('script');
+    orgScript.type = 'application/ld+json';
+    orgScript.textContent = JSON.stringify(organizationSchema);
+    document.head.appendChild(orgScript);
+
+    const webScript = document.createElement('script');
+    webScript.type = 'application/ld+json';
+    webScript.textContent = JSON.stringify(websiteSchema);
+    document.head.appendChild(webScript);
+
+    return () => {
+      document.head.removeChild(orgScript);
+      document.head.removeChild(webScript);
+    };
+  }, []);
+
   // AUTOMATIC POP-UP ON SCROLL DOWN (Triggers scroll mode form)
   useEffect(() => {
     const handleScroll = () => {
