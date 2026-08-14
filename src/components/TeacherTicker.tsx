@@ -68,19 +68,18 @@ export const TeacherTicker: React.FC = () => {
     );
   }
 
-  const buildLoopList = (items: TeacherImageItem[], startIndex: number) => {
-    // Rotate list so column starts at the given index
-    const rotated = [...items.slice(startIndex), ...items.slice(0, startIndex)];
-    let baseList = rotated;
-    while (baseList.length < 6) {
-      baseList = [...baseList, ...rotated];
-    }
-    return [...baseList, ...baseList];
+  const buildLoopList = (items: TeacherImageItem[]) => {
+    if (items.length === 0) return [];
+
+    const cycle = [...items, ...items];
+    return [...cycle, ...cycle];
   };
 
-  const col2Start = Math.ceil(imagesList.length / 2);
-  const col1Items = buildLoopList(imagesList, 0);
-  const col2Items = buildLoopList(imagesList, col2Start);
+  const splitIndex = Math.ceil(imagesList.length / 2);
+  const leftItems = imagesList.slice(0, splitIndex);
+  const rightItems = imagesList.slice(splitIndex);
+  const col1Items = buildLoopList(leftItems.length > 0 ? leftItems : imagesList);
+  const col2Items = buildLoopList(rightItems.length > 0 ? rightItems : imagesList);
 
       return (
         <div className="relative h-full overflow-hidden">
