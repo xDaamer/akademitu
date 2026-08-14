@@ -1,12 +1,13 @@
 {
-  "speedSeconds": 18,
-  "phaseOffsetSeconds": 4.5,
+  "speedSeconds": 40,
+  "phaseOffsetSeconds": 10,
   "activeImages": [
     "dila.jpg",
     "emre.jpg",
     "nehir.jpg",
     "dorukhan.jpg",
-    "onat.jpg"
+    "onat.jpg",
+    "bora.jpg"
   ],
   "description": "Bu ayar dosyasından hoca akış hızını (speedSeconds), faz farkı gecikmesini (phaseOffsetSeconds) ve gösterilecek görselleri (activeImages) düzenleyebilirsiniz."
 }
