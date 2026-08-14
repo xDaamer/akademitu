@@ -71,8 +71,8 @@ export const TeacherTicker: React.FC = () => {
   const buildLoopList = (items: TeacherImageItem[]) => {
     if (items.length === 0) return [];
 
-    const cycle = [...items, ...items];
-    return [...cycle, ...cycle];
+    const cycle = [...items, ...items, ...items];
+    return cycle;
   };
 
   const splitIndex = Math.ceil(imagesList.length / 2);
@@ -84,8 +84,14 @@ export const TeacherTicker: React.FC = () => {
       return (
         <div className="relative h-full overflow-hidden">
           <style>{`
-            @keyframes teacherScrollDown { from { transform: translateY(0); } to { transform: translateY(-50%); } }
-            @keyframes teacherScrollUp   { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+            @keyframes teacherScrollDown {
+              from { transform: translateY(0); }
+              to { transform: translateY(-33.333%); }
+            }
+            @keyframes teacherScrollUp {
+              from { transform: translateY(-33.333%); }
+              to { transform: translateY(0); }
+            }
           `}</style>
           {/* ÇERÇEVE DOKUNUŞU: ÜST VE ALT PERDE GRADIENTI (MASKING FRAME EFFECT - YUMUŞAK GEÇİŞ) */}
           <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#12164a] via-[#12164a]/60 to-transparent z-20 pointer-events-none" />
