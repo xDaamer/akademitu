@@ -166,12 +166,11 @@ const PureImageCard: React.FC<PureImageCardProps> = ({ item }) => {
   }, [item.imageUrl, item.filename]);
 
   const handleError = () => {
-    if (imgSrc.startsWith('/teachers/')) {
-      // Try /public/teachers/ fallback
-      setImgSrc(`/public/teachers/${item.filename}`);
-    } else if (imgSrc.startsWith('/public/teachers/')) {
-      // Try direct logo asset fallback
+    if (imgSrc === `/teachers/${item.filename}`) {
+      // Try the app logo as a final fallback
       setImgSrc('/teachers/logo-white.png');
+    } else if (imgSrc === '/teachers/logo-white.png') {
+      setHasError(true);
     } else {
       setHasError(true);
     }
