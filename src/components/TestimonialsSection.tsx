@@ -13,6 +13,7 @@ export function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startScrollLeft = useRef(0);
@@ -81,7 +82,8 @@ export function TestimonialsSection() {
     if (event.button !== 0) return;
 
     const container = scrollRef.current;
-    if (!container) return;
+    const track = trackRef.current;
+    if (!container || !track) return;
 
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -90,9 +92,9 @@ export function TestimonialsSection() {
     startX.current = event.clientX;
     startScrollLeft.current = container.scrollLeft;
     container.classList.add('dragging');
+    track.style.animationPlayState = 'paused';
     container.style.cursor = 'grabbing';
     container.style.userSelect = 'none';
-    container.style.animationPlayState = 'paused';
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -105,21 +107,22 @@ export function TestimonialsSection() {
 
   const stopDragging = (event?: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollRef.current;
-    if (!container) return;
+    const track = trackRef.current;
+    if (!container || !track) return;
 
     if (event && typeof event.currentTarget.releasePointerCapture === 'function') {
       try {
         event.currentTarget.releasePointerCapture(event.pointerId);
       } catch {
-        // no-op: pointer capture may already be released
+        // no-op
       }
     }
 
     isDragging.current = false;
     container.classList.remove('dragging');
+    track.style.animationPlayState = '';
     container.style.cursor = '';
     container.style.userSelect = '';
-    container.style.animationPlayState = '';
   };
 
   return (
@@ -133,7 +136,7 @@ export function TestimonialsSection() {
           <div
             ref={scrollRef}
             dir="rtl"
-            className="flex gap-6 animate-scroll cursor-grab active:cursor-grabbing select-none overflow-x-auto px-2 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="cursor-grab active:cursor-grabbing select-none overflow-x-hidden px-2 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ touchAction: 'pan-y' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -141,11 +144,15 @@ export function TestimonialsSection() {
             onPointerCancel={stopDragging}
             onContextMenu={(event) => event.preventDefault()}
           >
-            {testimonials.map((testimonial) => (
-              <div
-                key={`${testimonial.id}-1`}
-                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
-              >
+            <div
+              ref={trackRef}
+              className="flex gap-6 animate-scroll w-max"
+            >
+              {testimonials.map((testimonial) => (
+                <div
+                  key={`${testimonial.id}-1`}
+                  className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
+                >
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
                 </p>
@@ -163,27 +170,28 @@ export function TestimonialsSection() {
               </div>
             ))}
 
-            {testimonials.map((testimonial) => (
-              <div
-                key={`${testimonial.id}-2`}
-                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
-              >
-                <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
-                  "{testimonial.content}"
-                </p>
-
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="font-bold text-[#191F61] text-sm">
-                    {testimonial.student_name}
+              {testimonials.map((testimonial) => (
+                <div
+                  key={`${testimonial.id}-2`}
+                  className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
+                >
+                  <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
+                    "{testimonial.content}"
                   </p>
-                  {testimonial.student_grade && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      {testimonial.student_grade}
+
+                  <div className="border-t border-slate-100 pt-4">
+                    <p className="font-bold text-[#191F61] text-sm">
+                      {testimonial.student_name}
                     </p>
-                  )}
+                    {testimonial.student_grade && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        {testimonial.student_grade}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -206,10 +214,6 @@ export function TestimonialsSection() {
 
         .animate-scroll.dragging {
           animation-play-state: paused;
-        }
-
-        .animate-scroll:hover {
-          transform: translateX(0);
         }
       `}</style>
     </section>
