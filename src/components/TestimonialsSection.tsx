@@ -132,7 +132,7 @@ export function TestimonialsSection() {
             {testimonials.map((testimonial) => (
               <div
                 key={`${testimonial.id}-1`}
-                className="group bg-white rounded-xl p-6 shadow-md hover:shadow-[0_18px_40px_rgba(25,31,97,0.14)] hover:-translate-y-1 hover:border-[#191F61]/25 transition-all duration-300 shrink-0 w-80 border border-slate-100"
+                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_10px_18px_rgba(25,31,97,0.06)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
               >
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
@@ -154,7 +154,7 @@ export function TestimonialsSection() {
             {testimonials.map((testimonial) => (
               <div
                 key={`${testimonial.id}-2`}
-                className="group bg-white rounded-xl p-6 shadow-md hover:shadow-[0_18px_40px_rgba(25,31,97,0.14)] hover:-translate-y-1 hover:border-[#191F61]/25 transition-all duration-300 shrink-0 w-80 border border-slate-100"
+                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_10px_18px_rgba(25,31,97,0.06)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
               >
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
@@ -190,10 +190,6 @@ export function TestimonialsSection() {
           animation: scroll 40s linear infinite;
           width: max-content;
           will-change: transform;
-        }
-
-        .animate-scroll:hover {
-          animation-play-state: paused;
         }
 
         .animate-scroll.dragging {
