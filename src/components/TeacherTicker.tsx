@@ -4,7 +4,8 @@ import { Image as ImageIcon } from 'lucide-react';
 export interface TeacherTickerConfig {
   speedSeconds: number;
   phaseOffsetSeconds: number;
-  activeImages: string[];
+  activeImagesLeft: string[];
+  activeImagesRight: string[];
 }
 
 export interface TeacherImageItem {
@@ -18,7 +19,8 @@ export const TeacherTicker: React.FC = () => {
   const [config, setConfig] = useState<TeacherTickerConfig>({
     speedSeconds: 21.6,
     phaseOffsetSeconds: 4,
-    activeImages: ['logo-white.png'],
+    activeImagesLeft: ['logo-white.png'],
+    activeImagesRight: ['logo-white.png'],
   });
 
   const [imagesList, setImagesList] = useState<TeacherImageItem[]>([]);
@@ -33,7 +35,8 @@ export const TeacherTicker: React.FC = () => {
           setConfig({
             speedSeconds: typeof json.speedSeconds === 'number' ? json.speedSeconds : 18,
             phaseOffsetSeconds: typeof json.phaseOffsetSeconds === 'number' ? json.phaseOffsetSeconds : 4,
-            activeImages: Array.isArray(json.activeImages) ? json.activeImages : ['logo-white.png'],
+            activeImagesLeft: Array.isArray(json.activeImagesLeft) ? json.activeImagesLeft : ['logo-white.png'],
+            activeImagesRight: Array.isArray(json.activeImagesRight) ? json.activeImagesRight : ['logo-white.png'],
           });
         }
       } catch (err) {
@@ -45,15 +48,25 @@ export const TeacherTicker: React.FC = () => {
 
   // 2. Build image list directly from config.activeImages (public folder, no glob needed)
   useEffect(() => {
-    const items: TeacherImageItem[] = config.activeImages
+    const leftItems: TeacherImageItem[] = config.activeImagesLeft
       .filter((filename) => filename && filename !== '*')
       .map((filename, idx) => ({
-        id: `config-${idx}-${filename}`,
+        id: `left-${idx}-${filename}`,
         filename,
         imageUrl: `/teachers/${filename}`,
       }));
-    setImagesList(items);
-  }, [config.activeImages]);
+
+    const rightItems: TeacherImageItem[] = config.activeImagesRight
+      .filter((filename) => filename && filename !== '*')
+      .map((filename, idx) => ({
+        id: `right-${idx}-${filename}`,
+        filename,
+        imageUrl: `/teachers/${filename}`,
+      }));
+
+    const merged = [...leftItems, ...rightItems];
+    setImagesList(merged);
+  }, [config.activeImagesLeft, config.activeImagesRight]);
 
   // If no images uploaded or selected in config.json
   if (imagesList.length === 0) {
@@ -75,9 +88,8 @@ export const TeacherTicker: React.FC = () => {
     return cycle;
   };
 
-  const splitIndex = Math.ceil(imagesList.length / 2);
-  const leftItems = imagesList.slice(0, splitIndex);
-  const rightItems = imagesList.slice(splitIndex);
+  const leftItems = imagesList.filter((item) => item.id.startsWith('left-'));
+  const rightItems = imagesList.filter((item) => item.id.startsWith('right-'));
   const col1Items = buildLoopList(leftItems.length > 0 ? leftItems : imagesList);
   const col2Items = buildLoopList(rightItems.length > 0 ? rightItems : imagesList);
 
