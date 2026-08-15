@@ -78,6 +78,8 @@ export function TestimonialsSection() {
     return null;
   }
 
+  const repeatedTestimonials = [...testimonials, ...testimonials];
+
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
 
@@ -148,31 +150,9 @@ export function TestimonialsSection() {
               ref={trackRef}
               className="flex gap-6 animate-scroll w-max"
             >
-              {testimonials.map((testimonial) => (
+              {repeatedTestimonials.map((testimonial, index) => (
                 <div
-                  key={`${testimonial.id}-1`}
-                  className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
-                >
-                <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
-                  "{testimonial.content}"
-                </p>
-
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="font-bold text-[#191F61] text-sm">
-                    {testimonial.student_name}
-                  </p>
-                  {testimonial.student_grade && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      {testimonial.student_grade}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-
-              {testimonials.map((testimonial) => (
-                <div
-                  key={`${testimonial.id}-2`}
+                  key={`${testimonial.id}-${index}`}
                   className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
                 >
                   <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
