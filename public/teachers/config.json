@@ -4,20 +4,15 @@
   "activeImagesLeft": [
     "dila.jpg",
     "emre.jpg",
-    "nehir.jpg",
-    "dorukhan.jpg",
-    "onat.jpg",
-    "bora.jpg",
-    "celal.jpg"
+    "nehir.jpg"
+    
   ],
   "activeImagesRight": [
     "dorukhan.jpg",
     "onat.jpg",
     "bora.jpg",
-    "celal.jpg",
-    "dila.jpg",
-    "emre.jpg",
-    "nehir.jpg"
+    "celal.jpg"
+    
   ],
   "description": "Bu ayar dosyasından hoca akış hızını (speedSeconds), faz farkı gecikmesini (phaseOffsetSeconds) ve sol-sağ sütun görsellerini (activeImagesLeft, activeImagesRight) düzenleyebilirsiniz."
 }
