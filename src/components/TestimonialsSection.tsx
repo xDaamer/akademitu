@@ -77,13 +77,15 @@ export function TestimonialsSection() {
     return null;
   }
 
-  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
 
     const container = scrollRef.current;
     if (!container) return;
 
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+
     isDragging.current = true;
     startX.current = event.clientX;
     startScrollLeft.current = container.scrollLeft;
@@ -93,7 +95,7 @@ export function TestimonialsSection() {
     container.style.animationPlayState = 'paused';
   };
 
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollRef.current;
     if (!container || !isDragging.current) return;
 
@@ -101,9 +103,17 @@ export function TestimonialsSection() {
     container.scrollLeft = startScrollLeft.current - walk;
   };
 
-  const stopDragging = () => {
+  const stopDragging = (event?: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollRef.current;
     if (!container) return;
+
+    if (event && typeof event.currentTarget.releasePointerCapture === 'function') {
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        // no-op: pointer capture may already be released
+      }
+    }
 
     isDragging.current = false;
     container.classList.remove('dragging');
@@ -124,10 +134,11 @@ export function TestimonialsSection() {
             ref={scrollRef}
             dir="rtl"
             className="flex gap-6 animate-scroll cursor-grab active:cursor-grabbing select-none overflow-x-auto px-2 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={stopDragging}
-            onMouseLeave={stopDragging}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={stopDragging}
+            onPointerLeave={stopDragging}
+            onPointerCancel={stopDragging}
           >
             {testimonials.map((testimonial) => (
               <div
