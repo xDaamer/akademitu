@@ -90,6 +90,7 @@ export function TestimonialsSection() {
     container.classList.add('dragging');
     container.style.cursor = 'grabbing';
     container.style.userSelect = 'none';
+    container.style.animationPlayState = 'paused';
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -108,6 +109,7 @@ export function TestimonialsSection() {
     container.classList.remove('dragging');
     container.style.cursor = '';
     container.style.userSelect = '';
+    container.style.animationPlayState = '';
   };
 
   return (
@@ -117,11 +119,11 @@ export function TestimonialsSection() {
           Velilerimizin Görüşleri
         </h2>
 
-        <div className="border-t-4 border-b-4 border-[#191F61] py-8 bg-white/40 overflow-visible">
+        <div className="border-t-4 border-b-4 border-[#191F61] py-8 bg-white/40 overflow-visible relative">
           <div
             ref={scrollRef}
             dir="rtl"
-            className="flex gap-6 animate-scroll cursor-grab active:cursor-grabbing select-none overflow-x-auto px-2 pt-2 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="flex gap-6 animate-scroll cursor-grab active:cursor-grabbing select-none overflow-x-auto px-2 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={stopDragging}
@@ -190,7 +192,10 @@ export function TestimonialsSection() {
           will-change: transform;
         }
 
-        .animate-scroll:hover,
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+
         .animate-scroll.dragging {
           animation-play-state: paused;
         }
