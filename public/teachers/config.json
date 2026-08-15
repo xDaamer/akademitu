@@ -1,6 +1,6 @@
 {
-  "speedSeconds": 18,
-  "phaseOffsetSeconds": 10,
+  "speedSeconds": 10,
+  "phaseOffsetSeconds": 6,
   "activeImagesLeft": [
     "dila.jpg",
     "emre.jpg",
