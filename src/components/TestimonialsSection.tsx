@@ -134,16 +134,17 @@ export function TestimonialsSection() {
             ref={scrollRef}
             dir="rtl"
             className="flex gap-6 animate-scroll cursor-grab active:cursor-grabbing select-none overflow-x-auto px-2 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ touchAction: 'pan-y' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={stopDragging}
-            onPointerLeave={stopDragging}
             onPointerCancel={stopDragging}
+            onContextMenu={(event) => event.preventDefault()}
           >
             {testimonials.map((testimonial) => (
               <div
                 key={`${testimonial.id}-1`}
-                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_10px_18px_rgba(25,31,97,0.06)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
+                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
               >
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
@@ -165,7 +166,7 @@ export function TestimonialsSection() {
             {testimonials.map((testimonial) => (
               <div
                 key={`${testimonial.id}-2`}
-                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_10px_18px_rgba(25,31,97,0.06)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
+                className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
               >
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
@@ -205,6 +206,10 @@ export function TestimonialsSection() {
 
         .animate-scroll.dragging {
           animation-play-state: paused;
+        }
+
+        .animate-scroll:hover {
+          transform: translateX(0);
         }
       `}</style>
     </section>
