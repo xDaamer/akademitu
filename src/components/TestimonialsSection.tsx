@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface Testimonial {
@@ -12,6 +12,10 @@ interface Testimonial {
 export function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startScrollLeft = useRef(0);
 
   useEffect(() => {
     fetchTestimonials();
@@ -73,6 +77,34 @@ export function TestimonialsSection() {
     return null;
   }
 
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    isDragging.current = true;
+    startX.current = event.clientX;
+    startScrollLeft.current = container.scrollLeft;
+    container.style.cursor = 'grabbing';
+    container.style.userSelect = 'none';
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const container = scrollRef.current;
+    if (!container || !isDragging.current) return;
+
+    const walk = event.clientX - startX.current;
+    container.scrollLeft = startScrollLeft.current - walk;
+  };
+
+  const stopDragging = () => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    isDragging.current = false;
+    container.style.cursor = '';
+    container.style.userSelect = '';
+  };
+
   return (
     <section className="py-12 sm:py-16 overflow-hidden bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,24 +112,25 @@ export function TestimonialsSection() {
           Velilerimizin Görüşleri
         </h2>
 
-        {/* YORUMLAR KONTEYNERI - OTOMATİK SAĞDAN SOLA AKIŞ */}
         <div className="border-t-4 border-b-4 border-[#191F61] py-8 overflow-hidden bg-white/40">
           <div
+            ref={scrollRef}
             dir="rtl"
-            className="flex gap-6 animate-scroll"
+            className="flex gap-6 animate-scroll cursor-grab active:cursor-grabbing select-none overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={stopDragging}
+            onMouseLeave={stopDragging}
           >
-            {/* İlk döngü */}
             {testimonials.map((testimonial) => (
               <div
                 key={`${testimonial.id}-1`}
-                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300 shrink-0 w-80 border border-slate-100"
+                className="group bg-white rounded-xl p-6 shadow-md hover:shadow-[0_18px_40px_rgba(25,31,97,0.14)] hover:-translate-y-1 hover:border-[#191F61]/25 transition-all duration-300 shrink-0 w-80 border border-slate-100"
               >
-                {/* YORUM METNİ */}
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
                 </p>
 
-                {/* ÖĞRENCİ BİLGİSİ */}
                 <div className="border-t border-slate-100 pt-4">
                   <p className="font-bold text-[#191F61] text-sm">
                     {testimonial.student_name}
@@ -110,19 +143,16 @@ export function TestimonialsSection() {
                 </div>
               </div>
             ))}
-            
-            {/* İkinci döngü (seamless loop için) */}
+
             {testimonials.map((testimonial) => (
               <div
                 key={`${testimonial.id}-2`}
-                className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300 shrink-0 w-80 border border-slate-100"
+                className="group bg-white rounded-xl p-6 shadow-md hover:shadow-[0_18px_40px_rgba(25,31,97,0.14)] hover:-translate-y-1 hover:border-[#191F61]/25 transition-all duration-300 shrink-0 w-80 border border-slate-100"
               >
-                {/* YORUM METNİ */}
                 <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                   "{testimonial.content}"
                 </p>
 
-                {/* ÖĞRENCİ BİLGİSİ */}
                 <div className="border-t border-slate-100 pt-4">
                   <p className="font-bold text-[#191F61] text-sm">
                     {testimonial.student_name}
@@ -148,13 +178,16 @@ export function TestimonialsSection() {
             transform: translateX(-50%);
           }
         }
-        
+
         .animate-scroll {
           animation: scroll 40s linear infinite;
           width: max-content;
+          will-change: transform;
         }
-        
 
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
       `}</style>
     </section>
   );
