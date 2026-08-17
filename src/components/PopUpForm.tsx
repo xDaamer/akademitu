@@ -373,9 +373,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         )}
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2">
-                            Kayıtlı iletişim bilgileri
-                          </p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -397,178 +394,49 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           </div>
                         </div>
 
-                        {/* ÖĞRENCİ VE VELİ BİLGİSİ */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <label className="block text-xs font-semibold text-slate-700">
-                              Veli Adı ve Soyadı
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Veli adı soyadı"
-                              value={parentFullName}
-                              onChange={(e) => setParentFullName(e.target.value)}
-                              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                            />
-                            <p className="text-[10px] text-slate-500 italic">
-                              Öğrenciyseniz burayı doldurmanıza gerek yoktur.
-                            </p>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="block text-xs font-semibold text-slate-700">
-                              Öğrenci Adı ve Soyadı
-                            </label>
-                            <input
-                              type="text"
-                              value={studentFullName || fullName}
-                              readOnly
-                              className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
-                            />
-                          </div>
-                        </div>
-
-                        {/* VELİ MİSİNİZ ÖĞRENCİ MİSİNİZ */}
                         <div className="space-y-1">
                           <label className="block text-xs font-semibold text-slate-700">
-                            Veli misiniz öğrenci misiniz? *
+                            Ben kimim? *
                           </label>
-                          <div className="flex gap-2">
-                            {(['Öğrenci', 'Veli'] as const).map((role) => (
-                              <button
-                                key={role}
-                                type="button"
-                                onClick={() => setUserRole(role)}
-                                className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                  userRole === role
-                                    ? 'bg-[#191F61] text-white border-[#191F61]'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                }`}
-                              >
-                                {role}
-                              </button>
-                            ))}
-                          </div>
+                          <select
+                            value={userRole}
+                            onChange={(e) => setUserRole(e.target.value as 'Veli' | 'Öğrenci')}
+                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                          >
+                            <option value="Öğrenci">Öğrenci</option>
+                            <option value="Veli">Veli</option>
+                          </select>
                         </div>
 
-                        {/* TELEFON */}
                         <div className="space-y-1">
                           <label className="block text-xs font-semibold text-slate-700">
-                            Telefon *
+                            Sınıf *
                           </label>
-                          <input
-                            type="tel"
-                            value={phone}
-                            readOnly
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
-                            required
-                          />
-                          <p className="text-[10px] text-slate-500 italic">
-                            Bu alan iletişim formundan sabitlenir; geri dönerek güncelleyebilirsiniz.
-                          </p>
-                        </div>
-
-                        {/* HANGİ SINIFA GİDİYOR */}
-                        <div className="space-y-1">
-                          <label className="block text-xs font-semibold text-slate-700">
-                            Öğrencimiz hangi sınıfa gidiyor? *
-                          </label>
-                          <div className="flex flex-wrap gap-1.5">
+                          <select
+                            value={gradeClass}
+                            onChange={(e) => setGradeClass(e.target.value)}
+                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                          >
                             {[...MIDDLE_SCHOOL_GRADES, ...HIGH_SCHOOL_GRADES].map((g) => (
-                              <button
-                                key={g}
-                                type="button"
-                                onClick={() => setGradeClass(g)}
-                                className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                                  gradeClass === g
-                                    ? 'bg-[#191F61] text-white border-[#191F61]'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                }`}
-                              >
-                                {g}
-                              </button>
+                              <option key={g} value={g}>{g}</option>
                             ))}
-                          </div>
+                          </select>
                         </div>
 
-                        {/* HANGİ DERSLERDEN ÖZEL DERS ALMAK İSTİYORSUNUZ */}
-                        <div className="space-y-2 pt-1">
+                        <div className="space-y-1">
                           <label className="block text-xs font-semibold text-slate-700">
-                            Hangi derslerden özel ders almak istiyorsunuz?
+                            Ders *
                           </label>
-
-                          {isMiddleSchool ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {MIDDLE_SCHOOL_SUBJECTS.map((subj) => {
-                                const selected = selectedSubjects.includes(subj);
-                                return (
-                                  <button
-                                    key={subj}
-                                    type="button"
-                                    onClick={() => toggleSubject(subj)}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-                                      selected
-                                        ? 'bg-[#191F61] text-white border-[#191F61]'
-                                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                    }`}
-                                  >
-                                    {selected && <Check className="w-3 h-3 text-[#B6D6CC]" />}
-                                    <span>{subj}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                              <div>
-                                <span className="text-[10px] font-bold text-[#191F61] uppercase">TYT Dersleri</span>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {HIGH_SCHOOL_TYT_SUBJECTS.map((subj) => {
-                                    const selected = selectedSubjects.includes(subj);
-                                    return (
-                                      <button
-                                        key={subj}
-                                        type="button"
-                                        onClick={() => toggleSubject(subj)}
-                                        className={`px-2.5 py-1 text-[11px] font-medium rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
-                                          selected
-                                            ? 'bg-[#191F61] text-white border-[#191F61]'
-                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                        }`}
-                                      >
-                                        {selected && <Check className="w-3 h-3 text-[#B6D6CC]" />}
-                                        <span>{subj}</span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              <div className="pt-1">
-                                <span className="text-[10px] font-bold text-[#191F61] uppercase">AYT Dersleri</span>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {HIGH_SCHOOL_AYT_SUBJECTS.map((subj) => {
-                                    const selected = selectedSubjects.includes(subj);
-                                    return (
-                                      <button
-                                        key={subj}
-                                        type="button"
-                                        onClick={() => toggleSubject(subj)}
-                                        className={`px-2.5 py-1 text-[11px] font-medium rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
-                                          selected
-                                            ? 'bg-[#191F61] text-white border-[#191F61]'
-                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                        }`}
-                                      >
-                                        {selected && <Check className="w-3 h-3 text-[#B6D6CC]" />}
-                                        <span>{subj}</span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          <select
+                            value={selectedSubjects[0] || ''}
+                            onChange={(e) => setSelectedSubjects(e.target.value ? [e.target.value] : [])}
+                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                          >
+                            <option value="">Ders seçiniz</option>
+                            {(isMiddleSchool ? MIDDLE_SCHOOL_SUBJECTS : [...HIGH_SCHOOL_TYT_SUBJECTS, ...HIGH_SCHOOL_AYT_SUBJECTS]).map((subj) => (
+                              <option key={subj} value={subj}>{subj}</option>
+                            ))}
+                          </select>
                         </div>
 
                         <button
@@ -777,9 +645,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                       )}
 
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2">
-                          Kayıtlı iletişim bilgileri
-                        </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -801,173 +666,49 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700">
-                            Veli Adı ve Soyadı
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Veli adı soyadı"
-                            value={parentFullName}
-                            onChange={(e) => setParentFullName(e.target.value)}
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                          />
-                          <p className="text-[10px] text-slate-500 italic">
-                            Öğrenciyseniz burayı doldurmanıza gerek yoktur.
-                          </p>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700">
-                            Öğrenci Adı ve Soyadı
-                          </label>
-                          <input
-                            type="text"
-                            value={studentFullName || fullName}
-                            readOnly
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
-                          />
-                        </div>
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-slate-700">
+                          Ben kimim? *
+                        </label>
+                        <select
+                          value={userRole}
+                          onChange={(e) => setUserRole(e.target.value as 'Veli' | 'Öğrenci')}
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                        >
+                          <option value="Öğrenci">Öğrenci</option>
+                          <option value="Veli">Veli</option>
+                        </select>
                       </div>
 
                       <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-700">
-                          Veli misiniz öğrenci misiniz? *
+                          Sınıf *
                         </label>
-                        <div className="flex gap-2">
-                          {(['Öğrenci', 'Veli'] as const).map((role) => (
-                            <button
-                              key={role}
-                              type="button"
-                              onClick={() => setUserRole(role)}
-                              className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                userRole === role
-                                  ? 'bg-[#191F61] text-white border-[#191F61]'
-                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                              }`}
-                            >
-                              {role}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">
-                          Telefon *
-                        </label>
-                        <input
-                          type="tel"
-                          value={phone}
-                          readOnly
-                          className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
-                          required
-                        />
-                        <p className="text-[10px] text-slate-500 italic">
-                          Bu alan iletişim formundan sabitlenir; geri dönerek güncelleyebilirsiniz.
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">
-                          Öğrencimiz hangi sınıfa gidiyor? *
-                        </label>
-                        <div className="flex flex-wrap gap-1.5">
+                        <select
+                          value={gradeClass}
+                          onChange={(e) => setGradeClass(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                        >
                           {[...MIDDLE_SCHOOL_GRADES, ...HIGH_SCHOOL_GRADES].map((g) => (
-                            <button
-                              key={g}
-                              type="button"
-                              onClick={() => setGradeClass(g)}
-                              className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                                gradeClass === g
-                                  ? 'bg-[#191F61] text-white border-[#191F61]'
-                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                              }`}
-                            >
-                              {g}
-                            </button>
+                            <option key={g} value={g}>{g}</option>
                           ))}
-                        </div>
+                        </select>
                       </div>
 
-                      <div className="space-y-2 pt-1">
+                      <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-700">
-                          Hangi derslerden özel ders almak istiyorsunuz?
+                          Ders *
                         </label>
-
-                        {isMiddleSchool ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {MIDDLE_SCHOOL_SUBJECTS.map((subj) => {
-                              const selected = selectedSubjects.includes(subj);
-                              return (
-                                <button
-                                  key={subj}
-                                  type="button"
-                                  onClick={() => toggleSubject(subj)}
-                                  className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-                                    selected
-                                      ? 'bg-[#191F61] text-white border-[#191F61]'
-                                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                  }`}
-                                >
-                                  {selected && <Check className="w-3 h-3 text-[#B6D6CC]" />}
-                                  <span>{subj}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                            <div>
-                              <span className="text-[10px] font-bold text-[#191F61] uppercase">TYT Dersleri</span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {HIGH_SCHOOL_TYT_SUBJECTS.map((subj) => {
-                                  const selected = selectedSubjects.includes(subj);
-                                  return (
-                                    <button
-                                      key={subj}
-                                      type="button"
-                                      onClick={() => toggleSubject(subj)}
-                                      className={`px-2.5 py-1 text-[11px] font-medium rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
-                                        selected
-                                          ? 'bg-[#191F61] text-white border-[#191F61]'
-                                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      {selected && <Check className="w-3 h-3 text-[#B6D6CC]" />}
-                                      <span>{subj}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            <div className="pt-1">
-                              <span className="text-[10px] font-bold text-[#191F61] uppercase">AYT Dersleri</span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {HIGH_SCHOOL_AYT_SUBJECTS.map((subj) => {
-                                  const selected = selectedSubjects.includes(subj);
-                                  return (
-                                    <button
-                                      key={subj}
-                                      type="button"
-                                      onClick={() => toggleSubject(subj)}
-                                      className={`px-2.5 py-1 text-[11px] font-medium rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
-                                        selected
-                                          ? 'bg-[#191F61] text-white border-[#191F61]'
-                                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      {selected && <Check className="w-3 h-3 text-[#B6D6CC]" />}
-                                      <span>{subj}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        <select
+                          value={selectedSubjects[0] || ''}
+                          onChange={(e) => setSelectedSubjects(e.target.value ? [e.target.value] : [])}
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                        >
+                          <option value="">Ders seçiniz</option>
+                          {(isMiddleSchool ? MIDDLE_SCHOOL_SUBJECTS : [...HIGH_SCHOOL_TYT_SUBJECTS, ...HIGH_SCHOOL_AYT_SUBJECTS]).map((subj) => (
+                            <option key={subj} value={subj}>{subj}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <button
