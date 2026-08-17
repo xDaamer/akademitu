@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, Phone, User, ArrowRight, ShieldCheck, Check, Gift, Lock } from 'lucide-react';
+import { X, CheckCircle2, Phone, User, ArrowRight, ShieldCheck, Check, Gift, Lock, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
@@ -93,7 +93,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
   const isMiddleSchool = MIDDLE_SCHOOL_GRADES.includes(gradeClass);
 
-  // Step 1 Submit: Immediately pushes phone & name to Supabase
+  const handleBackToContact = () => {
+    setCurrentStep(1);
+    setError('');
+  };
+
+  // Step 1: collect the base contact info and reveal the detailed form on the same page.
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) {
@@ -106,33 +111,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     }
 
     setError('');
-    setIsSubmitting(true);
-
-    try {
-      const res = await saveLeadStep1({ fullName, phone, examType });
-      if (res.id) {
-        setLeadId(res.id);
-      }
-      setStudentFullName(fullName);
-      setCurrentStep(2);
-    } catch (err) {
-      console.error('Step 1 Error:', err);
-      // Fallback transition
-      setStudentFullName(fullName);
-      setCurrentStep(2);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setStudentFullName(fullName.trim());
+    setCurrentStep(2);
   };
 
-  // Step 2 Submit: Updates Supabase with full detailed survey info
+  // Step 2: send the full data only when the user submits the final form.
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentFullName.trim()) {
       setError('Lütfen Öğrenci Ad ve Soyadını giriniz.');
       return;
     }
-    if (!phone.trim()) {
+    if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
       setError('Lütfen İletişim Telefon Numarasını giriniz.');
       return;
     }
@@ -141,8 +131,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setIsSubmitting(true);
 
     try {
+      let nextLeadId = leadId;
+
+      if (!nextLeadId) {
+        const res = await saveLeadStep1({ fullName, phone, examType });
+        if (res.id) {
+          nextLeadId = res.id;
+          setLeadId(res.id);
+        }
+      }
+
       await updateLeadStep2({
-        leadId,
+        leadId: nextLeadId,
         phone,
         studentFullName,
         parentFullName,
@@ -232,7 +232,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
                     {/* ÜST DÜĞMELER */}
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {currentStep === 2 && (
+                          <button
+                            type="button"
+                            onClick={handleBackToContact}
+                            className="flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0"
+                            aria-label="Geri dön"
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            Geri
+                          </button>
+                        )}
                         <img
                           src={logoWhite}
                           alt="akademITU Logo"
@@ -346,7 +357,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           disabled={isSubmitting}
                           className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-3.5 rounded-2xl font-extrabold text-sm shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-4"
                         >
-                          <span>{isSubmitting ? 'Kaydediliyor...' : 'Devam Et'}</span>
+                          <span>{isSubmitting ? 'Kaydediliyor...' : 'Gönder'}</span>
                           <ArrowRight className="w-4 h-4 text-[#B6D6CC]" />
                         </button>
                       </form>
@@ -361,21 +372,33 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           </div>
                         )}
 
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2">
+                            Kayıtlı iletişim bilgileri
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                                Ad Soyad
+                              </label>
+                              <div className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl text-slate-900 font-medium">
+                                {studentFullName || fullName}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                                Telefon
+                              </label>
+                              <div className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl text-slate-900 font-medium">
+                                {phone}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* ÖĞRENCİ VE VELİ BİLGİSİ */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <label className="block text-xs font-semibold text-slate-700">
-                              Öğrenci Adı ve Soyadı *
-                            </label>
-                            <input
-                              type="text"
-                              value={studentFullName}
-                              onChange={(e) => setStudentFullName(e.target.value)}
-                              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                              required
-                            />
-                          </div>
-
                           <div className="space-y-1">
                             <label className="block text-xs font-semibold text-slate-700">
                               Veli Adı ve Soyadı
@@ -390,6 +413,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             <p className="text-[10px] text-slate-500 italic">
                               Öğrenciyseniz burayı doldurmanıza gerek yoktur.
                             </p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-slate-700">
+                              Öğrenci Adı ve Soyadı
+                            </label>
+                            <input
+                              type="text"
+                              value={studentFullName || fullName}
+                              readOnly
+                              className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
+                            />
                           </div>
                         </div>
 
@@ -424,12 +459,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <input
                             type="tel"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                            readOnly
+                            className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
                             required
                           />
                           <p className="text-[10px] text-slate-500 italic">
-                            Veliyseniz lütfen kendi telefon numaranızı giriniz.
+                            Bu alan iletişim formundan sabitlenir; geri dönerek güncelleyebilirsiniz.
                           </p>
                         </div>
 
@@ -605,7 +640,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                 >
                   {/* HEADER */}
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {currentStep === 2 && (
+                        <button
+                          type="button"
+                          onClick={handleBackToContact}
+                          className="flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0"
+                          aria-label="Geri dön"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                          Geri
+                        </button>
+                      )}
                       <img
                         src={logoWhite}
                         alt="akademITU Logo"
@@ -715,7 +761,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         disabled={isSubmitting}
                         className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-4 rounded-2xl font-extrabold text-base shadow-xl hover:shadow-2xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
                       >
-                        <span>{isSubmitting ? 'Kaydediliyor...' : 'Devam Et'}</span>
+                        <span>{isSubmitting ? 'Kaydediliyor...' : 'Gönder'}</span>
                         <ArrowRight className="w-5 h-5 text-[#B6D6CC]" />
                       </button>
                     </form>
@@ -730,20 +776,32 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700">
-                            Öğrenci Adı ve Soyadı *
-                          </label>
-                          <input
-                            type="text"
-                            value={studentFullName}
-                            onChange={(e) => setStudentFullName(e.target.value)}
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                            required
-                          />
-                        </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 mb-2">
+                          Kayıtlı iletişim bilgileri
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                              Ad Soyad
+                            </label>
+                            <div className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl text-slate-900 font-medium">
+                              {studentFullName || fullName}
+                            </div>
+                          </div>
 
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                              Telefon
+                            </label>
+                            <div className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl text-slate-900 font-medium">
+                              {phone}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700">
                             Veli Adı ve Soyadı
@@ -758,6 +816,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <p className="text-[10px] text-slate-500 italic">
                             Öğrenciyseniz burayı doldurmanıza gerek yoktur.
                           </p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700">
+                            Öğrenci Adı ve Soyadı
+                          </label>
+                          <input
+                            type="text"
+                            value={studentFullName || fullName}
+                            readOnly
+                            className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
+                          />
                         </div>
                       </div>
 
@@ -790,12 +860,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         <input
                           type="tel"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
+                          readOnly
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
                           required
                         />
                         <p className="text-[10px] text-slate-500 italic">
-                          Veliyseniz lütfen kendi telefon numaranızı giriniz.
+                          Bu alan iletişim formundan sabitlenir; geri dönerek güncelleyebilirsiniz.
                         </p>
                       </div>
 

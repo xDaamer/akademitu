@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface Testimonial {
@@ -14,13 +14,15 @@ export function TestimonialsSection() {
   const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const offsetRef = useRef(0);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startScrollLeft = useRef(0);
 
   useEffect(() => {
     fetchTestimonials();
-    
+
     // Real-time subscription to testimonials table
     if (supabase) {
       const subscription = supabase
@@ -40,6 +42,34 @@ export function TestimonialsSection() {
       };
     }
   }, []);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const renderLoop = () => {
+      if (!isDragging.current) {
+        const cycleWidth = track.scrollWidth / 2;
+        offsetRef.current += 0.8;
+
+        if (offsetRef.current >= cycleWidth) {
+          offsetRef.current -= cycleWidth;
+        }
+
+        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+      }
+
+      animationRef.current = window.requestAnimationFrame(renderLoop);
+    };
+
+    animationRef.current = window.requestAnimationFrame(renderLoop);
+
+    return () => {
+      if (animationRef.current) {
+        window.cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [testimonials.length]);
 
   async function fetchTestimonials() {
     try {
@@ -78,7 +108,7 @@ export function TestimonialsSection() {
     return null;
   }
 
-  const repeatedTestimonials = [...testimonials, ...testimonials];
+  const repeatedTestimonials = [...testimonials, ...testimonials, ...testimonials];
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -148,7 +178,7 @@ export function TestimonialsSection() {
           >
             <div
               ref={trackRef}
-              className="flex gap-6 animate-scroll w-max"
+              className="flex gap-6 w-max"
             >
               {repeatedTestimonials.map((testimonial, index) => (
                 <div
@@ -177,23 +207,8 @@ export function TestimonialsSection() {
       </div>
 
       <style>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-
         .animate-scroll {
-          animation: scroll 40s linear infinite;
-          width: max-content;
           will-change: transform;
-        }
-
-        .animate-scroll.dragging {
-          animation-play-state: paused;
         }
       `}</style>
     </section>
