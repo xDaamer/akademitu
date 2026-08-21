@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { GraduationCap, Mail, Phone, MapPin } from 'lucide-react';
 import logoBlue from '../assets/logo-blue.png';
 import need from '../../need.json';
@@ -98,7 +99,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
         {/* TELİF HAKKI VE ALT BİLGİ */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 text-center sm:text-left">
           <p>© {new Date().getFullYear()} akademITU. Tüm hakları saklıdır.</p>
-          <p className="text-slate-500">v{need.site.version}</p>
+          <div className="flex items-center gap-4">
+            <Link to="/gizlilik-politikasi" className="hover:text-[#B6D6CC] transition-colors">Gizlilik Politikası</Link>
+            <Link to="/kullanim-kosullari" className="hover:text-[#B6D6CC] transition-colors">Kullanım Koşulları</Link>
+            <p className="text-slate-500">v{need.site.version}</p>
+          </div>
         </div>
       </div>
     </footer>

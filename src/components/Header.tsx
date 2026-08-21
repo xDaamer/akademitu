@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { GraduationCap, Menu, X } from 'lucide-react';
 import logoWhite from '../assets/logo-white.png';
 
@@ -9,6 +10,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const navItems = [
     { id: 'ana-sayfa', label: 'Ana Sayfa' },
@@ -19,6 +22,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
+    if (location.pathname !== '/') {
+      navigate('/', { state: { scrollTo: id } });
+      return;
+    }
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });

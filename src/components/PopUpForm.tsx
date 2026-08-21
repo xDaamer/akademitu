@@ -47,6 +47,32 @@ const HIGH_SCHOOL_AYT_SUBJECTS = [
   'AYT Coğrafya',
 ];
 
+const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
+
+const normalizeTurkishMobile = (value: string) => {
+  const digits = normalizePhoneNumber(value).slice(0, 11);
+
+  if (digits.length === 10) {
+    return `0${digits}`;
+  }
+
+  return digits;
+};
+
+const formatTurkishPhone = (value: string) => {
+  const digits = normalizeTurkishMobile(value).slice(0, 11);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+  return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9)}`;
+};
+
+const isValidTurkishMobilePhone = (value: string) => {
+  const digits = normalizePhoneNumber(value);
+  return (digits.length === 10 && !digits.startsWith('0')) || /^0\d{10}$/.test(digits);
+};
+
 export const PopUpForm: React.FC<PopUpFormProps> = ({
   isOpen,
   mode,
@@ -98,6 +124,11 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setError('');
   };
 
+  const handlePhoneChange = (value: string) => {
+    const digitsOnly = normalizePhoneNumber(value);
+    setPhone(formatTurkishPhone(digitsOnly));
+  };
+
   // Step 1: collect the base contact info and reveal the detailed form on the same page.
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,12 +136,15 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       setError('Lütfen Ad ve Soyadınızı giriniz.');
       return;
     }
-    if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setError('Lütfen geçerli bir telefon numarası giriniz.');
+
+    const normalizedPhone = normalizeTurkishMobile(phone);
+    if (!isValidTurkishMobilePhone(normalizedPhone)) {
+      setError('Lütfen telefon numarasını 05XX XXX XX XX veya 5XX XXX XX XX formatında giriniz.');
       return;
     }
 
     setError('');
+    setPhone(formatTurkishPhone(normalizedPhone));
     setStudentFullName(fullName.trim());
     setCurrentStep(2);
   };
@@ -122,19 +156,22 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       setError('Lütfen Öğrenci Ad ve Soyadını giriniz.');
       return;
     }
-    if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setError('Lütfen İletişim Telefon Numarasını giriniz.');
+
+    const normalizedPhone = normalizeTurkishMobile(phone);
+    if (!isValidTurkishMobilePhone(normalizedPhone)) {
+      setError('Lütfen iletişim telefon numarasını 05XX XXX XX XX veya 5XX XXX XX XX formatında giriniz.');
       return;
     }
 
     setError('');
+    setPhone(formatTurkishPhone(normalizedPhone));
     setIsSubmitting(true);
 
     try {
       let nextLeadId = leadId;
 
       if (!nextLeadId) {
-        const res = await saveLeadStep1({ fullName, phone, examType });
+        const res = await saveLeadStep1({ fullName, phone: normalizedPhone, examType });
         if (res.id) {
           nextLeadId = res.id;
           setLeadId(res.id);
@@ -143,7 +180,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
       await updateLeadStep2({
         leadId: nextLeadId,
-        phone,
+        phone: normalizedPhone,
         studentFullName,
         parentFullName,
         userRole,
@@ -321,9 +358,11 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             <Phone className="w-5 h-5 absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
                             <input
                               type="tel"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               placeholder="05XX XXX XX XX"
                               value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
+                              onChange={(e) => handlePhoneChange(e.target.value)}
                               className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                               required
                             />
@@ -593,9 +632,11 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <Phone className="w-5 h-5 absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
                           <input
                             type="tel"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             placeholder="05XX XXX XX XX"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => handlePhoneChange(e.target.value)}
                             className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                             required
                           />

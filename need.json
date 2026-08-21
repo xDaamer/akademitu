@@ -36,6 +36,22 @@
         "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı.",
         "changefreq": "weekly",
         "priority": 1
+      },
+      {
+        "id": "privacy",
+        "path": "/gizlilik-politikasi",
+        "title": "Gizlilik Politikası | akademITU",
+        "description": "akademITU gizlilik politikası ve KVKK aydınlatma metni.",
+        "changefreq": "yearly",
+        "priority": 0.3
+      },
+      {
+        "id": "terms",
+        "path": "/kullanim-kosullari",
+        "title": "Kullanım Koşulları | akademITU",
+        "description": "akademITU internet sitesi kullanım koşulları.",
+        "changefreq": "yearly",
+        "priority": 0.3
       }
     ]
   }

@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Phone } from 'lucide-react';
 import { Header } from './components/Header';
-import { HeroSection } from './components/HeroSection';
-import { PackagesSection } from './components/PackagesSection';
-import { WhyUsSection } from './components/WhyUsSection';
-import { TestimonialsSection } from './components/TestimonialsSection';
-import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
 import { PopUpForm } from './components/PopUpForm';
+import { CookieBanner } from './components/CookieBanner';
+import { HomePage } from './pages/HomePage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { TermsPage } from './pages/TermsPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
   const [formMode, setFormMode] = useState<'scroll' | 'button' | null>(null);
   const [hasScrolledTriggered, setHasScrolledTriggered] = useState(false);
   const [activeSection, setActiveSection] = useState('ana-sayfa');
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   // SEO: Add Organization & WebSite Schema to document head
   useEffect(() => {
@@ -67,8 +70,10 @@ export default function App() {
     };
   }, []);
 
-  // AUTOMATIC POP-UP ON SCROLL DOWN (Triggers scroll mode form)
+  // AUTOMATIC POP-UP ON SCROLL DOWN (Triggers scroll mode form) — home page only
   useEffect(() => {
+    if (!isHome) return;
+
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
 
@@ -94,7 +99,7 @@ export default function App() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasScrolledTriggered]);
+  }, [hasScrolledTriggered, isHome]);
 
   const handleOpenTrialForm = () => {
     setFormMode('button');
@@ -105,7 +110,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#B6D6CC] selection:text-[#191F61]">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#B6D6CC] selection:text-[#191F61] pb-16 sm:pb-0">
       <Analytics />
       <SpeedInsights />
       {/* 1. SABİT HEADER (LOGO, YAZI, MENÜ VE BEYAZ METİNLİ MAVİ DÜĞME) */}
@@ -114,23 +119,13 @@ export default function App() {
         activeSection={activeSection}
       />
 
-      {/* 2. ANA İÇERİK BÖLÜMLERİ */}
-      <main className="flex-grow">
-        {/* HERO / ANA SAYFA BÖLÜMÜ */}
-        <HeroSection onOpenTrialForm={handleOpenTrialForm} />
-
-        {/* PAKETLER BÖLÜMÜ */}
-        <PackagesSection onOpenTrialForm={handleOpenTrialForm} />
-
-        {/* NEDEN BİZ BÖLÜMÜ */}
-        <WhyUsSection onOpenTrialForm={handleOpenTrialForm} />
-
-        {/* YORUMLAR BÖLÜMÜ */}
-        <TestimonialsSection />
-
-        {/* SIKÇA SORULAN SORULAR */}
-        <FAQSection />
-      </main>
+      {/* 2. SAYFA İÇERİKLERİ */}
+      <Routes>
+        <Route path="/" element={<HomePage onOpenTrialForm={handleOpenTrialForm} />} />
+        <Route path="/gizlilik-politikasi" element={<PrivacyPolicyPage />} />
+        <Route path="/kullanim-kosullari" element={<TermsPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
 
       {/* 3. FOOTER BÖLÜMÜ */}
       <Footer onOpenTrialForm={handleOpenTrialForm} />
@@ -154,7 +149,7 @@ export default function App() {
       </button>
 
       {/* 6. SAĞ ALT: WHATSAPP BUTONU (SABIT) */}
-      <div className="fixed bottom-6 right-6 z-40 group">
+      <div className="fixed bottom-24 sm:bottom-6 right-6 z-40 group">
         <a
           href="https://wa.me/905303699539?text=Merhaba! AkademITU için bilgi almak istiyorum."
           target="_blank"
@@ -174,6 +169,20 @@ export default function App() {
           <div className="absolute -bottom-2 right-4 w-4 h-4 bg-slate-800 transform rotate-45" />
         </div>
       </div>
+
+      {/* 7. MOBİL YAPIŞKAN CTA BAR */}
+      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] p-3">
+        <button
+          onClick={handleOpenTrialForm}
+          className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-3 rounded-xl font-bold text-sm text-center shadow-md active:scale-95 transition-all"
+        >
+          Ücretsiz Deneme Dersi Al
+        </button>
+      </div>
+
+      {/* 8. ÇEREZ BİLDİRİMİ */}
+      <CookieBanner />
     </div>
   );
 }
+
