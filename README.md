@@ -21,9 +21,9 @@ View your app in AI Studio: https://ai.studio/apps/a1bf94d0-bc83-453e-9f59-cbf8e
 
 ## Lead API Security
 
-Lead submission requires Cloudflare Turnstile. Create a Turnstile widget for the production domain, then set `VITE_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, and `ALLOWED_ORIGINS` in the deployment environment. The secret must never use a `VITE_` prefix.
+Set `ALLOWED_ORIGINS` in the deployment environment to the comma-separated list of browser origins permitted to call the API.
 
-The server accepts at most five lead API requests per IP address in ten minutes, validates the Turnstile token server-side, rejects a hidden honeypot field, and blocks origins outside `ALLOWED_ORIGINS`. Keep Supabase Row Level Security enabled and do not create public write policies for the `leads` table; only the server should have `SUPABASE_SERVICE_ROLE_KEY`.
+The server accepts at most five lead API requests per IP address in ten minutes, rejects a hidden honeypot field, and blocks origins outside `ALLOWED_ORIGINS`. Keep Supabase Row Level Security enabled and do not create public write policies for the `leads` table; only the server should have `SUPABASE_SERVICE_ROLE_KEY`.
 
 The browser never talks to Supabase directly — there is no client-side Supabase client in this app. Both `leads` writes and `testimonials` reads go through server API routes using the service-role key, and the `anon`/`authenticated` roles have **zero** table privileges (RLS enabled with no policies, plus explicit `REVOKE`d grants as a second layer). Run [`supabase-security-lockdown.sql`](supabase-security-lockdown.sql) against your Supabase project's SQL Editor to apply/verify this.
 

@@ -56,14 +56,12 @@ export async function saveLeadStep1(data: {
   fullName: string;
   phone: string;
   examType?: string;
-  turnstileToken: string;
   website: string;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   const payload = {
     fullName: data.fullName,
     phone: data.phone,
     examType: data.examType || 'YKS',
-    turnstileToken: data.turnstileToken,
     website: data.website,
   };
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-akademITU — a Turkish-language marketing site (YKS/LGS exam coaching) built as a single-page React app with a small Express backend that exists mainly to proxy a two-step lead-capture form into Supabase behind Cloudflare Turnstile verification. It originated from a Google AI Studio scaffold (see `metadata.json` / `.env.example` Gemini references) but the app does **not** currently call the Gemini API anywhere in `src/` or `server.ts` — treat those as inherited boilerplate, not live functionality.
+akademITU — a Turkish-language marketing site (YKS/LGS exam coaching) built as a single-page React app with a small Express backend that exists mainly to proxy a two-step lead-capture form into Supabase. It originated from a Google AI Studio scaffold (see `metadata.json` / `.env.example` Gemini references) but the app does **not** currently call the Gemini API anywhere in `src/` or `server.ts` — treat those as inherited boilerplate, not live functionality.
 
 ## Commands
 
@@ -25,8 +25,7 @@ akademITU — a Turkish-language marketing site (YKS/LGS exam coaching) built as
 
 **Lead form data flow (two-step, security-hardened).** The trial-lesson popup (`src/components/PopUpForm.tsx`) collects data in two steps and never talks to Supabase directly from the browser:
 1. `src/lib/supabase.ts` (misnomer — it's a fetch wrapper, not a Supabase client) posts to `/api/leads` (step 1: name + phone) and `/api/leads/step2` (step 2: student/parent/grade/subjects), always writing a local backup to `localStorage` (`derece_leads`) first as a fail-safe.
-2. `server.ts` holds the real Supabase client, built from `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` (service-role key is server-only, never exposed to the client). It enforces: per-IP rate limiting (5 requests / 10 min, in-memory `Map`), a hidden honeypot field (`website`), server-side Cloudflare Turnstile verification (`TURNSTILE_SECRET_KEY`, calls `challenges.cloudflare.com/turnstile/v0/siteverify`), Turkish mobile phone format validation, and an `ALLOWED_ORIGINS` origin allowlist. If Supabase isn't configured or errors, the endpoints still return `success: true` so the UX doesn't break (data is logged server-side / kept in the client's localStorage backup).
-3. `src/components/TurnstileWidget.tsx` renders the Cloudflare widget client-side using `VITE_TURNSTILE_SITE_KEY` and feeds the resulting token into the step-1 submission.
+2. `server.ts` holds the real Supabase client, built from `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` (service-role key is server-only, never exposed to the client). It enforces: per-IP rate limiting (5 requests / 10 min, in-memory `Map`), a hidden honeypot field (`website`), Turkish mobile phone format validation, and an `ALLOWED_ORIGINS` origin allowlist. If Supabase isn't configured or errors, the endpoints still return `success: true` so the UX doesn't break (data is logged server-side / kept in the client's localStorage backup).
 
 Do not add public Supabase INSERT/UPDATE policies for the `leads` table (see `supabase-testimonials-setup.sql` and the comment block in `src/lib/supabase.ts` for the expected table schema) — all writes must go through the server's service-role key.
 
@@ -39,5 +38,5 @@ Do not add public Supabase INSERT/UPDATE policies for the `leads` table (see `su
 ## Environment variables
 
 See `.env.example` for the full list. Key points:
-- Anything prefixed `VITE_` is exposed to the browser bundle; secrets (`TURNSTILE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) must never carry that prefix.
+- Anything prefixed `VITE_` is exposed to the browser bundle; secrets (`SUPABASE_SERVICE_ROLE_KEY`) must never carry that prefix.
 - `ALLOWED_ORIGINS` is comma-separated and enforced server-side in `server.ts`.

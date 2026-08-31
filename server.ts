@@ -58,26 +58,6 @@ function limitLeadRequests(req: express.Request, res: express.Response, next: ex
   next();
 }
 
-async function verifyTurnstile(token: unknown, clientIp: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret || typeof token !== "string" || !token) {
-    return false;
-  }
-
-  try {
-    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ secret, response: token, remoteip: clientIp }),
-    });
-    const result = await response.json() as { success?: boolean };
-    return result.success === true;
-  } catch (error) {
-    console.error("[Server API] Turnstile verification failed:", error);
-    return false;
-  }
-}
-
 function isValidTurkishMobile(value: string) {
   return /^0?5\d{9}$/.test(value.replace(/\D/g, ""));
 }
@@ -204,14 +184,10 @@ app.get("/api/testimonials", async (_req, res) => {
 
 // Step 1: Lead Submission (Name & Phone)
 app.post("/api/leads", limitLeadRequests, async (req, res) => {
-  const { fullName, phone, examType, turnstileToken, website } = req.body;
+  const { fullName, phone, examType, website } = req.body;
 
   if (website || typeof fullName !== "string" || typeof phone !== "string" || !fullName.trim() || !isValidTurkishMobile(phone)) {
     return res.status(400).json({ success: false, error: "Ad soyad ve telefon zorunludur." });
-  }
-
-  if (!(await verifyTurnstile(turnstileToken, req.ip))) {
-    return res.status(403).json({ success: false, error: "Güvenlik doğrulaması başarısız oldu." });
   }
 
   const payload = {
@@ -332,4 +308,14 @@ async function startServer() {
   });
 }
 
-startServer();
+// On Vercel, this file is imported by api/[...path].ts as a serverless
+// function handler — it must never bind a port or serve dist/ from local
+// disk there (Vercel serves the static build and routes /api/* to the
+// function separately). Everywhere else (local dev via `tsx server.ts`,
+// or `node dist/server.cjs` in `npm start`) it runs as a normal standalone
+// Express server.
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

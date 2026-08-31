@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
 import { KvkkModal } from './KvkkModal';
-import { TurnstileWidget } from './TurnstileWidget';
 import logoWhite from '../assets/logo-white.png';
 
 interface PopUpFormProps {
@@ -99,7 +98,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
   const [userRole, setUserRole] = useState<'Veli' | 'Öğrenci'>('Öğrenci');
   const [gradeClass, setGradeClass] = useState<string>('12. Sınıf');
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [turnstileToken, setTurnstileToken] = useState('');
   const [website, setWebsite] = useState('');
 
   const [error, setError] = useState('');
@@ -150,11 +148,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       setError('Lütfen iletişim telefon numarasını 05XX XXX XX XX veya 5XX XXX XX XX formatında giriniz.');
       return;
     }
-    if (!turnstileToken) {
-      setError('Lütfen güvenlik doğrulamasını tamamlayınız.');
-      return;
-    }
-
     setError('');
     setPhone(normalizedPhone);
     setIsSubmitting(true);
@@ -163,7 +156,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       let nextLeadId = leadId;
 
       if (!nextLeadId) {
-        const res = await saveLeadStep1({ fullName, phone: normalizedPhone, examType, turnstileToken, website });
+        const res = await saveLeadStep1({ fullName, phone: normalizedPhone, examType, website });
         if (!res.success) throw new Error(res.error);
         if (res.id) {
           nextLeadId = res.id;
@@ -223,7 +216,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setUserRole('Öğrenci');
     setGradeClass('12. Sınıf');
     setSelectedSubjects([]);
-    setTurnstileToken('');
     setWebsite('');
     setError('');
     onClose();
@@ -392,8 +384,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <label htmlFor="website-scroll">Website</label>
                           <input id="website-scroll" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
                         </div>
-
-                        <TurnstileWidget onTokenChange={setTurnstileToken} />
 
                         <button
                           type="submit"
@@ -673,8 +663,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         <label htmlFor="website-modal">Website</label>
                         <input id="website-modal" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
                       </div>
-
-                      <TurnstileWidget onTokenChange={setTurnstileToken} />
 
                       <button
                         type="submit"
