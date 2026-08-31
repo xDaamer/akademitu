@@ -10,20 +10,98 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(express.json({ limit: "16kb" }));
 
-// Server-side Supabase client (hidden from browser/frontend)
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "DENY");
+
+  const origin = req.get("origin");
+  if (origin && allowedOrigins.size > 0 && !allowedOrigins.has(origin)) {
+    return res.status(403).json({ success: false, error: "Geçersiz istek kaynağı." });
+  }
+
+  next();
+});
+
+type RateLimitEntry = { count: number; resetAt: number };
+const leadRequestLimits = new Map<string, RateLimitEntry>();
+const LEAD_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const LEAD_RATE_LIMIT_MAX_REQUESTS = 5;
+
+function limitLeadRequests(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const now = Date.now();
+  const clientIp = req.ip || "unknown";
+  const entry = leadRequestLimits.get(clientIp);
+
+  if (!entry || entry.resetAt <= now) {
+    leadRequestLimits.set(clientIp, { count: 1, resetAt: now + LEAD_RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+
+  if (entry.count >= LEAD_RATE_LIMIT_MAX_REQUESTS) {
+    res.setHeader("Retry-After", Math.ceil((entry.resetAt - now) / 1000));
+    return res.status(429).json({ success: false, error: "Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin." });
+  }
+
+  entry.count += 1;
+  next();
+}
+
+async function verifyTurnstile(token: unknown, clientIp: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret || typeof token !== "string" || !token) {
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: token, remoteip: clientIp }),
+    });
+    const result = await response.json() as { success?: boolean };
+    return result.success === true;
+  } catch (error) {
+    console.error("[Server API] Turnstile verification failed:", error);
+    return false;
+  }
+}
+
+function isValidTurkishMobile(value: string) {
+  return /^0?5\d{9}$/.test(value.replace(/\D/g, ""));
+}
+
+// Server-side Supabase client (hidden from browser/frontend).
+// Intentionally uses ONLY the service-role key: it bypasses Row Level
+// Security, so this is the sole path allowed to touch `leads`/`testimonials`.
+// Never fall back to an anon key here — anon has zero table privileges by
+// design (see supabase-security-lockdown.sql), so a fallback would only
+// mask a misconfigured deployment instead of failing loudly.
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.VITE_SUPABASE_ANON_KEY ||
-  "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const supabase =
   supabaseUrl && supabaseKey && supabaseUrl.startsWith("http")
     ? createClient(supabaseUrl, supabaseKey)
     : null;
+
+if (!supabase) {
+  console.warn(
+    "[Server API] Supabase not configured (missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY). " +
+    "Leads will only be logged/stored locally and /api/testimonials will return an empty list.",
+  );
+}
 
 // API Routes
 app.get("/api/health", (_req, res) => {
@@ -99,12 +177,41 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
-// Step 1: Lead Submission (Name & Phone)
-app.post("/api/leads", async (req, res) => {
-  const { fullName, phone, examType } = req.body;
+// Public testimonials list (server-mediated: browser never talks to Supabase directly)
+app.get("/api/testimonials", async (_req, res) => {
+  if (!supabase) {
+    return res.json({ success: true, testimonials: [] });
+  }
 
-  if (!fullName || !phone) {
+  try {
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("id, student_name, student_grade, content, rating")
+      .eq("is_published", true)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.warn("[Server API] Supabase Testimonials Notice:", error.message);
+      return res.json({ success: true, testimonials: [] });
+    }
+
+    return res.json({ success: true, testimonials: data ?? [] });
+  } catch (err: any) {
+    console.error("[Server API] Supabase Exception Testimonials:", err?.message || err);
+    return res.json({ success: true, testimonials: [] });
+  }
+});
+
+// Step 1: Lead Submission (Name & Phone)
+app.post("/api/leads", limitLeadRequests, async (req, res) => {
+  const { fullName, phone, examType, turnstileToken, website } = req.body;
+
+  if (website || typeof fullName !== "string" || typeof phone !== "string" || !fullName.trim() || !isValidTurkishMobile(phone)) {
     return res.status(400).json({ success: false, error: "Ad soyad ve telefon zorunludur." });
+  }
+
+  if (!(await verifyTurnstile(turnstileToken, req.ip))) {
+    return res.status(403).json({ success: false, error: "Güvenlik doğrulaması başarısız oldu." });
   }
 
   const payload = {
@@ -140,7 +247,7 @@ app.post("/api/leads", async (req, res) => {
 });
 
 // Step 2: Lead Details Update
-app.post("/api/leads/step2", async (req, res) => {
+app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
   const {
     leadId,
     phone,
@@ -149,9 +256,10 @@ app.post("/api/leads/step2", async (req, res) => {
     userRole,
     gradeClass,
     selectedSubjects,
+    website,
   } = req.body;
 
-  if (!phone || !studentFullName) {
+  if (website || typeof phone !== "string" || typeof studentFullName !== "string" || !studentFullName.trim() || !isValidTurkishMobile(phone)) {
     return res.status(400).json({ success: false, error: "Telefon ve öğrenci adı zorunludur." });
   }
 

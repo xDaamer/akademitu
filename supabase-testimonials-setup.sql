@@ -1,5 +1,13 @@
 -- SUPABASE SQL: Testimonials (Yorumlar) Tablosu Oluşturma
 -- Aşağıdaki kodu Supabase SQL Editor'ünde çalıştırın
+--
+-- GÜVENLİK NOTU: Bu dosyadaki anon SELECT / "authenticated all operations"
+-- policy'leri artık KULLANILMIYOR. Yorumlar tarayıcıdan değil, server'ın
+-- GET /api/testimonials rotası üzerinden (service_role ile) okunuyor.
+-- Bu tabloyu ilk kez oluşturuyorsanız aşağıdaki CREATE TABLE/INSERT
+-- kısımlarını çalıştırdıktan sonra mutlaka supabase-security-lockdown.sql
+-- dosyasını da çalıştırın; o dosya anon/authenticated rollerinin bu
+-- tablo üzerindeki TÜM izinlerini kaldırır (RLS + REVOKE).
 
 CREATE TABLE public.testimonials (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -16,13 +24,17 @@ CREATE TABLE public.testimonials (
 -- Row Level Security Aktif Et
 ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
 
--- Policy: Herkese yayınlanan yorumları okuma izni ver
-CREATE POLICY "Allow public read published testimonials" ON public.testimonials
-  FOR SELECT TO anon USING (is_published = true);
-
--- Policy: Admin (authenticated) tüm işlemleri yapabilir
-CREATE POLICY "Allow authenticated all operations" ON public.testimonials
-  FOR ALL USING (auth.role() = 'authenticated');
+-- ARTIK ÇALIŞTIRMAYIN: aşağıdaki iki policy, tarayıcının Supabase'e
+-- doğrudan (anon key ile) bağlandığı eski mimariden kalmadır. Okuma artık
+-- sunucu üzerinden (service_role ile) yapıldığı için anon/authenticated
+-- rollerine hiçbir policy verilmiyor — supabase-security-lockdown.sql bu
+-- policy'leri zaten kaldırır.
+--
+-- CREATE POLICY "Allow public read published testimonials" ON public.testimonials
+--   FOR SELECT TO anon USING (is_published = true);
+--
+-- CREATE POLICY "Allow authenticated all operations" ON public.testimonials
+--   FOR ALL USING (auth.role() = 'authenticated');
 
 -- Örnek Veriler Ekle
 INSERT INTO public.testimonials (student_name, student_grade, content, rating, display_order) VALUES

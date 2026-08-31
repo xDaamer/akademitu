@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { supabase } from '../lib/supabase';
 
 interface Testimonial {
   id: string;
@@ -22,25 +21,6 @@ export function TestimonialsSection() {
 
   useEffect(() => {
     fetchTestimonials();
-
-    // Real-time subscription to testimonials table
-    if (supabase) {
-      const subscription = supabase
-        .channel('public:testimonials')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'testimonials' },
-          () => {
-            // When data changes, refetch testimonials
-            fetchTestimonials();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(subscription);
-      };
-    }
   }, []);
 
   useEffect(() => {
@@ -73,21 +53,14 @@ export function TestimonialsSection() {
 
   async function fetchTestimonials() {
     try {
-      if (!supabase) {
-        console.warn('Supabase not configured');
-        setIsLoading(false);
-        return;
+      const res = await fetch('/api/testimonials');
+      const resData = await res.json();
+
+      if (!res.ok || !resData?.success) {
+        throw new Error(resData?.error || 'Failed to load testimonials');
       }
 
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('*')
-        .eq('is_published', true)
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-
-      setTestimonials(data || []);
+      setTestimonials(resData.testimonials || []);
     } catch (error) {
       console.error('Error fetching testimonials:', error);
       setTestimonials([]);

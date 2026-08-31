@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
 import { KvkkModal } from './KvkkModal';
+import { TurnstileWidget } from './TurnstileWidget';
 import logoWhite from '../assets/logo-white.png';
 
 interface PopUpFormProps {
@@ -50,27 +51,13 @@ const HIGH_SCHOOL_AYT_SUBJECTS = [
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
 
 const normalizeTurkishMobile = (value: string) => {
-  const digits = normalizePhoneNumber(value).slice(0, 11);
-
-  if (digits.length === 10) {
-    return `0${digits}`;
-  }
-
-  return digits;
-};
-
-const formatTurkishPhone = (value: string) => {
-  const digits = normalizeTurkishMobile(value).slice(0, 11);
-
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
-  if (digits.length <= 9) return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
-  return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 9)} ${digits.slice(9)}`;
+  const digits = normalizePhoneNumber(value).replace(/^0+/, '');
+  return `0${digits}`.slice(0, 11);
 };
 
 const isValidTurkishMobilePhone = (value: string) => {
   const digits = normalizePhoneNumber(value);
-  return (digits.length === 10 && !digits.startsWith('0')) || /^0\d{10}$/.test(digits);
+  return /^05\d{9}$/.test(digits);
 };
 
 export const PopUpForm: React.FC<PopUpFormProps> = ({
@@ -103,7 +90,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
   // Step 1 Data
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('0');
   const [examType, setExamType] = useState<'YKS' | 'LGS' | 'Diğer'>('YKS');
 
   // Step 2 Data
@@ -112,6 +99,8 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
   const [userRole, setUserRole] = useState<'Veli' | 'Öğrenci'>('Öğrenci');
   const [gradeClass, setGradeClass] = useState<string>('12. Sınıf');
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [website, setWebsite] = useState('');
 
   const [error, setError] = useState('');
 
@@ -125,8 +114,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
   };
 
   const handlePhoneChange = (value: string) => {
-    const digitsOnly = normalizePhoneNumber(value);
-    setPhone(formatTurkishPhone(digitsOnly));
+    setPhone(normalizeTurkishMobile(value));
   };
 
   // Step 1: collect the base contact info and reveal the detailed form on the same page.
@@ -144,7 +132,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     }
 
     setError('');
-    setPhone(formatTurkishPhone(normalizedPhone));
+    setPhone(normalizedPhone);
     setStudentFullName(fullName.trim());
     setCurrentStep(2);
   };
@@ -162,23 +150,28 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       setError('Lütfen iletişim telefon numarasını 05XX XXX XX XX veya 5XX XXX XX XX formatında giriniz.');
       return;
     }
+    if (!turnstileToken) {
+      setError('Lütfen güvenlik doğrulamasını tamamlayınız.');
+      return;
+    }
 
     setError('');
-    setPhone(formatTurkishPhone(normalizedPhone));
+    setPhone(normalizedPhone);
     setIsSubmitting(true);
 
     try {
       let nextLeadId = leadId;
 
       if (!nextLeadId) {
-        const res = await saveLeadStep1({ fullName, phone: normalizedPhone, examType });
+        const res = await saveLeadStep1({ fullName, phone: normalizedPhone, examType, turnstileToken, website });
+        if (!res.success) throw new Error(res.error);
         if (res.id) {
           nextLeadId = res.id;
           setLeadId(res.id);
         }
       }
 
-      await updateLeadStep2({
+      const result = await updateLeadStep2({
         leadId: nextLeadId,
         phone: normalizedPhone,
         studentFullName,
@@ -186,7 +179,9 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
         userRole,
         gradeClass,
         selectedSubjects,
+        website,
       });
+      if (!result.success) throw new Error(result.error);
 
       setCurrentStep(3);
       if (onSubmitSuccess) {
@@ -203,7 +198,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       }
     } catch (err) {
       console.error('Step 2 Error:', err);
-      setCurrentStep(3);
+      setError(err instanceof Error ? err.message : 'Form gönderilemedi. Lütfen tekrar deneyin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -221,13 +216,15 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setCurrentStep(1);
     setLeadId(undefined);
     setFullName('');
-    setPhone('');
+    setPhone('0');
     setExamType('YKS');
     setStudentFullName('');
     setParentFullName('');
     setUserRole('Öğrenci');
     setGradeClass('12. Sınıf');
     setSelectedSubjects([]);
+    setTurnstileToken('');
+    setWebsite('');
     setError('');
     onClose();
   };
@@ -360,7 +357,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                               type="tel"
                               inputMode="numeric"
                               pattern="[0-9]*"
-                              placeholder="05XX XXX XX XX"
+                              placeholder="05XXXXXXXXX"
                               value={phone}
                               onChange={(e) => handlePhoneChange(e.target.value)}
                               className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
@@ -390,6 +387,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             ))}
                           </div>
                         </div>
+
+                        <div className="absolute -left-[10000px]" aria-hidden="true">
+                          <label htmlFor="website-scroll">Website</label>
+                          <input id="website-scroll" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                        </div>
+
+                        <TurnstileWidget onTokenChange={setTurnstileToken} />
 
                         <button
                           type="submit"
@@ -634,7 +638,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             type="tel"
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            placeholder="05XX XXX XX XX"
+                            placeholder="05XXXXXXXXX"
                             value={phone}
                             onChange={(e) => handlePhoneChange(e.target.value)}
                             className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
@@ -664,6 +668,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           ))}
                         </div>
                       </div>
+
+                      <div className="absolute -left-[10000px]" aria-hidden="true">
+                        <label htmlFor="website-modal">Website</label>
+                        <input id="website-modal" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                      </div>
+
+                      <TurnstileWidget onTokenChange={setTurnstileToken} />
 
                       <button
                         type="submit"

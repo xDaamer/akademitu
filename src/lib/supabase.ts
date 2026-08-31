@@ -19,19 +19,14 @@
  * );
  * 
  * ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "Allow public insert and update" ON public.leads
- *   FOR ALL TO anon USING (true) WITH CHECK (true);
+ * Do not add public INSERT or UPDATE policies: lead writes must only use the server's service-role key.
+ *
+ * The `testimonials` table is read the same way: the browser never talks to Supabase
+ * directly (there is no client-side Supabase client in this app at all). Reads go through
+ * GET /api/testimonials in server.ts, which uses the service-role key. The `anon` and
+ * `authenticated` roles have zero grants on both `leads` and `testimonials` — see
+ * supabase-security-lockdown.sql, which must be run against the live project.
  */
-
-import { createClient } from '@supabase/supabase-js';
-
-// Server proxy endpoints prevent exposing sensitive API keys to the browser
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-export const supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http')) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
 
 // Helper to save backup to LocalStorage so no user data is ever lost
 function saveLocalLead(payload: any): string {
@@ -61,11 +56,15 @@ export async function saveLeadStep1(data: {
   fullName: string;
   phone: string;
   examType?: string;
+  turnstileToken: string;
+  website: string;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   const payload = {
     fullName: data.fullName,
     phone: data.phone,
     examType: data.examType || 'YKS',
+    turnstileToken: data.turnstileToken,
+    website: data.website,
   };
 
   // Always back up locally first
@@ -89,32 +88,12 @@ export async function saveLeadStep1(data: {
       const resData = await res.json();
       return { success: true, id: resData?.id || localId };
     }
+    const resData = await res.json().catch(() => null);
+    return { success: false, error: resData?.error || 'Form gönderilemedi. Lütfen tekrar deneyin.' };
   } catch (err) {
-    console.warn('Server API unavailable, falling back to client method:', err);
+    console.warn('Server API unavailable:', err);
   }
-
-  // Fallback if server route is unavailable but client client exists
-  if (supabase) {
-    try {
-      const { data: insertedData } = await supabase
-        .from('leads')
-        .insert([{
-          full_name: data.fullName,
-          phone: data.phone,
-          exam_type: data.examType || 'YKS',
-          step: 1,
-          created_at: new Date().toISOString(),
-        }])
-        .select('id')
-        .single();
-
-      return { success: true, id: insertedData?.id || localId };
-    } catch {
-      // Fallback already saved to localStorage
-    }
-  }
-
-  return { success: true, id: localId };
+  return { success: false, error: 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.' };
 }
 
 /**
@@ -128,6 +107,7 @@ export async function updateLeadStep2(data: {
   userRole: 'Veli' | 'Öğrenci';
   gradeClass: string;
   selectedSubjects: string[];
+  website: string;
 }): Promise<{ success: boolean; error?: string }> {
   // Always back up locally
   saveLocalLead({
@@ -152,35 +132,12 @@ export async function updateLeadStep2(data: {
     if (res.ok) {
       return { success: true };
     }
+    const resData = await res.json().catch(() => null);
+    return { success: false, error: resData?.error || 'Form gönderilemedi. Lütfen tekrar deneyin.' };
   } catch (err) {
     console.warn('Server API unavailable for Step 2:', err);
   }
-
-  // Direct Supabase Fallback
-  if (supabase) {
-    try {
-      const payload = {
-        phone: data.phone,
-        student_full_name: data.studentFullName,
-        parent_full_name: data.parentFullName || '',
-        user_role: data.userRole,
-        grade_class: data.gradeClass,
-        selected_subjects: data.selectedSubjects,
-        step: 2,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (data.leadId && !data.leadId.startsWith('lead_') && !data.leadId.startsWith('srv_')) {
-        await supabase.from('leads').update(payload).eq('id', data.leadId);
-      } else {
-        await supabase.from('leads').update(payload).eq('phone', data.phone);
-      }
-    } catch {
-      // Fallback already saved to localStorage
-    }
-  }
-
-  return { success: true };
+  return { success: false, error: 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.' };
 }
 
 
