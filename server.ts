@@ -9,7 +9,20 @@ import { createClient } from "@supabase/supabase-js";
 // depending on whether Vercel's Node function runtime bundles this as ESM or CJS.
 // readFileSync + process.cwd() has no module-system-specific syntax at all, so it
 // behaves identically under tsx (dev), esbuild (npm start), and Vercel.
-const need = JSON.parse(readFileSync(path.join(process.cwd(), "need.json"), "utf-8"));
+//
+// Wrapped in try/catch: this runs at module load (cold start). If it throws
+// unguarded, the whole function fails to load and EVERY route 500s
+// (FUNCTION_INVOCATION_FAILED) — including ones that never touch `need` —
+// which is exactly the failure mode this deployment kept hitting. Falling
+// back to a minimal shape keeps the function alive even if the file can't
+// be read, so at least the actual error is diagnosable from server logs
+// instead of a blanket crash.
+let need: any = { site: {}, contact: {}, social: {}, seo: { pages: [] } };
+try {
+  need = JSON.parse(readFileSync(path.join(process.cwd(), "need.json"), "utf-8"));
+} catch (err: any) {
+  console.error("[Server API] Failed to read need.json:", err?.message || err);
+}
 
 // quiet: true suppresses dotenv's own startup log line (including its random
 // promotional "tip" messages) so it never buries the Supabase error logs below.
@@ -79,10 +92,27 @@ function isValidTurkishMobile(value: string) {
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-const supabase =
-  supabaseUrl && supabaseKey && supabaseUrl.startsWith("http")
-    ? createClient(supabaseUrl, supabaseKey)
-    : null;
+// A small function (rather than the try/catch inline) so `supabase`'s type
+// is still inferred straight from the real createClient(url, key) call,
+// same as the plain ternary this replaced — inlining the try/catch around
+// a pre-declared `let supabase: ReturnType<typeof createClient> | null`
+// loses that inference and turns every later .insert()/.upsert() row type
+// into `never`.
+function createSupabaseClient() {
+  if (!supabaseUrl || !supabaseKey || !supabaseUrl.startsWith("http")) return null;
+  try {
+    return createClient(supabaseUrl, supabaseKey);
+  } catch (err: any) {
+    // createClient() can throw synchronously on a malformed URL. Never let
+    // that take down the whole function at cold start (see the need.json
+    // note above) — fail open to null instead, same as when it's simply
+    // not configured.
+    console.error("[Server API] Failed to create Supabase client:", err?.message || err);
+    return null;
+  }
+}
+
+const supabase = createSupabaseClient();
 
 if (!supabase) {
   console.warn(
