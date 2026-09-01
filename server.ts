@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { createServer as createViteServer } from "vite";
 import need from "./need.json" with { type: "json" };
 
 // quiet: true suppresses dotenv's own startup log line (including its random
@@ -317,6 +316,16 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    // Dynamic import: `vite` is a dev-only dependency. This file is also
+    // imported by api/[...path].ts as the Vercel serverless function for
+    // /api/*, and a static top-level `import ... from "vite"` would get
+    // pulled into that function's bundle by Vercel's builder even though
+    // this branch never runs there (see the !process.env.VERCEL guard
+    // below) — that was confirmed to break the deployed function, causing
+    // every /api/* request to silently fall through to the SPA's
+    // index.html rewrite (200 with HTML on GET, 405 on POST). A dynamic
+    // import here is only evaluated when this branch actually executes.
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

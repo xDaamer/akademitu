@@ -142,7 +142,10 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setPhone(formatPhoneDisplay(digits));
   };
 
-  // Step 1: collect the base contact info and reveal the detailed form on the same page.
+  // Step 1: persist the initial contact info right away, then reveal the
+  // detailed form on the same page. The button reads "Gönder" (Submit), so
+  // clicking it must actually save the lead — not just move to step 2
+  // locally and defer saving until step 2 is completed too.
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) {
@@ -157,8 +160,22 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     }
 
     setError('');
-    setStudentFullName(fullName.trim());
-    setCurrentStep(2);
+    setIsSubmitting(true);
+
+    try {
+      const res = await saveLeadStep1({ fullName, phone: normalizedPhone, examType, website });
+      if (!res.success) throw new Error(res.error);
+      if (res.id) {
+        setLeadId(res.id);
+      }
+      setStudentFullName(fullName.trim());
+      setCurrentStep(2);
+    } catch (err) {
+      console.error('Step 1 Error:', err);
+      setError(err instanceof Error ? err.message : 'Form gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Step 2: send the full data only when the user submits the final form.
