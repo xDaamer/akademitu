@@ -1,14 +1,15 @@
 import express from "express";
 import path from "path";
+import { readFileSync } from "fs";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { createRequire } from "node:module";
 
-// Plain `require` instead of `import ... with { type: "json" }`: the import-attribute
-// syntax is new enough that it risks breaking on Vercel's Node function runtime
-// (this was the likely cause of the POST /api/leads 500 right after the vite-import
-// fix landed). createRequire works identically everywhere — tsx, esbuild, Vercel.
-const need = createRequire(import.meta.url)("./need.json");
+// Plain readFileSync+JSON.parse instead of `import ... with { type: "json" }` or
+// createRequire(import.meta.url): both rely on syntax/semantics that can break
+// depending on whether Vercel's Node function runtime bundles this as ESM or CJS.
+// readFileSync + process.cwd() has no module-system-specific syntax at all, so it
+// behaves identically under tsx (dev), esbuild (npm start), and Vercel.
+const need = JSON.parse(readFileSync(path.join(process.cwd(), "need.json"), "utf-8"));
 
 // quiet: true suppresses dotenv's own startup log line (including its random
 // promotional "tip" messages) so it never buries the Supabase error logs below.
