@@ -2,7 +2,13 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import need from "./need.json" with { type: "json" };
+import { createRequire } from "node:module";
+
+// Plain `require` instead of `import ... with { type: "json" }`: the import-attribute
+// syntax is new enough that it risks breaking on Vercel's Node function runtime
+// (this was the likely cause of the POST /api/leads 500 right after the vite-import
+// fix landed). createRequire works identically everywhere — tsx, esbuild, Vercel.
+const need = createRequire(import.meta.url)("./need.json");
 
 // quiet: true suppresses dotenv's own startup log line (including its random
 // promotional "tip" messages) so it never buries the Supabase error logs below.
