@@ -321,30 +321,12 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
   }
 });
 
-async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
-    // Dynamic import: `vite` is a dev-only dependency. This file is also
-    // imported by api/[...path].ts as the Vercel serverless function for
-    // /api/*, and a static top-level `import ... from "vite"` would get
-    // pulled into that function's bundle by Vercel's builder even though
-    // this branch never runs there (see the !process.env.VERCEL guard
-    // below) — that was confirmed to break the deployed function, causing
-    // every /api/* request to silently fall through to the SPA's
-    // index.html rewrite (200 with HTML on GET, 405 on POST). A dynamic
-    // import here is only evaluated when this branch actually executes.
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
+function startProductionServer() {
+  const distPath = path.join(process.cwd(), "dist");
+  app.use(express.static(distPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
@@ -354,11 +336,22 @@ async function startServer() {
 // On Vercel, this file is imported by api/[...path].ts as a serverless
 // function handler — it must never bind a port or serve dist/ from local
 // disk there (Vercel serves the static build and routes /api/* to the
-// function separately). Everywhere else (local dev via `tsx server.ts`,
-// or `node dist/server.cjs` in `npm start`) it runs as a normal standalone
-// Express server.
-if (!process.env.VERCEL) {
-  startServer();
+// function separately).
+//
+// Local dev (`npm run dev`) does NOT run this file directly — it runs
+// dev-server.ts instead, which imports `app` from here and adds Vite's
+// middleware itself. That split matters: this file must never reference
+// `vite` in any way (static or dynamic import), because Vercel's function
+// bundler traces every import reachable from this file — including dynamic
+// ones — to decide what to include in the deployed function. Pulling in
+// `vite` (a large dev-only tool) that way was confirmed to break the
+// function at runtime (every /api/* request failed with
+// FUNCTION_INVOCATION_FAILED, even simple GETs, i.e. a cold-start crash).
+//
+// `npm start` (production, `node server-dist/server.cjs`) does run this
+// file directly, hence the production-only branch below.
+if (!process.env.VERCEL && process.env.NODE_ENV === "production") {
+  startProductionServer();
 }
 
 export default app;
