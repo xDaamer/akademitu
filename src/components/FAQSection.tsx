@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { FAQItem } from '../types';
 
 export const FAQSection: React.FC = () => {
@@ -86,10 +87,13 @@ export const FAQSection: React.FC = () => {
             return (
               <div
                 key={index}
-                className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden transition-all duration-200"
+                className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-colors duration-200 ${
+                  isOpen ? 'border-[#191F61]/20' : 'border-slate-200/80'
+                }`}
               >
                 <button
                   onClick={() => toggleFAQ(index)}
+                  aria-expanded={isOpen}
                   className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
                 >
                   <span className="font-bold text-base sm:text-lg text-[#191F61]">
@@ -102,11 +106,21 @@ export const FAQSection: React.FC = () => {
                   />
                 </button>
 
-                {isOpen && (
-                  <div className="px-6 pb-5 pt-1 text-slate-600 text-sm leading-relaxed border-t border-slate-100 animate-fade-in">
-                    {faq.answer}
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-5 pt-1 text-slate-600 text-sm leading-relaxed border-t border-slate-100">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}

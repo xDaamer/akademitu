@@ -1,5 +1,6 @@
 import React from 'react';
 import { Award, BarChart3, Users, MessageSquare, Clock } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface WhyUsSectionProps {
   onOpenTrialForm: () => void;
@@ -52,9 +53,13 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
           {features.map((item, index) => {
             const IconComponent = item.icon;
             return (
-              <div
+              <motion.div
                 key={index}
-                className="bg-slate-50 hover:bg-[#191F61] hover:text-white rounded-3xl p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl transition-all duration-300 group"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                className="bg-slate-50 hover:bg-[#191F61] hover:text-white rounded-3xl p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl transition-colors duration-300 group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-[#191F61] text-[#B6D6CC] group-hover:bg-[#B6D6CC] group-hover:text-[#191F61] flex items-center justify-center mb-6 transition-colors duration-300 shadow-md">
                   <IconComponent className="w-7 h-7" />
@@ -65,7 +70,7 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
                 <p className="mt-3 text-slate-600 group-hover:text-slate-200 text-sm leading-relaxed transition-colors">
                   {item.description}
                 </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>

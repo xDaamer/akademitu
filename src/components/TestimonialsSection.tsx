@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Quote, Star } from 'lucide-react';
 
 interface Testimonial {
   id: string;
@@ -133,9 +134,15 @@ export function TestimonialsSection() {
   return (
     <section className="py-12 sm:py-16 overflow-hidden bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl sm:text-4xl font-black text-[#191F61] mb-12 text-center">
-          Velilerimizin Görüşleri
-        </h2>
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 bg-[#191F61]/10 text-[#191F61] border border-[#c5a059]/30 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold mb-3 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
+            <span>Veli & Öğrenci Yorumları</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-[#191F61] tracking-tight">
+            Velilerimizin Görüşleri
+          </h2>
+        </div>
 
         <div className="border-t-4 border-b-4 border-[#191F61] py-8 bg-white/40 overflow-visible relative">
           <div
@@ -158,6 +165,22 @@ export function TestimonialsSection() {
                   key={`${testimonial.id}-${index}`}
                   className="group bg-white rounded-xl p-6 shadow-sm hover:shadow-[0_8px_14px_rgba(25,31,97,0.05)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 w-80 border border-slate-100"
                 >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-0.5" aria-label={`${testimonial.rating || 5} / 5 yıldız`}>
+                      {Array.from({ length: 5 }).map((_, starIndex) => (
+                        <Star
+                          key={starIndex}
+                          className={`w-3.5 h-3.5 ${
+                            starIndex < (testimonial.rating || 5)
+                              ? 'fill-[#c5a059] text-[#c5a059]'
+                              : 'fill-slate-200 text-slate-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <Quote className="w-5 h-5 text-[#191F61]/10 shrink-0" />
+                  </div>
+
                   <p className="text-slate-700 text-sm leading-relaxed mb-4 italic">
                     "{testimonial.content}"
                   </p>

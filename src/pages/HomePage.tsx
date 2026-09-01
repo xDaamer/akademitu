@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { HeroSection } from '../components/HeroSection';
+import { TrustBar } from '../components/TrustBar';
 import { PackagesSection } from '../components/PackagesSection';
 import { WhyUsSection } from '../components/WhyUsSection';
 import { TestimonialsSection } from '../components/TestimonialsSection';
@@ -27,6 +28,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenTrialForm }) => {
   return (
     <main className="flex-grow">
       <HeroSection onOpenTrialForm={onOpenTrialForm} />
+      <TrustBar />
       <PackagesSection onOpenTrialForm={onOpenTrialForm} />
       <WhyUsSection onOpenTrialForm={onOpenTrialForm} />
       <TestimonialsSection />

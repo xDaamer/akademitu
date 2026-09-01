@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Check, Gift, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface PackagesSectionProps {
   onOpenTrialForm: () => void;
@@ -102,7 +103,12 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
           
           {/* 1. SOL PAKET: ÜCRETSİZ DENEME DERSİ */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative group">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.45 }}
+            className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between relative group">
             <div>
               <div className="inline-block bg-[#B6D6CC]/30 text-[#191F61] px-3.5 py-1 rounded-xl text-xs font-bold mb-4">
                 İlk Adım
@@ -164,10 +170,18 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
             >
               Hemen Deneme Dersi Al
             </button>
-          </div>
+          </motion.div>
 
           {/* 2. SAĞ PAKET (ÖNE ÇIKAN): ÖZEL DERS PAKETİ */}
-          <div className="bg-[#191F61] text-white rounded-3xl p-8 border-2 border-[#c5a059] shadow-2xl flex flex-col justify-between relative transform -translate-y-3 z-10">
+          {/* NOT: bu kart '-translate-y-3' ile statik olarak yukarı kaydırılmış durumda;
+              motion'a y-transform verilmiyor, aksi halde giriş animasyonu bitince
+              motion'ın satır-içi transform'u bu kaymayı ezer. Sadece opacity animasyonu var. */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.45, delay: 0.08 }}
+            className="bg-[#191F61] text-white rounded-3xl p-8 border-2 border-[#c5a059] shadow-2xl flex flex-col justify-between relative transform -translate-y-3 z-10">
             {/* POPÜLER ROZETİ */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#c5a059] text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1.5 border border-amber-200/40">
               <Zap className="w-3.5 h-3.5 fill-current text-white" /> En Çok Tercih Edilen
@@ -248,10 +262,15 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
               <span>İndirimli Derse Başla</span>
               <ArrowRight className="w-5 h-5" />
             </button>
-          </div>
+          </motion.div>
 
           {/* 3. KOÇLUK PAKETİ */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative group">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.45, delay: 0.16 }}
+            className="bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between relative group">
             <div>
               <div className="inline-block bg-emerald-50 text-emerald-700 px-3.5 py-1 rounded-xl text-xs font-bold mb-4">
                 Koçluk
@@ -313,7 +332,7 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
             >
               Koçluk Başla
             </button>
-          </div>
+          </motion.div>
 
         </div>
 
