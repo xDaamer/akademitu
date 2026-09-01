@@ -1,8 +1,18 @@
 node_modules/
 build/
 dist/
+server-dist/
 coverage/
 .DS_Store
 *.log
 .env*
 !.env.example
+# Graphify çıktıları ve önbellekleri
+.graphify/
+graphify_cache/
+graphify.db
+graphify.sqlite*
+graphify-output/
+*.graph.json
+*.graph.html
+*.graph.svg

@@ -5,7 +5,9 @@ import { createClient } from "@supabase/supabase-js";
 import { createServer as createViteServer } from "vite";
 import need from "./need.json" with { type: "json" };
 
-dotenv.config();
+// quiet: true suppresses dotenv's own startup log line (including its random
+// promotional "tip" messages) so it never buries the Supabase error logs below.
+dotenv.config({ quiet: true });
 
 const app = express();
 const PORT = 3000;
@@ -211,22 +213,35 @@ app.post("/api/leads", limitLeadRequests, async (req, res) => {
       .single();
 
     if (error) {
-      console.warn("[Server API] Supabase Step 1 Notice:", error.message);
+      // Full detail (message/code/details/hint) so a misconfigured service-role
+      // key, schema mismatch, or RLS issue is diagnosable from Vercel/server logs
+      // even though the client always gets success:true (see file header note).
+      console.error("[Server API] Supabase Step 1 INSERT failed:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        payload,
+      });
       return res.json({ success: true, id: "srv_" + Date.now(), warning: error.message });
     }
 
     return res.json({ success: true, id: data?.id });
   } catch (err: any) {
-    console.error("[Server API] Supabase Exception Step 1:", err?.message || err);
+    console.error("[Server API] Supabase Exception Step 1:", err?.message || err, { payload });
     return res.json({ success: true, id: "srv_" + Date.now() });
   }
 });
+
+const ALLOWED_EXAM_TYPES = new Set(["YKS", "LGS", "Diğer"]);
 
 // Step 2: Lead Details Update
 app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
   const {
     leadId,
     phone,
+    fullName,
+    examType,
     studentFullName,
     parentFullName,
     userRole,
@@ -258,32 +273,44 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
   try {
     let error;
     if (leadId && !String(leadId).startsWith("lead_") && !String(leadId).startsWith("srv_")) {
+      // Step 1's insert gave us a real row id - update it directly.
       const resUpdate = await supabase
         .from("leads")
         .update(payload)
         .eq("id", leadId);
       error = resUpdate.error;
     } else {
-      const resUpdatePhone = await supabase
-        .from("leads")
-        .update(payload)
-        .eq("phone", payload.phone);
+      // Step 1 either never ran (leadId missing) or its insert failed and we
+      // only have a fake fallback id ("srv_"/"lead_" prefixed) - there may or
+      // may not already be a row for this phone. `phone` is UNIQUE, so upsert
+      // on that conflict key does the right thing atomically in one round
+      // trip: update the existing row, or insert a new one if none exists.
+      // Carrying full_name/exam_type here too means the row is complete even
+      // when step 1's insert never landed (see saveLeadStep1 in supabase.ts).
+      const upsertPayload: Record<string, unknown> = { ...payload };
+      if (fullName) upsertPayload.full_name = String(fullName).trim();
+      if (examType && ALLOWED_EXAM_TYPES.has(String(examType))) upsertPayload.exam_type = String(examType);
 
-      if (resUpdatePhone.error || !resUpdatePhone.data) {
-        const resInsert = await supabase
-          .from("leads")
-          .insert([payload]);
-        error = resInsert.error;
-      }
+      const resUpsert = await supabase
+        .from("leads")
+        .upsert(upsertPayload, { onConflict: "phone" });
+      error = resUpsert.error;
     }
 
     if (error) {
-      console.warn("[Server API] Supabase Step 2 Notice:", error.message);
+      console.error("[Server API] Supabase Step 2 write failed:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        leadId,
+        payload,
+      });
     }
 
     return res.json({ success: true });
   } catch (err: any) {
-    console.error("[Server API] Supabase Exception Step 2:", err?.message || err);
+    console.error("[Server API] Supabase Exception Step 2:", err?.message || err, { leadId, payload });
     return res.json({ success: true });
   }
 });

@@ -59,6 +59,25 @@ const isValidTurkishMobilePhone = (value: string) => {
   return /^05\d{9}$/.test(digits);
 };
 
+// Significant digits only: the 10 digits after the leading 0 (e.g. "532xxxxxxx").
+// Used to drive the live "0 (5XX) XXX XX XX" mask below.
+const extractSignificantPhoneDigits = (value: string) =>
+  normalizePhoneNumber(value).replace(/^0+/, '').slice(0, 10);
+
+const formatPhoneDisplay = (digits: string) => {
+  if (!digits) return '';
+  const area = digits.slice(0, 3);
+  const mid1 = digits.slice(3, 6);
+  const mid2 = digits.slice(6, 8);
+  const mid3 = digits.slice(8, 10);
+  let out = `0 (${area}`;
+  if (area.length === 3) out += ')';
+  if (mid1) out += ` ${mid1}`;
+  if (mid2) out += ` ${mid2}`;
+  if (mid3) out += ` ${mid3}`;
+  return out;
+};
+
 export const PopUpForm: React.FC<PopUpFormProps> = ({
   isOpen,
   mode,
@@ -89,7 +108,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
   // Step 1 Data
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('0');
+  const [phone, setPhone] = useState(''); // empty so the placeholder actually renders
   const [examType, setExamType] = useState<'YKS' | 'LGS' | 'Diğer'>('YKS');
 
   // Step 2 Data
@@ -111,8 +130,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setError('');
   };
 
-  const handlePhoneChange = (value: string) => {
-    setPhone(normalizeTurkishMobile(value));
+  const handlePhoneChange = (rawValue: string) => {
+    let digits = extractSignificantPhoneDigits(rawValue);
+    // Masked inputs re-derive their display from digits alone on every keystroke, so
+    // deleting a mask character (a space or a parenthesis) leaves the digit string
+    // unchanged and backspace appears to do nothing. Detect that case and drop one
+    // more digit so backspace always removes something visible.
+    if (rawValue.length < phone.length && digits === extractSignificantPhoneDigits(phone) && digits.length > 0) {
+      digits = digits.slice(0, -1);
+    }
+    setPhone(formatPhoneDisplay(digits));
   };
 
   // Step 1: collect the base contact info and reveal the detailed form on the same page.
@@ -125,12 +152,11 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
     const normalizedPhone = normalizeTurkishMobile(phone);
     if (!isValidTurkishMobilePhone(normalizedPhone)) {
-      setError('Lütfen telefon numarasını 05XX XXX XX XX veya 5XX XXX XX XX formatında giriniz.');
+      setError('Lütfen telefon numarasını 0 (5XX) XXX XX XX formatında giriniz.');
       return;
     }
 
     setError('');
-    setPhone(normalizedPhone);
     setStudentFullName(fullName.trim());
     setCurrentStep(2);
   };
@@ -145,11 +171,10 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
     const normalizedPhone = normalizeTurkishMobile(phone);
     if (!isValidTurkishMobilePhone(normalizedPhone)) {
-      setError('Lütfen iletişim telefon numarasını 05XX XXX XX XX veya 5XX XXX XX XX formatında giriniz.');
+      setError('Lütfen iletişim telefon numarasını 0 (5XX) XXX XX XX formatında giriniz.');
       return;
     }
     setError('');
-    setPhone(normalizedPhone);
     setIsSubmitting(true);
 
     try {
@@ -167,6 +192,8 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       const result = await updateLeadStep2({
         leadId: nextLeadId,
         phone: normalizedPhone,
+        fullName,
+        examType,
         studentFullName,
         parentFullName,
         userRole,
@@ -209,7 +236,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setCurrentStep(1);
     setLeadId(undefined);
     setFullName('');
-    setPhone('0');
+    setPhone('');
     setExamType('YKS');
     setStudentFullName('');
     setParentFullName('');
@@ -348,10 +375,11 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             <input
                               type="tel"
                               inputMode="numeric"
-                              pattern="[0-9]*"
-                              placeholder="05XXXXXXXXX"
+                              autoComplete="tel"
+                              placeholder="0 (5XX) XXX XX XX"
                               value={phone}
                               onChange={(e) => handlePhoneChange(e.target.value)}
+                              maxLength={17}
                               className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                               required
                             />
@@ -627,11 +655,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <input
                             type="tel"
                             inputMode="numeric"
-                            pattern="[0-9]*"
-                            placeholder="05XXXXXXXXX"
+                            autoComplete="tel"
+                            placeholder="0 (5XX) XXX XX XX"
                             value={phone}
                             onChange={(e) => handlePhoneChange(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
+                            maxLength={17}
+                            className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                             required
                           />
                         </div>

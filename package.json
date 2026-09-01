@@ -7,9 +7,9 @@
     "dev": "tsx server.ts",
     "push": "git push",
     "prebuild": "tsx scripts/generate-seo.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
-    "clean": "rm -rf dist server.js",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=server-dist/server.cjs",
+    "start": "node server-dist/server.cjs",
+    "clean": "rm -rf dist server-dist server.js",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

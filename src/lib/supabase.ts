@@ -100,6 +100,8 @@ export async function saveLeadStep1(data: {
 export async function updateLeadStep2(data: {
   leadId?: string;
   phone: string;
+  fullName?: string;
+  examType?: string;
   studentFullName: string;
   parentFullName?: string;
   userRole: 'Veli' | 'Öğrenci';
@@ -107,9 +109,13 @@ export async function updateLeadStep2(data: {
   selectedSubjects: string[];
   website: string;
 }): Promise<{ success: boolean; error?: string }> {
-  // Always back up locally
+  // Always back up locally. fullName/examType are included so the local
+  // backup stays complete even if step 1's server insert never landed
+  // (see the server's upsert-by-phone fallback in server.ts).
   saveLocalLead({
     phone: data.phone,
+    full_name: data.fullName || '',
+    exam_type: data.examType || 'YKS',
     student_full_name: data.studentFullName,
     parent_full_name: data.parentFullName || '',
     user_role: data.userRole,
