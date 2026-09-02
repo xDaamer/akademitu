@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Quote, Star } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 interface Testimonial {
   id: string;
@@ -53,15 +54,22 @@ export function TestimonialsSection() {
   }, [testimonials.length]);
 
   async function fetchTestimonials() {
+    if (!supabase) {
+      setTestimonials([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch('/api/testimonials');
-      const resData = await res.json();
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('id, student_name, student_grade, content, rating')
+        .eq('is_published', true)
+        .order('display_order', { ascending: true });
 
-      if (!res.ok || !resData?.success) {
-        throw new Error(resData?.error || 'Failed to load testimonials');
-      }
+      if (error) throw error;
 
-      setTestimonials(resData.testimonials || []);
+      setTestimonials(data || []);
     } catch (error) {
       console.error('Error fetching testimonials:', error);
       setTestimonials([]);
