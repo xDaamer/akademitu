@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, Phone, User, ArrowRight, ShieldCheck, Check, Gift, Lock, ArrowLeft } from 'lucide-react';
+import { X, CheckCircle2, Phone, User, ArrowRight, ShieldCheck, Check, Gift, Lock, ArrowLeft, ChevronDown, Layers, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
@@ -49,12 +49,23 @@ const YKS_AYT_SUBJECTS = [
 
 const NOT_DECIDED_SUBJECT = 'Henüz karar vermedim';
 
-// Hedef sınava göre ders müfredatı: LGS seçildiyse LGS dersleri, YKS
-// seçildiyse TYT/AYT dersleri, "Diğer" seçildiyse ikisi birden gösterilir.
-const getSubjectOptions = (examType: 'YKS' | 'LGS' | 'Diğer'): string[] => {
-  if (examType === 'LGS') return LGS_SUBJECTS;
-  if (examType === 'YKS') return [...YKS_TYT_SUBJECTS, ...YKS_AYT_SUBJECTS];
-  return [...LGS_SUBJECTS, ...YKS_TYT_SUBJECTS, ...YKS_AYT_SUBJECTS];
+// Hedef sınava göre ders müfredatını <optgroup>'lara ayırarak render eder,
+// böylece "Diğer" seçiminde onlarca ders tek düz liste yerine LGS/TYT/AYT
+// başlıkları altında gruplanır.
+const renderSubjectOptions = (examType: 'YKS' | 'LGS' | 'Diğer') => {
+  const groups: { label: string; subjects: string[] }[] = [];
+  if (examType !== 'YKS') groups.push({ label: 'LGS', subjects: LGS_SUBJECTS });
+  if (examType !== 'LGS') {
+    groups.push({ label: 'TYT', subjects: YKS_TYT_SUBJECTS });
+    groups.push({ label: 'AYT', subjects: YKS_AYT_SUBJECTS });
+  }
+  return groups.map(({ label, subjects }) => (
+    <optgroup key={label} label={label}>
+      {subjects.map((subj) => (
+        <option key={subj} value={subj}>{subj}</option>
+      ))}
+    </optgroup>
+  ));
 };
 
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
@@ -87,6 +98,36 @@ const formatPhoneDisplay = (digits: string) => {
   if (mid3) out += ` ${mid3}`;
   return out;
 };
+
+// Marka diliyle uyumlu, ikonlu ve özel oklu select — tarayıcının varsayılan
+// dropdown görünümünü (appearance-none) kaldırıp metin girişleriyle aynı
+// çerçeve/odak stiline getirir.
+interface SelectFieldProps {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  children: React.ReactNode;
+}
+
+const SelectField: React.FC<SelectFieldProps> = ({ icon: Icon, label, value, onChange, children }) => (
+  <div className="space-y-1">
+    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+      {label}
+    </label>
+    <div className="relative">
+      <Icon className="w-5 h-5 absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full appearance-none pl-11 pr-10 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] focus:border-transparent transition-all cursor-pointer"
+      >
+        {children}
+      </select>
+      <ChevronDown className="w-4 h-4 absolute right-3.5 top-4 text-slate-400 pointer-events-none" />
+    </div>
+  </div>
+);
 
 export const PopUpForm: React.FC<PopUpFormProps> = ({
   isOpen,
@@ -132,8 +173,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
   const [error, setError] = useState('');
 
   if (!isOpen || !mode) return null;
-
-  const subjectOptions = getSubjectOptions(examType);
 
   const handleBackToContact = () => {
     setCurrentStep(1);
@@ -460,7 +499,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           </div>
                         )}
 
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                        <div className="rounded-2xl border border-[#B6D6CC]/50 bg-[#EBF5F2] p-3 sm:p-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -483,50 +522,55 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </div>
 
                         <div className="space-y-1">
-                          <label className="block text-xs font-semibold text-slate-700">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                             Ben kimim? *
                           </label>
-                          <select
-                            value={userRole}
-                            onChange={(e) => setUserRole(e.target.value as 'Veli' | 'Öğrenci')}
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                          >
-                            <option value="Öğrenci">Öğrenci</option>
-                            <option value="Veli">Veli</option>
-                          </select>
+                          <div className="flex gap-2">
+                            {(['Öğrenci', 'Veli'] as const).map((role) => (
+                              <button
+                                key={role}
+                                type="button"
+                                onClick={() => setUserRole(role)}
+                                className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                  userRole === role
+                                    ? 'bg-[#191F61] text-white border-[#191F61]'
+                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                {role}
+                              </button>
+                            ))}
+                          </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="block text-xs font-semibold text-slate-700">
-                            Sınıf *
-                          </label>
-                          <select
-                            value={gradeClass}
-                            onChange={(e) => setGradeClass(e.target.value)}
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                          >
-                            {[...MIDDLE_SCHOOL_GRADES, ...HIGH_SCHOOL_GRADES].map((g) => (
+                        <SelectField
+                          icon={Layers}
+                          label="Sınıf *"
+                          value={gradeClass}
+                          onChange={(e) => setGradeClass(e.target.value)}
+                        >
+                          <optgroup label="Ortaokul">
+                            {MIDDLE_SCHOOL_GRADES.map((g) => (
                               <option key={g} value={g}>{g}</option>
                             ))}
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-xs font-semibold text-slate-700">
-                            Ders *
-                          </label>
-                          <select
-                            value={selectedSubjects[0] || ''}
-                            onChange={(e) => setSelectedSubjects(e.target.value ? [e.target.value] : [])}
-                            className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                          >
-                            <option value="">Ders seçiniz</option>
-                            <option value={NOT_DECIDED_SUBJECT}>{NOT_DECIDED_SUBJECT}</option>
-                            {subjectOptions.map((subj) => (
-                              <option key={subj} value={subj}>{subj}</option>
+                          </optgroup>
+                          <optgroup label="Lise">
+                            {HIGH_SCHOOL_GRADES.map((g) => (
+                              <option key={g} value={g}>{g}</option>
                             ))}
-                          </select>
-                        </div>
+                          </optgroup>
+                        </SelectField>
+
+                        <SelectField
+                          icon={BookOpen}
+                          label="Ders *"
+                          value={selectedSubjects[0] || ''}
+                          onChange={(e) => setSelectedSubjects(e.target.value ? [e.target.value] : [])}
+                        >
+                          <option value="">Ders seçiniz</option>
+                          <option value={NOT_DECIDED_SUBJECT}>{NOT_DECIDED_SUBJECT}</option>
+                          {renderSubjectOptions(examType)}
+                        </SelectField>
 
                         <button
                           type="submit"
@@ -741,7 +785,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </div>
                       )}
 
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                      <div className="rounded-2xl border border-[#B6D6CC]/50 bg-[#EBF5F2] p-3 sm:p-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -764,50 +808,55 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                           Ben kimim? *
                         </label>
-                        <select
-                          value={userRole}
-                          onChange={(e) => setUserRole(e.target.value as 'Veli' | 'Öğrenci')}
-                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                        >
-                          <option value="Öğrenci">Öğrenci</option>
-                          <option value="Veli">Veli</option>
-                        </select>
+                        <div className="flex gap-2">
+                          {(['Öğrenci', 'Veli'] as const).map((role) => (
+                            <button
+                              key={role}
+                              type="button"
+                              onClick={() => setUserRole(role)}
+                              className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                userRole === role
+                                  ? 'bg-[#191F61] text-white border-[#191F61]'
+                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {role}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">
-                          Sınıf *
-                        </label>
-                        <select
-                          value={gradeClass}
-                          onChange={(e) => setGradeClass(e.target.value)}
-                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                        >
-                          {[...MIDDLE_SCHOOL_GRADES, ...HIGH_SCHOOL_GRADES].map((g) => (
+                      <SelectField
+                        icon={Layers}
+                        label="Sınıf *"
+                        value={gradeClass}
+                        onChange={(e) => setGradeClass(e.target.value)}
+                      >
+                        <optgroup label="Ortaokul">
+                          {MIDDLE_SCHOOL_GRADES.map((g) => (
                             <option key={g} value={g}>{g}</option>
                           ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700">
-                          Ders *
-                        </label>
-                        <select
-                          value={selectedSubjects[0] || ''}
-                          onChange={(e) => setSelectedSubjects(e.target.value ? [e.target.value] : [])}
-                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
-                        >
-                          <option value="">Ders seçiniz</option>
-                          <option value={NOT_DECIDED_SUBJECT}>{NOT_DECIDED_SUBJECT}</option>
-                          {subjectOptions.map((subj) => (
-                            <option key={subj} value={subj}>{subj}</option>
+                        </optgroup>
+                        <optgroup label="Lise">
+                          {HIGH_SCHOOL_GRADES.map((g) => (
+                            <option key={g} value={g}>{g}</option>
                           ))}
-                        </select>
-                      </div>
+                        </optgroup>
+                      </SelectField>
+
+                      <SelectField
+                        icon={BookOpen}
+                        label="Ders *"
+                        value={selectedSubjects[0] || ''}
+                        onChange={(e) => setSelectedSubjects(e.target.value ? [e.target.value] : [])}
+                      >
+                        <option value="">Ders seçiniz</option>
+                        <option value={NOT_DECIDED_SUBJECT}>{NOT_DECIDED_SUBJECT}</option>
+                        {renderSubjectOptions(examType)}
+                      </SelectField>
 
                       <button
                         type="submit"
