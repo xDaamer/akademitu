@@ -10,7 +10,8 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=server-dist/server.cjs",
     "start": "node server-dist/server.cjs",
     "clean": "rm -rf dist server-dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -34,6 +35,8 @@
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"
