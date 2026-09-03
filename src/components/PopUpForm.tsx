@@ -16,7 +16,7 @@ interface PopUpFormProps {
 const MIDDLE_SCHOOL_GRADES = ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'];
 const HIGH_SCHOOL_GRADES = ['9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun'];
 
-const MIDDLE_SCHOOL_SUBJECTS = [
+const LGS_SUBJECTS = [
   'Matematik',
   'Türkçe',
   'Fen Bilimleri',
@@ -25,7 +25,7 @@ const MIDDLE_SCHOOL_SUBJECTS = [
   'Din Kültürü',
 ];
 
-const HIGH_SCHOOL_TYT_SUBJECTS = [
+const YKS_TYT_SUBJECTS = [
   'TYT Matematik',
   'TYT Geometri',
   'TYT Türkçe',
@@ -36,7 +36,7 @@ const HIGH_SCHOOL_TYT_SUBJECTS = [
   'TYT Coğrafya',
 ];
 
-const HIGH_SCHOOL_AYT_SUBJECTS = [
+const YKS_AYT_SUBJECTS = [
   'AYT Matematik',
   'AYT Geometri',
   'AYT Türk Dili ve Edebiyatı',
@@ -46,6 +46,16 @@ const HIGH_SCHOOL_AYT_SUBJECTS = [
   'AYT Tarih',
   'AYT Coğrafya',
 ];
+
+const NOT_DECIDED_SUBJECT = 'Henüz karar vermedim';
+
+// Hedef sınava göre ders müfredatı: LGS seçildiyse LGS dersleri, YKS
+// seçildiyse TYT/AYT dersleri, "Diğer" seçildiyse ikisi birden gösterilir.
+const getSubjectOptions = (examType: 'YKS' | 'LGS' | 'Diğer'): string[] => {
+  if (examType === 'LGS') return LGS_SUBJECTS;
+  if (examType === 'YKS') return [...YKS_TYT_SUBJECTS, ...YKS_AYT_SUBJECTS];
+  return [...LGS_SUBJECTS, ...YKS_TYT_SUBJECTS, ...YKS_AYT_SUBJECTS];
+};
 
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
 
@@ -123,7 +133,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
   if (!isOpen || !mode) return null;
 
-  const isMiddleSchool = MIDDLE_SCHOOL_GRADES.includes(gradeClass);
+  const subjectOptions = getSubjectOptions(examType);
 
   const handleBackToContact = () => {
     setCurrentStep(1);
@@ -511,7 +521,8 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
                           >
                             <option value="">Ders seçiniz</option>
-                            {(isMiddleSchool ? MIDDLE_SCHOOL_SUBJECTS : [...HIGH_SCHOOL_TYT_SUBJECTS, ...HIGH_SCHOOL_AYT_SUBJECTS]).map((subj) => (
+                            <option value={NOT_DECIDED_SUBJECT}>{NOT_DECIDED_SUBJECT}</option>
+                            {subjectOptions.map((subj) => (
                               <option key={subj} value={subj}>{subj}</option>
                             ))}
                           </select>
@@ -791,7 +802,8 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#191F61]"
                         >
                           <option value="">Ders seçiniz</option>
-                          {(isMiddleSchool ? MIDDLE_SCHOOL_SUBJECTS : [...HIGH_SCHOOL_TYT_SUBJECTS, ...HIGH_SCHOOL_AYT_SUBJECTS]).map((subj) => (
+                          <option value={NOT_DECIDED_SUBJECT}>{NOT_DECIDED_SUBJECT}</option>
+                          {subjectOptions.map((subj) => (
                             <option key={subj} value={subj}>{subj}</option>
                           ))}
                         </select>

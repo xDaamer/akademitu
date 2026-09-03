@@ -30,6 +30,11 @@
 -- olmadığı için veri okunamaz/sızdırılamaz, sadece teorik olarak bilinen/
 -- tahmin edilen bir telefon numarasının kaydı üzerine yazılabilir.
 --
+-- phone artık UNIQUE değil: aynı numarayla ikinci bir başvuru artık ham bir
+-- "duplicate key" Postgres hatasıyla reddedilmek yerine kabul edilir ve
+-- is_repeat_submission/first_seen_lead_id ile işaretlenir (bkz. aşağıdaki
+-- "tekrar başvuruya izin ver" bölümü).
+--
 -- Safe to run multiple times (idempotent).
 
 -- =========================================================================
@@ -81,6 +86,11 @@ CREATE POLICY "anon_insert_leads" ON public.leads
 -- leads: adım 2 güncellemesi (RPC — bkz. dosya başındaki açıklama)
 -- =========================================================================
 
+-- phone artık UNIQUE değil (bkz. aşağıdaki "tekrar başvuruya izin ver"
+-- bölümü), bu yüzden WHERE phone = p_phone aynı numarayla birden fazla
+-- satıra çarpabilir. Bu fonksiyon bu telefon için en son eklenmiş ve henüz
+-- adım 2'si tamamlanmamış (step = 1) satırı hedefler — normal akışta bu her
+-- zaman az önce saveLeadStep1() ile eklenen satırdır.
 CREATE OR REPLACE FUNCTION public.update_lead_step2(
   p_phone TEXT,
   p_student_full_name TEXT,
@@ -91,12 +101,24 @@ CREATE OR REPLACE FUNCTION public.update_lead_step2(
   p_website TEXT
 )
 RETURNS void AS $$
+DECLARE
+  target_id UUID;
 BEGIN
   IF p_student_full_name IS NULL OR length(trim(p_student_full_name)) = 0 THEN
     RAISE EXCEPTION 'Öğrenci ad soyad zorunludur.';
   END IF;
   IF p_website IS NOT NULL AND p_website <> '' THEN
     RAISE EXCEPTION 'Geçersiz istek.';
+  END IF;
+
+  SELECT id INTO target_id
+  FROM public.leads
+  WHERE phone = p_phone AND step = 1
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF target_id IS NULL THEN
+    RETURN;
   END IF;
 
   UPDATE public.leads
@@ -109,13 +131,59 @@ BEGIN
     website = p_website,
     step = 2,
     updated_at = now()
-  WHERE phone = p_phone;
+  WHERE id = target_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Bu fonksiyon bilerek herkese açık bir RPC endpoint'i (rate-limit
 -- trigger'ının aksine) — anon'un EXECUTE alması amaçlanan tasarım.
 GRANT EXECUTE ON FUNCTION public.update_lead_step2(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT) TO anon;
+
+-- =========================================================================
+-- leads: aynı telefonla tekrar başvuruya izin ver, ama işaretle
+-- =========================================================================
+-- Eskiden phone UNIQUE'ti ve ikinci başvuru ham bir Postgres hatasıyla
+-- (duplicate key value violates unique constraint) reddediliyordu — bu hata
+-- doğrudan kullanıcıya sızıyordu. Artık tekrar başvurulara izin veriliyor;
+-- bunun yerine satır is_repeat_submission=true ve first_seen_lead_id ile
+-- işaretleniyor, böylece ekip aynı numarayla gelen tüm başvuruları görebilir.
+
+ALTER TABLE public.leads DROP CONSTRAINT IF EXISTS leads_phone_key;
+
+ALTER TABLE public.leads
+  ADD COLUMN IF NOT EXISTS is_repeat_submission BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS first_seen_lead_id UUID REFERENCES public.leads(id) ON DELETE SET NULL;
+
+-- BEFORE INSERT, SECURITY DEFINER: anon'un leads üzerinde hiç SELECT'i
+-- olmasa da bu numarayla daha önce kayıt var mı diye bakabilmek için.
+CREATE OR REPLACE FUNCTION public.mark_leads_repeat_submission()
+RETURNS trigger AS $$
+DECLARE
+  earliest_id UUID;
+BEGIN
+  SELECT id INTO earliest_id
+  FROM public.leads
+  WHERE phone = NEW.phone
+  ORDER BY created_at ASC
+  LIMIT 1;
+
+  IF earliest_id IS NOT NULL THEN
+    NEW.is_repeat_submission := true;
+    NEW.first_seen_lead_id := earliest_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS leads_mark_repeat_trigger ON public.leads;
+CREATE TRIGGER leads_mark_repeat_trigger
+  BEFORE INSERT ON public.leads
+  FOR EACH ROW EXECUTE FUNCTION public.mark_leads_repeat_submission();
+
+-- Sadece trigger olarak çalışması amaçlanmış (NEW'e referans veriyor) —
+-- doğrudan RPC olarak asla çağrılmamalı.
+REVOKE EXECUTE ON FUNCTION public.mark_leads_repeat_submission() FROM PUBLIC, anon, authenticated;
 
 -- =========================================================================
 -- testimonials: sadece yayınlanmış (is_published = true) satırları okuma

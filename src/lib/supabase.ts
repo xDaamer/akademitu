@@ -20,7 +20,7 @@
  *   created_at TIMESTAMPTZ DEFAULT NOW(),
  *   updated_at TIMESTAMPTZ DEFAULT NOW(),
  *   full_name TEXT,
- *   phone TEXT UNIQUE,
+ *   phone TEXT, -- not UNIQUE: repeat submissions are allowed, see below
  *   exam_type TEXT,
  *   student_full_name TEXT,
  *   parent_full_name TEXT,
@@ -28,7 +28,9 @@
  *   grade_class TEXT,
  *   selected_subjects TEXT[],
  *   step INT DEFAULT 1,
- *   website TEXT -- honeypot column, see supabase-anon-lead-insert.sql
+ *   website TEXT, -- honeypot column, see supabase-anon-lead-insert.sql
+ *   is_repeat_submission BOOLEAN DEFAULT false, -- set by a DB trigger, never by the client
+ *   first_seen_lead_id UUID -- ditto; points at this phone's earliest lead row
  * );
  *
  * The `testimonials` table is read the same way, straight from the browser
@@ -36,6 +38,17 @@
  * `is_published = true` rows only.
  */
 import { supabase } from './supabaseClient';
+
+// Never show a raw Postgres/PostgREST error straight to the user (leaks
+// schema/constraint names, is usually in English). The one exception is the
+// rate-limit trigger's RAISE EXCEPTION (code P0001): that message is our own
+// Turkish, user-safe text, written specifically to be shown as-is.
+function friendlyErrorMessage(error: { code?: string; message?: string } | null | undefined): string {
+  if (error?.code === 'P0001' && error.message) {
+    return error.message;
+  }
+  return 'Form gönderilirken bir sorun oluştu. Lütfen tekrar deneyin ya da bizi WhatsApp üzerinden arayın.';
+}
 
 // Helper to save backup to LocalStorage so no user data is ever lost
 function saveLocalLead(payload: any): string {
@@ -85,7 +98,9 @@ export async function saveLeadStep1(data: {
     // to return the inserted row (Postgres's RETURNING-under-RLS rule), and
     // anon intentionally has none — it can never read leads back, only add/
     // update them. We don't need the real id anyway: updateLeadStep2 below
-    // keys off `phone` (UNIQUE), so the local fallback id is enough.
+    // keys off `phone` (no longer UNIQUE — a DB trigger now targets the
+    // right pending row instead, see supabase-anon-lead-insert.sql), so the
+    // local fallback id is enough.
     const { error } = await supabase.from('leads').insert({
       full_name: data.fullName,
       phone: data.phone,
@@ -96,7 +111,7 @@ export async function saveLeadStep1(data: {
 
     if (error) {
       console.error('[Supabase] Lead Step 1 insert failed:', error.message, error);
-      return { success: false, error: error.message || 'Form gönderilemedi. Lütfen tekrar deneyin.' };
+      return { success: false, error: friendlyErrorMessage(error) };
     }
 
     return { success: true, id: localId };
@@ -160,7 +175,7 @@ export async function updateLeadStep2(data: {
 
     if (error) {
       console.error('[Supabase] Lead Step 2 update failed:', error.message, error);
-      return { success: false, error: error.message || 'Form gönderilemedi. Lütfen tekrar deneyin.' };
+      return { success: false, error: friendlyErrorMessage(error) };
     }
 
     return { success: true };
