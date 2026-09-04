@@ -350,31 +350,78 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({
    * Tam sayıya yuvarlamak alt-piksel kaymasını ve buna bağlı bulanıklığı
    * da engeller.
    */
+  /*
+   * ÖLÇÜMÜN ANİMASYONA SIZMASINI ENGELLEMEK
+   *
+   * groupHeight aşağıda hem --ticker-shift (keyframe'in bitiş değeri) hem de
+   * --ticker-duration'a besleniyor. İkisi de ÇALIŞAN bir animasyonun girdisi:
+   * 1px'lik bir değişim, tarayıcının mevcut konumu anında yeniden interpole
+   * etmesine ve geçen süre/süre oranını yeniden eşlemesine yol açar — şerit
+   * gözle görülür biçimde ileri geri sıçrar.
+   *
+   * Sıçramayı tetikleyen şey pop-up'ın <body>'ye uyguladığı kaydırma kilidiydi:
+   * position:fixed tüm dokümanı yeniden layout eder, kartlar aspect-ratio ile
+   * boyutlandığı için genişlikteki her oynama yüksekliğe dönüşür ve buradaki
+   * ResizeObserver tetiklenir. Kilit açılışta bir kez, kapanışta bir kez daha
+   * kurulup söküldüğü için sıçrama iki yönlü oluyordu.
+   *
+   * İki savunma: (1) geçici dalgalanmayı tek ölçüme indiren debounce — kilit
+   * kurma ve sökme birbirini götürdüğü için sonuç genelde HİÇ değişmemiş bir
+   * değer olur, dolayısıyla animasyona hiçbir şey ulaşmaz, (2) alt-piksel
+   * gürültüsünü eleyen eşik.
+   *
+   * Track'i yeniden key'leyip animasyonu temiz başlatmak da düşünüldü ve
+   * bilinçli olarak yapılmadı: groupRef track'in İÇİNDE, yani remount
+   * ResizeObserver'ı kopmuş bir düğüme bağlı bırakırdı; ayrıca tüm görseller
+   * remount olup göz kırpardı. Geriye kalan tek senaryo olan cihaz döndürme
+   * zaten sayfanın tamamını yeniden akıtıyor, orada bir sıçrama görünmüyor.
+   */
+  const EPSILON_PX = 2;
+
   useLayoutEffect(() => {
     const group = groupRef.current;
     const viewport = viewportRef.current;
     if (!group || !viewport) return;
 
-    const measure = () => {
+    const applyMeasurement = () => {
       const nextGroup = Math.round(group.getBoundingClientRect().height);
       const nextViewport = Math.round(
         viewport.getBoundingClientRect().height
       );
 
-      setGroupHeight((prev) => (prev === nextGroup ? prev : nextGroup));
+      setGroupHeight((prev) =>
+        Math.abs(prev - nextGroup) <= EPSILON_PX ? prev : nextGroup
+      );
       setViewportHeight((prev) =>
-        prev === nextViewport ? prev : nextViewport
+        Math.abs(prev - nextViewport) <= EPSILON_PX ? prev : nextViewport
       );
     };
 
-    measure();
+    // İlk ölçüm anında: şerit ancak ölçüldükten sonra çalışmaya başlıyor.
+    applyMeasurement();
 
-    const observer = new ResizeObserver(measure);
+    let frame = 0;
+    let timer = 0;
+
+    const scheduleMeasurement = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        window.cancelAnimationFrame(frame);
+        frame = window.requestAnimationFrame(applyMeasurement);
+      }, 150);
+    };
+
+    const observer = new ResizeObserver(scheduleMeasurement);
     observer.observe(group);
     observer.observe(viewport);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
+    };
   }, [items]);
+
 
   useEffect(() => {
     if (groupHeight > 0) onMeasure?.(groupHeight);
@@ -387,9 +434,19 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({
    * (copies - 1) grubun görüntü alanını doldurması gerekir. Az görselli
    * bir config'de 2 kopya yetmez ve döngüde boşluk görünür.
    */
+  /*
+   * Histerezis: kopya sayısı yalnızca ARTAR. copies değişmek, animasyonlu
+   * track'in DOM çocuklarını değiştirmek demek; bu da grubun yüksekliğini
+   * değiştirip yukarıdaki ResizeObserver'ı yeniden tetikliyor — kendi kendini
+   * besleyen bir döngü. Geçici bir yükseklik düşüşünün o döngüyü başlatmasını
+   * engelliyoruz; fazladan bir kopya yalnızca ekran dışında durur, zararsızdır.
+   */
+  const maxCopies = useRef(2);
   const copies = useMemo(() => {
-    if (groupHeight <= 0 || viewportHeight <= 0) return 2;
-    return Math.max(2, Math.ceil(viewportHeight / groupHeight) + 1);
+    if (groupHeight <= 0 || viewportHeight <= 0) return maxCopies.current;
+    const needed = Math.max(2, Math.ceil(viewportHeight / groupHeight) + 1);
+    maxCopies.current = Math.max(maxCopies.current, needed);
+    return maxCopies.current;
   }, [groupHeight, viewportHeight]);
 
   const durationSeconds =

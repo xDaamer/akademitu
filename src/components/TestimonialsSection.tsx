@@ -64,10 +64,26 @@ export function TestimonialsSection() {
         return;
       }
 
-      cycleWidth = Math.abs(
+      const next = Math.abs(
         cards[cardsPerSet].getBoundingClientRect().left -
           cards[0].getBoundingClientRect().left
       );
+
+      // Alt-piksel gürültüsü turu yeniden ölçeklendirmeye değmez.
+      if (Math.abs(next - cycleWidth) <= 2) return;
+
+      /*
+       * offsetRef tur genişliğine GÖRE bir konum: aşağıdaki döngü onu
+       * `% cycleWidth` ile sarıyor. Yeni genişliği ölçekleme yapmadan yazmak
+       * şeridi anında başka bir noktaya ışınlıyordu (pop-up <body>'yi
+       * position:fixed yapıp geri aldığında bu iki kez tetikleniyor). Oranı
+       * koruyarak yazınca kart aynı yerinde kalır.
+       */
+      if (cycleWidth > 0 && next > 0) {
+        offsetRef.current = (offsetRef.current / cycleWidth) * next;
+      }
+
+      cycleWidth = next;
     };
 
     measureCycle();

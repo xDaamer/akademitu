@@ -74,27 +74,49 @@ export default function App() {
   useEffect(() => {
     if (!isHome) return;
 
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
+    /*
+     * Bu handler her scroll olayında dört kez getBoundingClientRect() çağırıp
+     * setState ediyordu: tick başına zorunlu senkron layout, throttle yok. Aynı
+     * handler 280px'te pop-up'ı da açtığı için pop-up tam bir scroll fırtınasının
+     * ortasında doğuyor ve açılış animasyonu ilk karelerinde takılıyordu.
+     *
+     * rAF ile kareye bir kez indiriliyor; ölçümler karenin içinde kaldığı için
+     * scroll başına en fazla bir layout oluyor. Bölüm elemanları da her tick'te
+     * yeniden sorgulanmıyor.
+     */
+    const sectionIds = ['ana-sayfa', 'paketler', 'neden-biz', 'sss'];
+    let sections: (HTMLElement | null)[] | null = null;
+    let ticking = false;
 
-      // Auto trigger scroll form after scrolling 280px down
-      if (scrollPosition > 280 && !hasScrolledTriggered) {
+    const update = () => {
+      ticking = false;
+
+      if (window.scrollY > 280 && !hasScrolledTriggered) {
         setFormMode('scroll');
         setHasScrolledTriggered(true);
       }
 
-      // Track active section for header menu items
-      const sections = ['ana-sayfa', 'paketler', 'neden-biz', 'sss'];
-      for (const sectionId of sections) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= 200 && rect.bottom >= 100) {
-            setActiveSection(sectionId);
-            break;
-          }
+      // İlk tick'te bir kez çözülür; bölümler sayfa ömrü boyunca sabit.
+      if (!sections) {
+        sections = sectionIds.map((id) => document.getElementById(id));
+      }
+
+      for (let i = 0; i < sections.length; i += 1) {
+        const element = sections[i];
+        if (!element) continue;
+
+        const rect = element.getBoundingClientRect();
+        if (rect.top <= 200 && rect.bottom >= 100) {
+          setActiveSection(sectionIds[i]);
+          break;
         }
       }
+    };
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

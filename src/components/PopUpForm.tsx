@@ -184,20 +184,37 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
   onSubmitSuccess,
   onEscalateToModal,
 }) => {
-  // Screen size detection for responsive pop-up drawer behavior
+  /*
+   * KIP TESPİTİ — matchMedia, resize DEĞİL
+   *
+   * Burada `resize` dinleyip `window.innerWidth < 768` okunuyordu. Mobilde URL
+   * çubuğunun her açılıp kapanışı bir `resize` üretir; her olayda hem zorunlu bir
+   * layout okuması hem de bir setState oluyordu. Daha kötüsü: aşağıdaki kaydırma
+   * kilidinin bağımlılıkları [isOpen, isMobile] olduğu için, kilit pop-up AÇIKKEN
+   * sökülüp yeniden kuruluyordu — yani sayfa ortasında fazladan bir window.scrollTo
+   * ve iki tam doküman relayout'u. O relayout'lar hero'daki hoca şeridinin çalışan
+   * animasyonunu sıçratıyordu.
+   *
+   * matchMedia yalnızca eşik GERÇEKTEN geçildiğinde tetiklenir.
+   */
+  const MOBILE_QUERY = '(max-width: 767px)';
+
   const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 768;
-    }
-    return false;
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(MOBILE_QUERY).matches;
   });
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    // İlk render ile bu effect arasında eşik değişmiş olabilir.
+    setIsMobile(mq.matches);
+
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
   }, []);
 
   /*
@@ -227,11 +244,26 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       overflow: style.overflow,
     };
 
+    /*
+     * Genişlik `100%` DEĞİL, kilitlenmeden önceki gerçek piksel değeri.
+     *
+     * `overflow: hidden` klasik (overlay olmayan) kaydırma çubuğunu kaldırır ve
+     * `position: fixed` gövdenin sarma bloğunu görüntü alanına çevirir; `100%`
+     * ikisinin ardından farklı bir sayıya çözülüyordu. Ölçülen fark 16px:
+     * hero ızgarası daralıyor, hoca kartları aspect-ratio ile boyutlandığı için
+     * bu daralma yüksekliğe dönüşüyor ve TeacherTicker'ın ÇALIŞAN animasyonunun
+     * --ticker-shift/--ticker-duration girdileri ortasından değişiyordu. Şerit
+     * bu yüzden pop-up açılırken bir yöne, kapanırken diğer yöne sıçrıyordu.
+     *
+     * Genişliği piksel olarak sabitlemek bu yeniden akıtmayı tamamen kaldırır.
+     */
+    const lockedWidth = document.body.getBoundingClientRect().width;
+
     style.position = 'fixed';
     style.top = `-${scrollY}px`;
     style.left = '0';
-    style.right = '0';
-    style.width = '100%';
+    style.right = 'auto';
+    style.width = `${lockedWidth}px`;
     style.overflow = 'hidden';
 
     return () => {
@@ -241,7 +273,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       style.right = previous.right;
       style.width = previous.width;
       style.overflow = previous.overflow;
-      window.scrollTo(0, scrollY);
+      /*
+       * index.html'de <html class="scroll-smooth"> var; düz scrollTo(0, y) bu
+       * yüzden ANİMASYONLU bir smooth scroll olarak koşuyor ve çıkış animasyonunun
+       * tam üstüne ~400ms'lik kesintisiz relayout akışı bindiriyordu. Kilit geri
+       * alınırken sayfa zaten olması gereken yerde; buraya animasyon gerekmiyor.
+       */
+      window.scrollTo({ top: scrollY, behavior: 'instant' as ScrollBehavior });
     };
   }, [isOpen, isMobile]);
 
@@ -444,7 +482,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
         fragment'a sarmak çıkış animasyonlarının hiç çalışmamasına yol açıyor
         (aynı tuzağa Header'daki mobil menüde de düşülmüştü).
       */}
-      <AnimatePresence>
+      {/*
+        mode="wait": mobil sheet'ten modal'a devir teslimde (mode-scroll -> mode-button)
+        key değiştiği için iki dal aynı anda render oluyordu; telefonda anlık olarak
+        üst üste binen iki tam ekran perde demekti. Sheet çıkışını bitirmeden modal
+        girmiyor. Devir teslim yavaş hissettirirse geri alınacak tek şey budur.
+      */}
+      <AnimatePresence mode="wait">
             {/* MODE 1: KAYDIRINCA ÇIKAN FORM (MOBİLDE ALTTAN AÇILAN KISA İLK ADIM, MASAÜSTÜNDE SAĞ ÇEKMECE) */}
             {isOpen && mode === 'scroll' && (
               <div key="mode-scroll" className={`fixed inset-0 z-50 overflow-hidden flex ${isMobile ? 'flex-col justify-end' : 'justify-end'}`}>
@@ -742,15 +786,22 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={onClose}
-                  className="fixed inset-0 bg-[#191F61]/90 backdrop-blur-xl z-0"
+                  /* Perde %95 opak: arkasındaki backdrop-blur zaten görünmüyordu ama
+                     her karede tüm viewport'u rasterize edip blur'dan geçirmeyi
+                     zorunlu kılıyordu. Blur kalktı, opaklık farkı kapatıyor. */
+                  className="fixed inset-0 bg-[#191F61]/95 z-0"
                 />
 
                 <motion.div
                   initial={{ scale: 0.92, opacity: 0, y: 10 }}
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.92, opacity: 0, y: 10 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                  className="relative z-10 w-full max-w-xl bg-white/95 rounded-3xl shadow-2xl border border-white/50 p-6 sm:p-8 backdrop-blur-2xl my-auto text-slate-900 max-h-[90vh] overflow-y-auto"
+                  transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+                  /* Panel tam opak: %95 beyazın arkasındaki 40px blur görünmüyor,
+                     üstelik perdenin blur'unun İÇİNDE ikinci bir tam ekran geçişti.
+                     shadow-2xl -> shadow-xl: gölge scale animasyonu boyunca her
+                     karede yeniden rasterize oluyor. */
+                  className="relative z-10 w-full max-w-xl bg-white rounded-3xl shadow-xl border border-white/50 p-6 sm:p-8 my-auto text-slate-900 max-h-[90vh] overflow-y-auto"
                 >
                   {/* HEADER */}
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">

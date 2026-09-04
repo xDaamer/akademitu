@@ -80,7 +80,9 @@ export const MobileLeadSheet: React.FC<MobileLeadSheetProps> = ({
       initial={{ y: '100%' }}
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
-      transition={{ type: 'spring', damping: 30, stiffness: 260 }}
+      /* Spring her karede fizik simülasyonu koşturur. Süreli tween aynı hissi
+         çok daha ucuza verir; drag davranışı bundan etkilenmez. */
+      transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
       drag="y"
       dragDirectionLock
       dragConstraints={{ top: 0, bottom: 0 }}
