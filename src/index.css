@@ -12,37 +12,155 @@
   --color-mint: #B6D6CC;
 }
 
-/* Infinite vertical scroll for teachers */
-@keyframes scrollVerticalDown {
-  0% {
-    transform: translateY(-50%);
-  }
-  100% {
-    transform: translateY(0%);
+/* =========================================================================
+   HOCA GÖRSEL ŞERİDİ (TeacherTicker)
+   -------------------------------------------------------------------------
+   Kaydırma mesafesi (--ticker-shift) ve süre (--ticker-duration) JS'te
+   ÖLÇÜLEN grup yüksekliğinden gelir. Yüzde değil piksel kullanılır, çünkü:
+     1) Her sütun kendi yüksekliğini ortak bir px/sn hızıyla kat eder;
+        sütunlardaki görsel sayısı farklı olsa da hızlar eşitlenir.
+     2) Bir grup tam olarak bir grup boyu kaydığı için dikişte sıçrama olmaz.
+   Kartların arasındaki boşluk kartın KENDİ margin-bottom'ıdır; böylece grup
+   yüksekliği kendi arka boşluğunu da içerir ve dikişteki aralık, gruplar
+   arasındaki aralıkla birebir aynı kalır.
+   ========================================================================= */
+.teacher-ticker {
+  --ticker-gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .teacher-ticker {
+    --ticker-gap: 16px;
   }
 }
 
-@keyframes scrollVerticalUp {
-  0% {
-    transform: translateY(0%);
+@keyframes teacherScrollDown {
+  from {
+    transform: translate3d(0, 0, 0);
   }
-  100% {
-    transform: translateY(-50%);
+  to {
+    transform: translate3d(0, var(--ticker-shift, 0px), 0);
   }
 }
 
-.animate-teacher-scroll {
-  animation-name: scrollVerticalUp;
+@keyframes teacherScrollUp {
+  from {
+    transform: translate3d(0, var(--ticker-shift, 0px), 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Üst ve alt kenarı arka plandan bağımsız olarak sönümler.
+   Sabit renkli gradient katmanların aksine hero'nun diyagonal
+   gradyanı üzerinde de temiz çalışır. */
+.teacher-scroll-viewport {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 14%,
+    #000 86%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 14%,
+    #000 86%,
+    transparent 100%
+  );
+}
+
+.teacher-scroll-track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Animasyon yalnızca ölçüm tamamlandıktan sonra başlar (data-running),
+   böylece açılışta yarım ölçümle bir sıçrama yaşanmaz. */
+.teacher-scroll-track[data-running='true'] {
+  animation-duration: var(--ticker-duration, 20s);
+  animation-delay: var(--ticker-delay, 0s);
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-  will-change: transform;
+  animation-fill-mode: both;
 }
 
-.animate-teacher-scroll-down {
-  animation-name: scrollVerticalDown;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  will-change: transform;
+.teacher-scroll-track--down[data-running='true'] {
+  animation-name: teacherScrollDown;
+}
+
+.teacher-scroll-track--up[data-running='true'] {
+  animation-name: teacherScrollUp;
+}
+
+.teacher-scroll-group {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Kart: cam panel değil, fotoğrafın kendisi.
+   Gölge griye değil laciverte çalar — navy zemin üzerinde gri kirli durur. */
+.teacher-card {
+  margin-bottom: var(--ticker-gap);
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 10px 30px -12px rgb(16 20 66 / 0.65);
+  transition:
+    transform 300ms ease-out,
+    border-color 300ms ease-out,
+    box-shadow 300ms ease-out;
+}
+
+.teacher-card img {
+  display: block;
+  transition:
+    transform 300ms ease-out,
+    filter 300ms ease-out;
+}
+
+/* Şeffaf logo PNG'sinin arkasına ince bir plaka; fotoğraflarda yok. */
+.teacher-card--plate {
+  background: rgb(255 255 255 / 0.08);
+}
+
+/* Büyüyen kartın kendisi değil, kartın İÇİNDEKİ fotoğraf. Kart yerinde
+   kaldığı için sütunun overflow'una taşıp kırpılmaz ve komşu kartları
+   itmez; yakınlaşma yuvarlatılmış çerçevenin içinde kalır.
+   Dokunmatik cihazlarda hover kilitlenmesin diye (hover: hover) ile sınırlı. */
+@media (hover: hover) {
+  .teacher-card:hover {
+    border-color: rgb(182 214 204 / 0.45);
+    box-shadow: 0 14px 34px -12px rgb(16 20 66 / 0.75);
+  }
+
+  .teacher-card:hover img {
+    transform: scale(1.04);
+    filter: brightness(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-scroll-track {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .teacher-card,
+  .teacher-card img {
+    transition: none !important;
+  }
+
+  /* Hover yakınlaşması da hareket sayılır; yalnızca kenar rengi kalsın. */
+  .teacher-card:hover img {
+    transform: none !important;
+  }
 }
 
 /* Custom subtle scrollbar */

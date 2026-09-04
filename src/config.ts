@@ -5,13 +5,18 @@ import { Teacher } from './types';
 // =========================================================================
 
 /**
- * HOCALAR GÖRSEL AKIŞ HIZI (Saniye Cinsinden)
+ * HOCALAR GÖRSEL AKIŞ HIZI (Saniyede Kaç Piksel)
  * -------------------------------------------------------------------------
- * Bu değeri küçültürseniz görseller daha hızlı akar (örn: 10 veya 12).
- * Bu değeri büyütürseniz görseller daha yavaş akar (örn: 25 veya 30).
- * Kaynak koddan burayı değiştirerek dilediğiniz akış hızını ayarlayabilirsiniz.
+ * Hız saniye cinsinden bir "tur süresi" değil, saniyede kat edilen piksel
+ * olarak tanımlıdır. Sebebi: sol ve sağ sütunlarda farklı sayıda görsel
+ * olabilir. Sabit tur süresi verilirse çok görselli sütun daha hızlı akar
+ * (eski davranış buydu). Ortak px/sn ile iki sütun her zaman aynı hızda akar.
+ *
+ * Büyütürseniz akış hızlanır, küçültürseniz yavaşlar.
+ * Bu yalnızca varsayılandır; `public/teachers/config.json` içindeki
+ * `pixelsPerSecond` alanı yayına almadan hız değiştirmenizi sağlar.
  */
-export const TEACHER_SCROLL_SPEED_SECONDS = 18;
+export const TEACHER_TICKER_PIXELS_PER_SECOND = 70;
 
 /**
  * ÖZEL DERS & KOÇLUK KAMPANYASI BİTİŞ TARİHİ
