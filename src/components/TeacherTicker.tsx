@@ -1,8 +1,28 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Image as ImageIcon } from 'lucide-react';
+import { TEACHER_TICKER_PIXELS_PER_SECOND } from '../config';
+
+/** Yüklenemeyen görsellerin yerine geçen marka logosu (public/ kökünde). */
+const FALLBACK_IMAGE_URL = '/logo-white.png';
+
+/** Tek bir görsel bu süre içinde yüklenmezse akış onsuz başlar. */
+const IMAGE_PRELOAD_TIMEOUT_MS = 3000;
+
+/** Ölçülemeyen görseller için makul bir portre oranı (4:5). */
+const FALLBACK_ASPECT_RATIO = 0.8;
 
 export interface TeacherTickerConfig {
-  speedSeconds: number;
+  /** Saniyede kat edilen piksel. Verilirse hız kaynağı budur. */
+  pixelsPerSecond: number | null;
+  /** Eski şema: bir turun kaç saniye süreceği. Geriye dönük uyumluluk için okunur. */
+  speedSeconds: number | null;
   phaseOffsetSeconds: number;
   activeImagesLeft: string[];
   activeImagesRight: string[];
@@ -12,19 +32,46 @@ export interface TeacherImageItem {
   id: string;
   filename: string;
   imageUrl: string;
-  aspectRatio?: number;
+  aspectRatio: number;
+  naturalWidth?: number;
+  naturalHeight?: number;
 }
 
-export const TeacherTicker: React.FC = () => {
-  const [config, setConfig] = useState<TeacherTickerConfig>({
-    speedSeconds: 21.6,
-    phaseOffsetSeconds: 4,
-    activeImagesLeft: ['logo-white.png'],
-    activeImagesRight: ['logo-white.png'],
-  });
+type RawTeacherImage = Pick<
+  TeacherImageItem,
+  'id' | 'filename' | 'imageUrl'
+>;
 
+const EMPTY_CONFIG: TeacherTickerConfig = {
+  pixelsPerSecond: null,
+  speedSeconds: null,
+  phaseOffsetSeconds: 4,
+  activeImagesLeft: [],
+  activeImagesRight: [],
+};
+
+const readPositiveNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+
+const readFilenames = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter(
+        (entry): entry is string =>
+          typeof entry === 'string' &&
+          entry.trim() !== '' &&
+          entry !== '*'
+      )
+    : [];
+
+export const TeacherTicker: React.FC = () => {
+  const [config, setConfig] =
+    useState<TeacherTickerConfig>(EMPTY_CONFIG);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const [imagesList, setImagesList] = useState<TeacherImageItem[]>([]);
   const [imagesReady, setImagesReady] = useState(false);
+  const [leftGroupHeight, setLeftGroupHeight] = useState(0);
 
   // ============================================================
   // 1. CONFIG YÜKLE
@@ -36,9 +83,7 @@ export const TeacherTicker: React.FC = () => {
       try {
         const response = await fetch(
           '/teachers/config.json?v=' + Date.now(),
-          {
-            cache: 'no-store',
-          }
+          { cache: 'no-store' }
         );
 
         if (!response.ok) {
@@ -50,31 +95,20 @@ export const TeacherTicker: React.FC = () => {
         if (cancelled) return;
 
         setConfig({
-          speedSeconds:
-            typeof json.speedSeconds === 'number'
-              ? json.speedSeconds
-              : 18,
-
+          pixelsPerSecond: readPositiveNumber(json.pixelsPerSecond),
+          speedSeconds: readPositiveNumber(json.speedSeconds),
           phaseOffsetSeconds:
-            typeof json.phaseOffsetSeconds === 'number'
-              ? json.phaseOffsetSeconds
-              : 4,
-
-          activeImagesLeft:
-            Array.isArray(json.activeImagesLeft)
-              ? json.activeImagesLeft
-              : ['logo-white.png'],
-
-          activeImagesRight:
-            Array.isArray(json.activeImagesRight)
-              ? json.activeImagesRight
-              : ['logo-white.png'],
+            readPositiveNumber(json.phaseOffsetSeconds) ??
+            EMPTY_CONFIG.phaseOffsetSeconds,
+          activeImagesLeft: readFilenames(json.activeImagesLeft),
+          activeImagesRight: readFilenames(json.activeImagesRight),
         });
       } catch (err) {
-        console.warn(
-          'teachers/config.json okunamadı:',
-          err
-        );
+        console.warn('teachers/config.json okunamadı:', err);
+      } finally {
+        // Hata durumunda da işaretlenir: aksi halde boş-durum paneli
+        // hiç görünmez ve bileşen sonsuza kadar boş kalır.
+        if (!cancelled) setConfigLoaded(true);
       }
     }
 
@@ -88,41 +122,24 @@ export const TeacherTicker: React.FC = () => {
   // ============================================================
   // 2. CONFIG'TEN IMAGE LIST OLUŞTUR
   // ============================================================
-  const rawImageItems = useMemo(() => {
-    const leftItems: TeacherImageItem[] =
-      config.activeImagesLeft
-        .filter(
-          (filename) =>
-            filename &&
-            filename !== '*'
-        )
-        .map((filename, idx) => ({
-          id: `left-${idx}-${filename}`,
-          filename,
-          imageUrl: `/teachers/${filename}`,
-        }));
+  const rawImageItems = useMemo<RawTeacherImage[]>(() => {
+    const toItems = (filenames: string[], side: 'left' | 'right') =>
+      filenames.map((filename, idx) => ({
+        id: `${side}-${idx}-${filename}`,
+        filename,
+        imageUrl: `/teachers/${filename}`,
+      }));
 
-    const rightItems: TeacherImageItem[] =
-      config.activeImagesRight
-        .filter(
-          (filename) =>
-            filename &&
-            filename !== '*'
-        )
-        .map((filename, idx) => ({
-          id: `right-${idx}-${filename}`,
-          filename,
-          imageUrl: `/teachers/${filename}`,
-        }));
-
-    return [...leftItems, ...rightItems];
-  }, [
-    config.activeImagesLeft,
-    config.activeImagesRight,
-  ]);
+    return [
+      ...toItems(config.activeImagesLeft, 'left'),
+      ...toItems(config.activeImagesRight, 'right'),
+    ];
+  }, [config.activeImagesLeft, config.activeImagesRight]);
 
   // ============================================================
   // 3. TÜM GÖRSELLERİ ANİMASYON BAŞLAMADAN ÖNCE PRELOAD ET
+  //    Böylece ilk karede kart yükseklikleri kesindir ve akış
+  //    başladıktan sonra layout kaymaz.
   // ============================================================
   useEffect(() => {
     let cancelled = false;
@@ -135,51 +152,53 @@ export const TeacherTicker: React.FC = () => {
 
     setImagesReady(false);
 
-    async function preloadImages() {
-      const loadedItems =
-        await Promise.all(
-          rawImageItems.map(
-            (item) =>
-              new Promise<TeacherImageItem>(
-                (resolve) => {
-                  const img = new Image();
+    // Her görselin kendi zaman aşımı var: takılan tek bir dosya
+    // tüm hero'yu süresiz boş bırakamaz.
+    const loadOne = (item: RawTeacherImage) =>
+      new Promise<TeacherImageItem>((resolve) => {
+        const img = new Image();
+        let settled = false;
 
-                  img.onload = () => {
-                    const aspectRatio =
-                      img.naturalWidth &&
-                      img.naturalHeight
-                        ? img.naturalWidth /
-                          img.naturalHeight
-                        : 1;
+        const finish = (loaded: TeacherImageItem) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          img.onload = null;
+          img.onerror = null;
+          resolve(loaded);
+        };
 
-                    resolve({
-                      ...item,
-                      aspectRatio,
-                    });
-                  };
-
-                  img.onerror = () => {
-                    // Görsel yüklenemezse yine de
-                    // animasyon geometrisini bozma.
-                    resolve({
-                      ...item,
-                      aspectRatio: 1,
-                    });
-                  };
-
-                  img.src = item.imageUrl;
-                }
-              )
-          )
+        const timer = window.setTimeout(
+          () =>
+            finish({ ...item, aspectRatio: FALLBACK_ASPECT_RATIO }),
+          IMAGE_PRELOAD_TIMEOUT_MS
         );
 
-      if (cancelled) return;
+        img.onload = () => {
+          const { naturalWidth, naturalHeight } = img;
 
+          finish({
+            ...item,
+            aspectRatio:
+              naturalWidth && naturalHeight
+                ? naturalWidth / naturalHeight
+                : FALLBACK_ASPECT_RATIO,
+            naturalWidth,
+            naturalHeight,
+          });
+        };
+
+        img.onerror = () =>
+          finish({ ...item, aspectRatio: FALLBACK_ASPECT_RATIO });
+
+        img.src = item.imageUrl;
+      });
+
+    Promise.all(rawImageItems.map(loadOne)).then((loadedItems) => {
+      if (cancelled) return;
       setImagesList(loadedItems);
       setImagesReady(true);
-    }
-
-    preloadImages();
+    });
 
     return () => {
       cancelled = true;
@@ -187,9 +206,58 @@ export const TeacherTicker: React.FC = () => {
   }, [rawImageItems]);
 
   // ============================================================
+  // 4. SÜTUNLAR
+  // ============================================================
+  const { col1Items, col2Items } = useMemo(() => {
+    const left = imagesList.filter((item) => item.id.startsWith('left-'));
+    const right = imagesList.filter((item) => item.id.startsWith('right-'));
+
+    return {
+      col1Items: left.length > 0 ? left : imagesList,
+      col2Items: right.length > 0 ? right : imagesList,
+    };
+  }, [imagesList]);
+
+  // ============================================================
+  // 5. HIZ
+  //    Süre değil px/sn: sol sütunda 3, sağda 4 görsel olsa bile
+  //    ikisi de aynı hızda akar. (Eskiden ikisine de aynı saniye
+  //    verildiği için çok görselli sütun ~%33 hızlı akıyordu.)
+  // ============================================================
+  const handleLeftMeasure = useCallback((height: number) => {
+    setLeftGroupHeight(height);
+  }, []);
+
+  const pixelsPerSecond = useMemo(() => {
+    if (config.pixelsPerSecond) return config.pixelsPerSecond;
+
+    // Eski `speedSeconds` şeması: sol sütunun ölçülen boyu üzerinden
+    // px/sn'ye çevrilir, sonra iki sütuna da aynısı uygulanır.
+    if (config.speedSeconds && leftGroupHeight > 0) {
+      return leftGroupHeight / config.speedSeconds;
+    }
+
+    return TEACHER_TICKER_PIXELS_PER_SECOND;
+  }, [config.pixelsPerSecond, config.speedSeconds, leftGroupHeight]);
+
+  // `speedSeconds` yolunda hız ölçüme bağlı; ölçüm gelmeden başlatırsak
+  // varsayılan hızdan gerçek hıza görünür bir sıçrama olur.
+  const speedResolved =
+    Boolean(config.pixelsPerSecond) ||
+    !config.speedSeconds ||
+    leftGroupHeight > 0;
+
+  // ============================================================
+  // CONFIG VEYA GÖRSELLER HAZIR DEĞİL
+  // ============================================================
+  if (!configLoaded || !imagesReady) {
+    return <div className="relative h-full overflow-hidden" />;
+  }
+
+  // ============================================================
   // GÖRSEL YOK
   // ============================================================
-  if (imagesList.length === 0 && imagesReady) {
+  if (imagesList.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-300 space-y-3 bg-white/5 rounded-2xl border border-dashed border-white/20">
         <ImageIcon className="w-10 h-10 text-[#c5a059] animate-bounce" />
@@ -203,138 +271,38 @@ export const TeacherTicker: React.FC = () => {
           <code className="bg-black/40 px-1.5 py-0.5 rounded text-[#B6D6CC]">
             public/teachers/
           </code>{' '}
-          klasörüne görsellerinizi ekleyin.
+          klasörüne görsellerinizi ekleyin ve{' '}
+          <code className="bg-black/40 px-1.5 py-0.5 rounded text-[#B6D6CC]">
+            config.json
+          </code>{' '}
+          içinde listeleyin.
         </p>
       </div>
     );
   }
 
-  // ============================================================
-  // ANİMASYON BAŞLAMADAN ÖNCE BEKLE
-  // Böylece ilk açılışta layout değişmez.
-  // ============================================================
-  if (!imagesReady) {
-    return (
-      <div className="relative h-full overflow-hidden" />
-    );
-  }
-
-  const leftItems = imagesList.filter((item) =>
-    item.id.startsWith('left-')
-  );
-
-  const rightItems = imagesList.filter((item) =>
-    item.id.startsWith('right-')
-  );
-
-  const col1Items =
-    leftItems.length > 0
-      ? leftItems
-      : imagesList;
-
-  const col2Items =
-    rightItems.length > 0
-      ? rightItems
-      : imagesList;
-
   return (
-    <div className="relative h-full overflow-hidden">
-      <style>{`
-        /*
-         * SEAMLESS INFINITE LOOP
-         *
-         * Track içerisinde:
-         *
-         * [1 2 3 4] [1 2 3 4]
-         *
-         * İlk grup tamamen yukarı çıktığında
-         * ikinci grup birebir aynı pozisyondadır.
-         *
-         * Bu nedenle hiçbir jump oluşmaz.
-         */
-
-        @keyframes teacherScrollDown {
-          from {
-            transform: translate3d(0, 0, 0);
-          }
-
-          to {
-            transform: translate3d(0, -50%, 0);
-          }
-        }
-
-        @keyframes teacherScrollUp {
-          from {
-            transform: translate3d(0, -50%, 0);
-          }
-
-          to {
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        .teacher-scroll-track {
-          will-change: transform;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          transform: translate3d(0, 0, 0);
-        }
-
-        .teacher-scroll-group {
-          flex-shrink: 0;
-        }
-      `}</style>
-
-      {/* ÜST MASK */}
-      <div
-        className="
-          absolute
-          top-0
-          left-0
-          right-0
-          h-8
-          bg-gradient-to-b
-          from-[#12164a]
-          via-[#12164a]/60
-          to-transparent
-          z-20
-          pointer-events-none
-        "
-      />
-
-      {/* ALT MASK */}
-      <div
-        className="
-          absolute
-          bottom-0
-          left-0
-          right-0
-          h-8
-          bg-gradient-to-t
-          from-[#3540a3]
-          via-[#3540a3]/60
-          to-transparent
-          z-20
-          pointer-events-none
-        "
-      />
-
-      {/* İKİ SÜTUN */}
+    <div
+      className="teacher-ticker relative h-full overflow-hidden"
+      role="img"
+      aria-label="Derece hocalarımızdan kareler"
+    >
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
         <ScrollColumn
           items={col1Items}
-          speedSeconds={config.speedSeconds}
+          pixelsPerSecond={pixelsPerSecond}
           reverse={false}
           phaseOffsetSeconds={0}
+          enabled={speedResolved}
+          onMeasure={handleLeftMeasure}
         />
 
         <ScrollColumn
           items={col2Items}
-          speedSeconds={config.speedSeconds}
+          pixelsPerSecond={pixelsPerSecond}
           reverse={true}
-          phaseOffsetSeconds={
-            config.phaseOffsetSeconds
-          }
+          phaseOffsetSeconds={config.phaseOffsetSeconds}
+          enabled={speedResolved}
         />
       </div>
     </div>
@@ -347,116 +315,144 @@ export const TeacherTicker: React.FC = () => {
 
 interface ScrollColumnProps {
   items: TeacherImageItem[];
-  speedSeconds: number;
+  pixelsPerSecond: number;
   reverse?: boolean;
   phaseOffsetSeconds?: number;
+  enabled: boolean;
+  onMeasure?: (groupHeight: number) => void;
 }
 
-const ScrollColumn: React.FC<
-  ScrollColumnProps
-> = ({
+const ScrollColumn: React.FC<ScrollColumnProps> = ({
   items,
-  speedSeconds,
+  pixelsPerSecond,
   reverse = false,
   phaseOffsetSeconds = 0,
+  enabled,
+  onMeasure,
 }) => {
-  if (items.length === 0) return null;
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  const [groupHeight, setGroupHeight] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   /*
-   * EN ÖNEMLİ KISIM:
+   * ÖLÇÜM
    *
-   * Artık 3 kere değil, TAM OLARAK 2 kere
-   * aynı listeyi render ediyoruz.
+   * Kaydırma mesafesi yüzdeden değil, ilk grubun gerçek yüksekliğinden
+   * gelir. Her kart kendi alt boşluğunu (margin-bottom) taşıdığı için
+   * grup yüksekliği o boşluğu da içerir; dolayısıyla bir grup boyu
+   * kayınca dikişteki aralık, gruplar içindeki aralıkla birebir aynı olur.
    *
-   * [1 2 3 4]
-   * [1 2 3 4]
+   *   ÖNCE   [foto 14 foto 14 foto] 0 [foto 14 foto 14 foto]  ← dikişte sıkışma
+   *   SONRA  [foto 14 foto 14 foto 14][foto 14 foto 14 foto 14]
    *
-   * Track yüksekliği = 2 × group yüksekliği
-   *
-   * translateY(-50%) =
-   * tam olarak bir grubun yüksekliği.
-   *
-   * Böylece:
-   *
-   * 1 → 2 → 3 → 4 → 1 → 2 → 3 → 4
-   *
-   * kesintisiz akar.
+   * Tam sayıya yuvarlamak alt-piksel kaymasını ve buna bağlı bulanıklığı
+   * da engeller.
    */
+  useLayoutEffect(() => {
+    const group = groupRef.current;
+    const viewport = viewportRef.current;
+    if (!group || !viewport) return;
 
-  const duplicatedItems = [
-    ...items,
-    ...items,
-  ];
+    const measure = () => {
+      const nextGroup = Math.round(group.getBoundingClientRect().height);
+      const nextViewport = Math.round(
+        viewport.getBoundingClientRect().height
+      );
 
-  const animationName = reverse
-    ? 'teacherScrollUp'
-    : 'teacherScrollDown';
+      setGroupHeight((prev) => (prev === nextGroup ? prev : nextGroup));
+      setViewportHeight((prev) =>
+        prev === nextViewport ? prev : nextViewport
+      );
+    };
 
-  const animationDelay =
-    phaseOffsetSeconds > 0
-      ? `-${phaseOffsetSeconds}s`
-      : '0s';
+    measure();
 
-  const animationStyle: React.CSSProperties = {
-    animationName,
-    animationDuration: `${speedSeconds}s`,
-    animationTimingFunction: 'linear',
-    animationIterationCount: 'infinite',
-    animationDelay,
-    animationFillMode: 'both',
-  };
+    const observer = new ResizeObserver(measure);
+    observer.observe(group);
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [items]);
+
+  useEffect(() => {
+    if (groupHeight > 0) onMeasure?.(groupHeight);
+  }, [groupHeight, onMeasure]);
+
+  /*
+   * KOPYA SAYISI
+   *
+   * Bir grup boyu kaydığımız için, kayma sonundaki karede geriye kalan
+   * (copies - 1) grubun görüntü alanını doldurması gerekir. Az görselli
+   * bir config'de 2 kopya yetmez ve döngüde boşluk görünür.
+   */
+  const copies = useMemo(() => {
+    if (groupHeight <= 0 || viewportHeight <= 0) return 2;
+    return Math.max(2, Math.ceil(viewportHeight / groupHeight) + 1);
+  }, [groupHeight, viewportHeight]);
+
+  const durationSeconds =
+    groupHeight > 0 && pixelsPerSecond > 0
+      ? groupHeight / pixelsPerSecond
+      : 0;
+
+  const isRunning = enabled && durationSeconds > 0;
+
+  const trackStyle = {
+    '--ticker-shift': `${-groupHeight}px`,
+    '--ticker-duration': `${durationSeconds}s`,
+    '--ticker-delay':
+      phaseOffsetSeconds > 0 ? `-${phaseOffsetSeconds}s` : '0s',
+  } as React.CSSProperties;
 
   return (
-    <div className="overflow-hidden h-full relative">
+    <div
+      ref={viewportRef}
+      className="teacher-scroll-viewport relative h-full overflow-hidden"
+    >
       <div
-        className="teacher-scroll-track"
-        style={animationStyle}
+        className={`teacher-scroll-track ${
+          reverse
+            ? 'teacher-scroll-track--up'
+            : 'teacher-scroll-track--down'
+        }`}
+        style={trackStyle}
+        data-running={isRunning ? 'true' : 'false'}
       >
-        {/* ==================================================
-            İLK TAM GRUP
-            ================================================== */}
-        <div className="teacher-scroll-group space-y-3.5">
-          {items.map((item, index) => (
-            <PureImageCard
-              key={`group-a-${item.id}-${index}`}
-              item={item}
-            />
-          ))}
-        </div>
-
-        {/* ==================================================
-            İKİNCİ TAM GRUP
-            İLK GRUBUN BİREBİR KOPYASI
-            ================================================== */}
-        <div className="teacher-scroll-group space-y-3.5">
-          {items.map((item, index) => (
-            <PureImageCard
-              key={`group-b-${item.id}-${index}`}
-              item={item}
-            />
-          ))}
-        </div>
+        {Array.from({ length: copies }, (_, copyIndex) => (
+          <div
+            key={`copy-${copyIndex}`}
+            ref={copyIndex === 0 ? groupRef : undefined}
+            className="teacher-scroll-group"
+            aria-hidden={copyIndex > 0 ? true : undefined}
+          >
+            {items.map((item) => (
+              <TeacherPhoto
+                key={`${copyIndex}-${item.id}`}
+                item={item}
+                priority={copyIndex === 0}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
 // ============================================================
-// PURE IMAGE CARD
+// TEACHER PHOTO
 // ============================================================
 
-interface PureImageCardProps {
+interface TeacherPhotoProps {
   item: TeacherImageItem;
+  priority: boolean;
 }
 
-const PureImageCard: React.FC<
-  PureImageCardProps
-> = ({ item }) => {
-  const [imgSrc, setImgSrc] =
-    useState(item.imageUrl);
-
-  const [hasError, setHasError] =
-    useState(false);
+const TeacherPhoto: React.FC<TeacherPhotoProps> = ({ item, priority }) => {
+  const [imgSrc, setImgSrc] = useState(item.imageUrl);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setImgSrc(item.imageUrl);
@@ -464,59 +460,42 @@ const PureImageCard: React.FC<
   }, [item.imageUrl]);
 
   const handleError = () => {
-    if (
-      imgSrc !==
-      '/teachers/logo-white.png'
-    ) {
-      setImgSrc(
-        '/teachers/logo-white.png'
-      );
+    if (imgSrc !== FALLBACK_IMAGE_URL) {
+      setImgSrc(FALLBACK_IMAGE_URL);
       return;
     }
 
     setHasError(true);
   };
 
+  // Şeffaf logo, fotoğraf gibi kırpılmamalı; arkasına da bir plaka gerekir.
+  const isPlate = imgSrc.toLowerCase().includes('logo');
+
   return (
     <div
-      className="
-        w-full
-        bg-white/10
-        backdrop-blur-md
-        rounded-2xl
-        flex
-        items-center
-        justify-center
-        shadow-lg
-        overflow-hidden
-        transition-all
-        duration-300
-        hover:bg-white/20
-        hover:shadow-xl
-      "
+      className={`teacher-card w-full flex items-center justify-center${
+        isPlate ? ' teacher-card--plate' : ''
+      }`}
       style={{
-        /*
-         * Aspect ratio artık animasyon başladıktan
-         * sonra değişmiyor.
-         */
-        aspectRatio:
-          item.aspectRatio &&
-          item.aspectRatio > 0
-            ? `${item.aspectRatio}`
-            : '1 / 1',
+        aspectRatio: `${
+          item.aspectRatio > 0 ? item.aspectRatio : FALLBACK_ASPECT_RATIO
+        }`,
       }}
     >
       {!hasError ? (
         <img
           src={imgSrc}
-          alt={item.filename}
+          /* Fotoğraflar dekoratif: erişilebilir ad dıştaki
+             role="img" sarmalayıcısında bir kez veriliyor. */
+          alt=""
+          width={item.naturalWidth}
+          height={item.naturalHeight}
           onError={handleError}
           draggable={false}
           decoding="async"
+          fetchPriority={priority ? 'high' : 'auto'}
           className={
-            item.filename
-              .toLowerCase()
-              .includes('logo')
+            isPlate
               ? 'w-4/5 h-4/5 object-contain'
               : 'w-full h-full object-cover'
           }
@@ -525,9 +504,7 @@ const PureImageCard: React.FC<
         <div className="py-6 px-3 text-center text-slate-300 text-xs font-mono">
           <ImageIcon className="w-6 h-6 mx-auto mb-1 text-slate-400" />
 
-          <span>
-            {item.filename}
-          </span>
+          <span>{item.filename}</span>
         </div>
       )}
     </div>

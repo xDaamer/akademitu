@@ -1,18 +1,16 @@
 {
-  "speedSeconds": 10,
+  "pixelsPerSecond": 70,
   "phaseOffsetSeconds": 6,
   "activeImagesLeft": [
     "dila.jpg",
     "emre.jpg",
     "nehir.jpg"
-    
   ],
   "activeImagesRight": [
     "dorukhan.jpg",
     "onat.jpg",
     "bora.jpg",
     "celal.jpg"
-    
   ],
-  "description": "Bu ayar dosyasından hoca akış hızını (speedSeconds), faz farkı gecikmesini (phaseOffsetSeconds) ve sol-sağ sütun görsellerini (activeImagesLeft, activeImagesRight) düzenleyebilirsiniz."
+  "description": "Hoca akışını buradan ayarlarsınız. pixelsPerSecond: akışın saniyede kat ettiği piksel (büyütürseniz hızlanır, küçültürseniz yavaşlar) — sütunlardaki görsel sayısı farklı olsa da iki sütun hep aynı hızda akar. phaseOffsetSeconds: sağ sütunun sol sütuna göre gecikmesi, iki sütunun aynı anda hizalanmasını engeller. activeImagesLeft / activeImagesRight: public/teachers klasöründeki dosya adları. Eski projelerden kalan speedSeconds alanı hâlâ okunur (bir turun kaç saniye süreceği) ama pixelsPerSecond verilmişse o kullanılır."
 }

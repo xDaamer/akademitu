@@ -10,6 +10,16 @@ interface Testimonial {
   rating: number;
 }
 
+/** Yorum şeridinin saniyede kat ettiği piksel (ekran tazeleme hızından bağımsız). */
+const TESTIMONIAL_SCROLL_PIXELS_PER_SECOND = 48;
+
+/**
+ * Listenin şeritte kaç kez tekrarlandığı. Döngü matematiği de bunu kullanır;
+ * ikisi ayrı yerlerde yazıldığı için (3 kopya render edilip tur scrollWidth/2
+ * kabul edildiği için) her turda sert bir sıçrama oluşuyordu.
+ */
+const TESTIMONIAL_SET_COUNT = 3;
+
 export function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,14 +39,61 @@ export function TestimonialsSection() {
     const track = trackRef.current;
     if (!track) return;
 
-    const renderLoop = () => {
-      if (!isDragging.current) {
-        const cycleWidth = track.scrollWidth / 2;
-        offsetRef.current += 0.8;
+    // Hareketi azalt tercihi açıksa şerit hiç akmaz.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
 
-        if (offsetRef.current >= cycleWidth) {
-          offsetRef.current -= cycleWidth;
-        }
+    let lastTimestamp: number | null = null;
+    let cycleWidth = 0;
+
+    /*
+     * Bir tam tur = aynı kartın iki kopyası arasındaki mesafe.
+     *
+     * `scrollWidth / 3` kullanmak yanlış: scrollWidth N kart + (N-1) boşluk
+     * içerir, dolayısıyla üçe bölünce kopya başına boşluğun 2/3'ü eksik kalır
+     * (24px'lik gap'te tur başına 8px). Kartların gerçek konumunu ölçmek hem
+     * bu farkı hem de responsive kart genişliklerini kendiliğinden çözer.
+     */
+    const measureCycle = () => {
+      const cards = track.children;
+      const cardsPerSet = cards.length / TESTIMONIAL_SET_COUNT;
+
+      if (!Number.isInteger(cardsPerSet) || !cards[cardsPerSet]) {
+        cycleWidth = 0;
+        return;
+      }
+
+      cycleWidth = Math.abs(
+        cards[cardsPerSet].getBoundingClientRect().left -
+          cards[0].getBoundingClientRect().left
+      );
+    };
+
+    measureCycle();
+
+    const observer = new ResizeObserver(measureCycle);
+    observer.observe(track);
+
+    const renderLoop = (timestamp: number) => {
+      /*
+       * Kare başına değil, geçen SÜREYE göre ilerle. Sabit "+0.8 px/kare"
+       * 60Hz'de 48 px/sn iken 120Hz ProMotion ekranda 96 px/sn oluyordu —
+       * aynı site makineye göre iki farklı hızda akıyordu.
+       * Sekme arka plandayken oluşan dev sıçramaları da 100ms'e kırpıyoruz.
+       */
+      const deltaSeconds =
+        lastTimestamp === null
+          ? 0
+          : Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+
+      lastTimestamp = timestamp;
+
+      if (!isDragging.current && cycleWidth > 0) {
+        offsetRef.current =
+          (offsetRef.current +
+            TESTIMONIAL_SCROLL_PIXELS_PER_SECOND * deltaSeconds) %
+          cycleWidth;
 
         track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
       }
@@ -47,6 +104,8 @@ export function TestimonialsSection() {
     animationRef.current = window.requestAnimationFrame(renderLoop);
 
     return () => {
+      observer.disconnect();
+
       if (animationRef.current) {
         window.cancelAnimationFrame(animationRef.current);
       }
@@ -90,14 +149,16 @@ export function TestimonialsSection() {
     return null;
   }
 
-  const repeatedTestimonials = [...testimonials, ...testimonials, ...testimonials];
+  const repeatedTestimonials = Array.from(
+    { length: TESTIMONIAL_SET_COUNT },
+    () => testimonials
+  ).flat();
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
 
     const container = scrollRef.current;
-    const track = trackRef.current;
-    if (!container || !track) return;
+    if (!container) return;
 
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -106,7 +167,8 @@ export function TestimonialsSection() {
     startX.current = event.clientX;
     startScrollLeft.current = container.scrollLeft;
     container.classList.add('dragging');
-    track.style.animationPlayState = 'paused';
+    // Akış rAF ile sürüldüğü için duraklatma `isDragging` üzerinden olur;
+    // burada bir CSS animasyonu yok (eski `animationPlayState` yazımı no-op'tu).
     container.style.cursor = 'grabbing';
     container.style.userSelect = 'none';
   };
@@ -121,8 +183,7 @@ export function TestimonialsSection() {
 
   const stopDragging = (event?: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollRef.current;
-    const track = trackRef.current;
-    if (!container || !track) return;
+    if (!container) return;
 
     if (event && typeof event.currentTarget.releasePointerCapture === 'function') {
       try {
@@ -134,7 +195,6 @@ export function TestimonialsSection() {
 
     isDragging.current = false;
     container.classList.remove('dragging');
-    track.style.animationPlayState = '';
     container.style.cursor = '';
     container.style.userSelect = '';
   };
@@ -166,7 +226,7 @@ export function TestimonialsSection() {
           >
             <div
               ref={trackRef}
-              className="flex gap-6 w-max"
+              className="flex gap-6 w-max will-change-transform"
             >
               {repeatedTestimonials.map((testimonial, index) => (
                 <div
@@ -209,12 +269,6 @@ export function TestimonialsSection() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        .animate-scroll {
-          will-change: transform;
-        }
-      `}</style>
     </section>
   );
 }
