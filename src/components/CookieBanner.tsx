@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Cookie } from 'lucide-react';
+import { Button } from './ui/Button';
 
 const STORAGE_KEY = 'akademitu_cookie_consent';
 
@@ -33,12 +34,9 @@ export const CookieBanner: React.FC = () => {
           </Link>
           'nı inceleyebilirsiniz.
         </p>
-        <button
-          onClick={accept}
-          className="shrink-0 bg-[#191F61] hover:bg-[#101442] text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md active:scale-95 whitespace-nowrap"
-        >
+        <Button onClick={accept} className="shrink-0 whitespace-nowrap">
           Anladım
-        </button>
+        </Button>
       </div>
     </div>
   );

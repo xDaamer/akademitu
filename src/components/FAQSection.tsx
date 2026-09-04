@@ -94,7 +94,9 @@ export const FAQSection: React.FC = () => {
                 <button
                   onClick={() => toggleFAQ(index)}
                   aria-expanded={isOpen}
-                  className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
+                  /* focus:outline-none yerine görünür bir odak halkası:
+                     klavyeyle gezerken hangi soruda olunduğu belli olmalı. */
+                  className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-inset"
                 >
                   <span className="font-bold text-base sm:text-lg text-[#191F61]">
                     {faq.question}

@@ -5,6 +5,7 @@ import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
 import { KvkkModal } from './KvkkModal';
 import logoWhite from '../assets/logo-white.png';
+import { Button } from './ui/Button';
 
 interface PopUpFormProps {
   isOpen: boolean;
@@ -353,15 +354,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <div className="flex items-center gap-3 min-w-0">
                         {currentStep === 2 && (
-                          <button
-                            type="button"
+                          <Button
+                            variant="iconSoft"
+                            size="none"
                             onClick={handleBackToContact}
-                            className="flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0"
+                            className="rounded-full px-2.5 py-1.5 text-xs font-bold gap-1.5 shrink-0"
                             aria-label="Geri dön"
                           >
                             <ArrowLeft className="w-3.5 h-3.5" />
                             Geri
-                          </button>
+                          </Button>
                         )}
                         <img
                           src={logoWhite}
@@ -375,13 +377,14 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           </span>
                         </div>
                       </div>
-                      <button
+                      <Button
+                        variant="iconSoft"
+                        size="icon"
                         onClick={onClose}
-                        className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
                         aria-label="Kapat"
                       >
                         <X className="w-6 h-6" />
-                      </button>
+                      </Button>
                     </div>
 
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-[#191F61] tracking-tight mb-2">
@@ -479,14 +482,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <input id="website-scroll" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
                         </div>
 
-                        <button
+                        <Button
                           type="submit"
+                          size="lg"
+                          fullWidth
                           disabled={isSubmitting}
-                          className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-3.5 rounded-2xl font-extrabold text-sm shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-4"
+                          className="mt-4"
                         >
                           <span>{isSubmitting ? 'Kaydediliyor...' : 'Gönder'}</span>
                           <ArrowRight className="w-4 h-4 text-[#B6D6CC]" />
-                        </button>
+                        </Button>
                       </form>
                     )}
 
@@ -572,14 +577,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           {renderSubjectOptions(examType)}
                         </SelectField>
 
-                        <button
+                        <Button
                           type="submit"
+                          size="lg"
+                          fullWidth
                           disabled={isSubmitting}
-                          className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-3.5 rounded-2xl font-extrabold text-sm shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-4"
+                          className="mt-4"
                         >
                           <span>{isSubmitting ? 'Kaydediliyor...' : 'Tamamla ve Gönder'}</span>
                           <Check className="w-4 h-4 text-[#B6D6CC]" />
-                        </button>
+                        </Button>
                       </form>
                     )}
 
@@ -595,12 +602,9 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                           Tebrikler <span className="font-bold text-[#191F61]">{studentFullName || fullName}</span>! Bilgileriniz derece koçumuza iletildi. En kısa sürede sizinle iletişime geçeceğiz.
                         </p>
-                        <button
-                          onClick={handleReset}
-                          className="w-full bg-[#191F61] hover:bg-[#101442] text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer"
-                        >
+                        <Button fullWidth size="lg" onClick={handleReset}>
                           Tamamdır
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -608,13 +612,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                   {/* KVKK BİLGİLENDİRME YAZISI */}
                   <div className="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
                     <span>Bu formu doldurarak </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
                       onClick={() => setIsKvkkOpen(true)}
-                      className="text-[#191F61] font-bold underline hover:text-[#101442] cursor-pointer inline-block"
+                      className="inline"
                     >
                       KVKK Aydınlatma Metni
-                    </button>
+                    </Button>
                     <span> ve Gizlilik Politikasını onaylamış olursunuz.</span>
                   </div>
                 </motion.div>
@@ -643,15 +647,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                   <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                     <div className="flex items-center gap-3 min-w-0">
                       {currentStep === 2 && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="iconSoft"
+                          size="none"
                           onClick={handleBackToContact}
-                          className="flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer shrink-0"
+                          className="rounded-full px-2.5 py-1.5 text-xs font-bold gap-1.5 shrink-0"
                           aria-label="Geri dön"
                         >
                           <ArrowLeft className="w-3.5 h-3.5" />
                           Geri
-                        </button>
+                        </Button>
                       )}
                       <img
                         src={logoWhite}
@@ -669,13 +674,14 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </p>
                       </div>
                     </div>
-                    <button
+                    <Button
+                      variant="iconSoft"
+                      size="icon"
                       onClick={onClose}
-                      className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
                       aria-label="Kapat"
                     >
                       <X className="w-5 h-5" />
-                    </button>
+                    </Button>
                   </div>
 
                   {/* STEP 1 FORM (BUTTON MODE) */}
@@ -765,14 +771,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         <input id="website-modal" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
                       </div>
 
-                      <button
+                      <Button
                         type="submit"
+                        size="lg"
+                        fullWidth
                         disabled={isSubmitting}
-                        className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-4 rounded-2xl font-extrabold text-base shadow-xl hover:shadow-2xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+                        className="mt-2"
                       >
                         <span>{isSubmitting ? 'Kaydediliyor...' : 'Gönder'}</span>
                         <ArrowRight className="w-5 h-5 text-[#B6D6CC]" />
-                      </button>
+                      </Button>
                     </form>
                   )}
 
@@ -858,14 +866,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         {renderSubjectOptions(examType)}
                       </SelectField>
 
-                      <button
+                      <Button
                         type="submit"
+                        size="lg"
+                        fullWidth
                         disabled={isSubmitting}
-                        className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-4 rounded-2xl font-extrabold text-base shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+                        className="mt-2"
                       >
                         <span>{isSubmitting ? 'Kaydediliyor...' : 'Tamamla ve Gönder'}</span>
                         <Check className="w-5 h-5 text-[#B6D6CC]" />
-                      </button>
+                      </Button>
                     </form>
                   )}
 
@@ -881,25 +891,27 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                       <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-md mx-auto">
                         Tebrikler <span className="font-bold text-[#191F61]">{studentFullName || fullName}</span>! Bilgileriniz derece koçumuza başarıyla ulaştı. En kısa sürede sizinle iletişime geçeceğiz.
                       </p>
-                      <button
+                      <Button
+                        fullWidth
+                        size="lg"
                         onClick={handleReset}
-                        className="mt-2 w-full bg-[#191F61] text-white py-3.5 rounded-2xl font-bold text-base hover:bg-[#101442] transition-colors shadow-lg cursor-pointer"
+                        className="mt-2"
                       >
                         Tamamdır
-                      </button>
+                      </Button>
                     </div>
                   )}
 
                   {/* KVKK NOTICE */}
                   <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
                     <span>Bu formu doldurarak </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
                       onClick={() => setIsKvkkOpen(true)}
-                      className="text-[#191F61] font-bold underline hover:text-[#101442] cursor-pointer inline-block"
+                      className="inline"
                     >
                       KVKK Aydınlatma Metni
-                    </button>
+                    </Button>
                     <span> ve Gizlilik Politikasını onaylamış olursunuz.</span>
                   </div>
                 </motion.div>

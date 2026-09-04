@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, MessageCircle } from 'lucide-react';
 import need from '../../need.json';
+import { Button, buttonClasses } from '../components/ui/Button';
 
 export const NotFoundPage: React.FC = () => {
   useEffect(() => {
@@ -26,20 +27,27 @@ export const NotFoundPage: React.FC = () => {
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {/* react-router Link olduğu için Button değil, sınıfları kullanılıyor. */}
               <Link
                 to="/"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#191F61] hover:bg-[#B6D6CC] px-6 py-3.5 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-0.5"
+                className={buttonClasses({
+                  variant: 'inverse',
+                  size: 'lg',
+                  className: 'w-full sm:w-auto',
+                })}
               >
                 <Home className="w-4 h-4" />
                 Ana Sayfaya Dön
               </Link>
-              <button
+              <Button
+                variant="ghostInverse"
+                size="lg"
                 onClick={() => window.history.back()}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3.5 rounded-2xl font-bold text-sm transition-all cursor-pointer border border-white/10"
+                className="w-full sm:w-auto"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Geri Git
-              </button>
+              </Button>
             </div>
 
             <a

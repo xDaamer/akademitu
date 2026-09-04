@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Button } from './ui/Button';
 
 interface KvkkModalProps {
   isOpen: boolean;
@@ -43,13 +44,14 @@ export const KvkkModal: React.FC<KvkkModalProps> = ({ isOpen, onClose }) => {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="iconGhost"
+                size="icon"
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                 aria-label="Kapat"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
                         {/* Content (Scrollable) */}
@@ -106,12 +108,7 @@ export const KvkkModal: React.FC<KvkkModalProps> = ({ isOpen, onClose }) => {
 
 {/* Footer */}
             <div className="pt-4 border-t border-slate-100 mt-4 flex justify-end shrink-0">
-              <button
-                onClick={onClose}
-                className="bg-[#191F61] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-[#101442] transition-colors cursor-pointer"
-              >
-                Anladım ve Kapat
-              </button>
+              <Button onClick={onClose}>Anladım ve Kapat</Button>
             </div>
           </motion.div>
         </div>

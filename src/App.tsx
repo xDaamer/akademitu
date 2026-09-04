@@ -11,6 +11,7 @@ import { HomePage } from './pages/HomePage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { Button } from './components/ui/Button';
 
 export default function App() {
   const [formMode, setFormMode] = useState<'scroll' | 'button' | null>(null);
@@ -138,15 +139,20 @@ export default function App() {
       />
 
       {/* 5. SAĞ TARAF: ARAYALIM BUTONU (SABIT) */}
-      <button
+      {/* Kendi biçimi olduğu için size="none": renk/hover/odak varyanttan gelir. */}
+      <Button
+        size="none"
         onClick={handleOpenTrialForm}
-        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#191F61] hover:bg-[#0f1436] text-white px-4 py-10 rounded-l-2xl shadow-lg transition-all duration-300 z-40 group hidden sm:flex flex-col items-center justify-center gap-2"
+        className="fixed right-0 top-1/2 -translate-y-1/2 px-4 py-10 rounded-l-2xl z-40 hidden sm:flex flex-col"
       >
         <Phone className="w-6 h-6" />
-        <span className="text-[11px] font-bold whitespace-nowrap writing-mode-vertical" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+        <span
+          className="text-[11px] font-bold whitespace-nowrap"
+          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+        >
           Sizi Arayalım
         </span>
-      </button>
+      </Button>
 
       {/* 6. SAĞ ALT: WHATSAPP BUTONU (SABIT) */}
       <div className="fixed bottom-24 sm:bottom-6 right-6 z-40 group">
@@ -172,12 +178,9 @@ export default function App() {
 
       {/* 7. MOBİL YAPIŞKAN CTA BAR */}
       <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] p-3">
-        <button
-          onClick={handleOpenTrialForm}
-          className="w-full bg-[#191F61] hover:bg-[#101442] text-white py-3 rounded-xl font-bold text-sm text-center shadow-md active:scale-95 transition-all"
-        >
+        <Button fullWidth size="lg" onClick={handleOpenTrialForm}>
           Ücretsiz Deneme Dersi Al
-        </button>
+        </Button>
       </div>
 
       {/* 8. ÇEREZ BİLDİRİMİ */}
