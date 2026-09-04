@@ -91,6 +91,18 @@ CREATE POLICY "anon_insert_leads" ON public.leads
 -- satıra çarpabilir. Bu fonksiyon bu telefon için en son eklenmiş ve henüz
 -- adım 2'si tamamlanmamış (step = 1) satırı hedefler — normal akışta bu her
 -- zaman az önce saveLeadStep1() ile eklenen satırdır.
+--
+-- p_exam_type sonradan eklendi: mobilde alttan açılan kısa ilk adım yalnızca
+-- ad ve telefon soruyor (ekranın yarısına sığması için), hedef sınav ikinci
+-- adımda soruluyor. Parametre olmadan bu başvurular veritabanına her zaman
+-- step 1'in varsayılanı olan 'YKS' ile düşerdi.
+--
+-- Parametre eklemek CREATE OR REPLACE ile yapılamaz (yeni bir aşırı yükleme
+-- oluşturur ve 7 argümanlı çağrı belirsiz kalır), bu yüzden eski imza önce
+-- düşürülüyor. DEFAULT NULL sayesinde henüz güncellenmemiş bir istemci eski
+-- 7 argümanlı çağrısını yapmaya devam edebilir.
+DROP FUNCTION IF EXISTS public.update_lead_step2(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT);
+
 CREATE OR REPLACE FUNCTION public.update_lead_step2(
   p_phone TEXT,
   p_student_full_name TEXT,
@@ -98,7 +110,8 @@ CREATE OR REPLACE FUNCTION public.update_lead_step2(
   p_user_role TEXT,
   p_grade_class TEXT,
   p_selected_subjects TEXT[],
-  p_website TEXT
+  p_website TEXT,
+  p_exam_type TEXT DEFAULT NULL
 )
 RETURNS void AS $$
 DECLARE
@@ -129,6 +142,11 @@ BEGIN
     grade_class = p_grade_class,
     selected_subjects = p_selected_subjects,
     website = p_website,
+    -- Tanınmayan ya da hiç gönderilmeyen bir değer step 1'de yazılanı ezmez.
+    exam_type = CASE
+      WHEN p_exam_type IN ('YKS', 'LGS', 'Diğer') THEN p_exam_type
+      ELSE exam_type
+    END,
     step = 2,
     updated_at = now()
   WHERE id = target_id;
@@ -137,7 +155,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Bu fonksiyon bilerek herkese açık bir RPC endpoint'i (rate-limit
 -- trigger'ının aksine) — anon'un EXECUTE alması amaçlanan tasarım.
-GRANT EXECUTE ON FUNCTION public.update_lead_step2(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_lead_step2(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT) TO anon;
 
 -- =========================================================================
 -- leads: aynı telefonla tekrar başvuruya izin ver, ama işaretle

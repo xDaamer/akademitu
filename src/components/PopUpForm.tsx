@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
 import { KvkkModal } from './KvkkModal';
+import { MobileLeadSheet } from './MobileLeadSheet';
 import logoWhite from '../assets/logo-white.png';
 import { Button } from './ui/Button';
 
@@ -12,6 +13,13 @@ interface PopUpFormProps {
   mode: 'scroll' | 'button' | null;
   onClose: () => void;
   onSubmitSuccess?: (data: LeadFormData) => void;
+  /**
+   * Mobilde alttan açılan kısa form ilk adımı kaydettikten sonra çağrılır:
+   * ikinci adım aynı yarım ekranda devam etmez, ana sayfadaki butonun açtığı
+   * tam ekran pencereye geçer. Bileşen bu geçişte sökülmediği için girilen
+   * ad/telefon ve adım numarası korunur.
+   */
+  onEscalateToModal?: () => void;
 }
 
 const MIDDLE_SCHOOL_GRADES = ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'];
@@ -130,11 +138,51 @@ const SelectField: React.FC<SelectFieldProps> = ({ icon: Icon, label, value, onC
   </div>
 );
 
+/*
+ * Yan yana duran seçim düğmeleri (hedef sınav, "ben kimim?"). Aynı işaretleme
+ * dört ayrı yerde elle tekrarlanıyordu; tek yerde tanımlı olması, adım 2'ye
+ * yeni bir seçim eklendiğinde diğer kopyalarla ayrışmasını engelliyor.
+ */
+interface ChoiceRowProps {
+  label: string;
+  options: readonly string[];
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const ChoiceRow: React.FC<ChoiceRowProps> = ({ label, options, value, onChange }) => (
+  <div className="space-y-1">
+    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+      {label}
+    </label>
+    <div className="flex gap-2">
+      {options.map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+            value === option
+              ? 'bg-[#191F61] text-white border-[#191F61]'
+              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+          }`}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const EXAM_OPTIONS = ['YKS', 'LGS', 'Diğer'] as const;
+const ROLE_OPTIONS = ['Öğrenci', 'Veli'] as const;
+
 export const PopUpForm: React.FC<PopUpFormProps> = ({
   isOpen,
   mode,
   onClose,
   onSubmitSuccess,
+  onEscalateToModal,
 }) => {
   // Screen size detection for responsive pop-up drawer behavior
   const [isMobile, setIsMobile] = useState(() => {
@@ -152,6 +200,51 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  /*
+   * GÖVDE KAYDIRMA KİLİDİ — YALNIZCA MOBİL
+   * -------------------------------------------------------------------------
+   * Telefonda alttan açılan yüzeyin üzerinde yapılan her parmak hareketi
+   * altındaki tanıtım sayfasını sürüklüyor, form yerinde duruyordu. Tek başına
+   * `overflow: hidden` iOS Safari'de dokunmatik kaydırmayı durdurmadığı için
+   * gövde bulunduğu yerde sabitleniyor; kapanışta aynı kaydırma konumuna geri
+   * dönülüyor.
+   *
+   * Masaüstünde bilinçli olarak kilit YOK: orada sağ çekmece açıkken sayfanın
+   * kaydırılabilir kalması sitenin önceki davranışı ve bu düzenlemenin kapsamı
+   * sadece mobil.
+   */
+  useEffect(() => {
+    if (!isOpen || !isMobile) return;
+
+    const { style } = document.body;
+    const scrollY = window.scrollY;
+    const previous = {
+      position: style.position,
+      top: style.top,
+      left: style.left,
+      right: style.right,
+      width: style.width,
+      overflow: style.overflow,
+    };
+
+    style.position = 'fixed';
+    style.top = `-${scrollY}px`;
+    style.left = '0';
+    style.right = '0';
+    style.width = '100%';
+    style.overflow = 'hidden';
+
+    return () => {
+      style.position = previous.position;
+      style.top = previous.top;
+      style.left = previous.left;
+      style.right = previous.right;
+      style.width = previous.width;
+      style.overflow = previous.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen, isMobile]);
+
   // Step Management: 1 = Initial Lead, 2 = Detailed Student Form, 3 = Final Confirmation
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
@@ -162,6 +255,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState(''); // empty so the placeholder actually renders
   const [examType, setExamType] = useState<'YKS' | 'LGS' | 'Diğer'>('YKS');
+  /*
+   * Mobildeki kısa form hedef sınavı sormaz (ad, telefon ve gönder düğmesinin
+   * ekranın yarısına sığması için). O durumda soru ikinci adımda sorulur ve
+   * cevap updateLeadStep2 ile kayda yazılır — aksi halde bu satırlar
+   * veritabanına her zaman varsayılan "YKS" olarak düşerdi.
+   */
+  const [examDeferred, setExamDeferred] = useState(false);
 
   // Step 2 Data
   const [studentFullName, setStudentFullName] = useState('');
@@ -173,7 +273,18 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
   const [error, setError] = useState('');
 
-  if (!isOpen || !mode) return null;
+  /*
+   * Burada bir "kapalıysa hiçbir şey çizme" erken dönüşü vardı. AnimatePresence
+   * çıkış animasyonunu ancak çocuğunu kendisi kaldırdığında oynatabilir; bileşen
+   * kapanır kapanmaz null döndüğü için tüm ağaç AnimatePresence'ın haberi olmadan
+   * sökülüyor, form açılırken yumuşakça geliyor ama kapanırken bir anda yok
+   * oluyordu. Parmakla aşağı sürüklenen bir yüzeyde bu, hareketin ortasında
+   * kopan bir kesme gibi hissediliyor. Görünürlük artık aşağıdaki
+   * AnimatePresence'ın key'li çocuklarında.
+   */
+
+  /** Telefonda alttan açılan, yalnızca ad/telefon soran kısa ilk adım. */
+  const isCompactSheet = mode === 'scroll' && isMobile;
 
   const handleBackToContact = () => {
     setCurrentStep(1);
@@ -220,6 +331,16 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
       }
       setStudentFullName(fullName.trim());
       setCurrentStep(2);
+
+      /*
+       * Telefonda ikinci adım bu yarım ekranda devam etmez: kayıt alındıktan
+       * sonra form, ana sayfadaki "Ücretsiz Deneme Dersi" butonunun açtığı tam
+       * ekran pencereye geçer. Hedef sınav orada sorulur (bkz. examDeferred).
+       */
+      if (isCompactSheet) {
+        setExamDeferred(true);
+        onEscalateToModal?.();
+      }
     } catch (err) {
       console.error('Step 1 Error:', err);
       setError(err instanceof Error ? err.message : 'Form gönderilemedi. Lütfen tekrar deneyin.');
@@ -305,6 +426,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
     setFullName('');
     setPhone('');
     setExamType('YKS');
+    setExamDeferred(false);
     setStudentFullName('');
     setParentFullName('');
     setUserRole('Öğrenci');
@@ -317,12 +439,15 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
 
   return (
     <>
+      {/*
+        Her iki kip de AnimatePresence'ın DOĞRUDAN ve key'li çocuğu: ikisini bir
+        fragment'a sarmak çıkış animasyonlarının hiç çalışmamasına yol açıyor
+        (aynı tuzağa Header'daki mobil menüde de düşülmüştü).
+      */}
       <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* MODE 1: KAYDIRINCA ÇIKAN FORM (MOBİLDE AŞAĞIDAN YUKARI %60 EKRAN KAPLAYAN BOTTOM SHEET, DESKTOP'TA SAĞ ÇEKMECE) */}
-            {mode === 'scroll' && (
-              <div className={`fixed inset-0 z-50 overflow-hidden flex ${isMobile ? 'flex-col justify-end' : 'justify-end'}`}>
+            {/* MODE 1: KAYDIRINCA ÇIKAN FORM (MOBİLDE ALTTAN AÇILAN KISA İLK ADIM, MASAÜSTÜNDE SAĞ ÇEKMECE) */}
+            {isOpen && mode === 'scroll' && (
+              <div key="mode-scroll" className={`fixed inset-0 z-50 overflow-hidden flex ${isMobile ? 'flex-col justify-end' : 'justify-end'}`}>
                 {/* ARKA PLAN KARARTMA PERDESİ */}
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -332,24 +457,37 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                   className="fixed inset-0 bg-slate-950/30 backdrop-blur-xs z-0"
                 />
 
-                {/* ÇEKMECE / BOTTOM SHEET */}
+                {/*
+                  Telefonda ayrı, kısa bir bileşen: masaüstü çekmecesinin tamamı
+                  (rozetler, paragraf, sınav seçimi, adım 2 ve adım 3) yarım
+                  ekrana sığmıyor, "Gönder" düğmesi görünmüyordu.
+                */}
+                {isMobile && (
+                  <MobileLeadSheet
+                    fullName={fullName}
+                    phone={phone}
+                    website={website}
+                    error={error}
+                    isSubmitting={isSubmitting}
+                    onFullNameChange={setFullName}
+                    onPhoneChange={handlePhoneChange}
+                    onWebsiteChange={setWebsite}
+                    onSubmit={handleStep1Submit}
+                    onClose={onClose}
+                    onOpenKvkk={() => setIsKvkkOpen(true)}
+                  />
+                )}
+
+                {/* MASAÜSTÜ: SAĞ ÇEKMECE */}
+                {!isMobile && (
                 <motion.div
-                  initial={isMobile ? { y: '100%', opacity: 0 } : { x: '100%', opacity: 0 }}
-                  animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
-                  exit={isMobile ? { y: '100%', opacity: 0 } : { x: '100%', opacity: 0 }}
+                  initial={{ x: '100%', opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: '100%', opacity: 0 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-                  className={`relative z-10 w-full bg-white text-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto ${
-                    isMobile
-                      ? 'h-[60vh] rounded-t-3xl border-t border-slate-200 p-5'
-                      : 'md:w-1/2 h-full border-l border-slate-200 p-6 sm:p-10 md:p-12'
-                  }`}
+                  className="relative z-10 w-full md:w-1/2 h-full bg-white text-slate-800 shadow-2xl flex flex-col justify-between overflow-y-auto border-l border-slate-200 p-6 sm:p-10 md:p-12"
                 >
                   <div>
-                    {/* MOBİL DOKUNMA/ÇEKME HALKASI (TUTAMAÇ) */}
-                    {isMobile && (
-                      <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
-                    )}
-
                     {/* ÜST DÜĞMELER */}
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <div className="flex items-center gap-3 min-w-0">
@@ -455,27 +593,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Hedef Sınavınız
-                          </label>
-                          <div className="flex gap-2">
-                            {['YKS', 'LGS', 'Diğer'].map((exam) => (
-                              <button
-                                key={exam}
-                                type="button"
-                                onClick={() => setExamType(exam as any)}
-                                className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                  examType === exam
-                                    ? 'bg-[#191F61] text-white border-[#191F61]'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                }`}
-                              >
-                                {exam}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        <ChoiceRow
+                          label="Hedef Sınavınız"
+                          options={EXAM_OPTIONS}
+                          value={examType}
+                          onChange={(value) => setExamType(value as typeof examType)}
+                        />
 
                         <div className="absolute -left-[10000px]" aria-hidden="true">
                           <label htmlFor="website-scroll">Website</label>
@@ -526,27 +649,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                            Ben kimim? *
-                          </label>
-                          <div className="flex gap-2">
-                            {(['Öğrenci', 'Veli'] as const).map((role) => (
-                              <button
-                                key={role}
-                                type="button"
-                                onClick={() => setUserRole(role)}
-                                className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                  userRole === role
-                                    ? 'bg-[#191F61] text-white border-[#191F61]'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                }`}
-                              >
-                                {role}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        <ChoiceRow
+                          label="Ben kimim? *"
+                          options={ROLE_OPTIONS}
+                          value={userRole}
+                          onChange={(value) => setUserRole(value as typeof userRole)}
+                        />
 
                         <SelectField
                           icon={Layers}
@@ -622,12 +730,13 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                     <span> ve Gizlilik Politikasını onaylamış olursunuz.</span>
                   </div>
                 </motion.div>
+                )}
               </div>
             )}
 
             {/* MODE 2: BUTTON CLICK MODAL */}
-            {mode === 'button' && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            {isOpen && mode === 'button' && (
+              <div key="mode-button" className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -651,20 +760,23 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           variant="iconSoft"
                           size="none"
                           onClick={handleBackToContact}
-                          className="rounded-full px-2.5 py-1.5 text-xs font-bold gap-1.5 shrink-0"
+                          /* Telefonda yalnızca ok gösteriliyor: "Geri" yazısı
+                             başlığa kalan genişliği iki satıra düşürüyordu.
+                             sm ve üstünde düğme eskisiyle birebir aynı. */
+                          className="rounded-full p-2 sm:px-2.5 sm:py-1.5 text-xs font-bold gap-1.5 shrink-0"
                           aria-label="Geri dön"
                         >
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                          Geri
+                          <ArrowLeft className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                          <span className="hidden sm:inline">Geri</span>
                         </Button>
                       )}
                       <img
                         src={logoWhite}
                         alt="akademITU Logo"
-                        className="h-12 w-auto object-contain"
+                        className="h-11 sm:h-12 w-auto object-contain shrink-0"
                       />
-                      <div>
-                        <h3 className="text-xl font-extrabold text-[#191F61] tracking-tight">
+                      <div className="min-w-0">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-[#191F61] tracking-tight">
                           {currentStep === 1 && 'Ücretsiz Deneme Dersi'}
                           {currentStep === 2 && 'Öğrenci & Ders Detayları'}
                           {currentStep === 3 && 'Talebiniz Alındı!'}
@@ -744,27 +856,12 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                          Hedef Sınavınız
-                        </label>
-                        <div className="flex gap-2">
-                          {['YKS', 'LGS', 'Diğer'].map((exam) => (
-                            <button
-                              key={exam}
-                              type="button"
-                              onClick={() => setExamType(exam as any)}
-                              className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                examType === exam
-                                  ? 'bg-[#191F61] text-white border-[#191F61]'
-                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                              }`}
-                            >
-                              {exam}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      <ChoiceRow
+                        label="Hedef Sınavınız"
+                        options={EXAM_OPTIONS}
+                        value={examType}
+                        onChange={(value) => setExamType(value as typeof examType)}
+                      />
 
                       <div className="absolute -left-[10000px]" aria-hidden="true">
                         <label htmlFor="website-modal">Website</label>
@@ -815,27 +912,26 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                          Ben kimim? *
-                        </label>
-                        <div className="flex gap-2">
-                          {(['Öğrenci', 'Veli'] as const).map((role) => (
-                            <button
-                              key={role}
-                              type="button"
-                              onClick={() => setUserRole(role)}
-                              className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                userRole === role
-                                  ? 'bg-[#191F61] text-white border-[#191F61]'
-                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                              }`}
-                            >
-                              {role}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      {/*
+                        Hedef sınav yalnızca mobildeki kısa ilk adımdan gelindiğinde
+                        burada sorulur; normal akışta adım 1'de zaten soruldu ve iki
+                        kez sorulması gerekmez.
+                      */}
+                      {examDeferred && (
+                        <ChoiceRow
+                          label="Hedef Sınavınız *"
+                          options={EXAM_OPTIONS}
+                          value={examType}
+                          onChange={(value) => setExamType(value as typeof examType)}
+                        />
+                      )}
+
+                      <ChoiceRow
+                        label="Ben kimim? *"
+                        options={ROLE_OPTIONS}
+                        value={userRole}
+                        onChange={(value) => setUserRole(value as typeof userRole)}
+                      />
 
                       <SelectField
                         icon={Layers}
@@ -917,8 +1013,6 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                 </motion.div>
               </div>
             )}
-          </>
-        )}
       </AnimatePresence>
 
       {/* KVKK MODAL */}

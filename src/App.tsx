@@ -6,7 +6,6 @@ import { Phone } from 'lucide-react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { PopUpForm } from './components/PopUpForm';
-import { CookieBanner } from './components/CookieBanner';
 import { HomePage } from './pages/HomePage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
@@ -110,8 +109,25 @@ export default function App() {
     setFormMode(null);
   };
 
+  /*
+   * Mobildeki alttan açılan sayfa yalnızca ad/telefon alan kısa bir adımdır.
+   * Kişi "Gönder"e bastığında ikinci adım aynı yarım ekranda devam etmez —
+   * form, ana sayfadaki "Ücretsiz Deneme Dersi" butonunun açtığı tam ekran
+   * pencereye geçer. PopUpForm aradaki durumu (ad, telefon, adım) koruduğu
+   * için kişi bilgilerini ikinci kez girmez.
+   */
+  const handleEscalateToModal = () => {
+    setFormMode('button');
+  };
+
+  /*
+   * Alttaki yapışkan çubuk 73px yüksekliğinde; sayfa için ayrılan boşluk ise
+   * 64px'ti, yani alt bilginin son satırı çubuğun altında kalıyordu. Ayrılan
+   * yer artık çubuğun gerçek yüksekliği kadar ve telefonun alt güvenli alanını
+   * da (çentikli cihazlardaki ana ekran çubuğu) hesaba katıyor.
+   */
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#B6D6CC] selection:text-[#191F61] pb-16 sm:pb-0">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#B6D6CC] selection:text-[#191F61] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-0">
       <Analytics />
       <SpeedInsights />
       {/* 1. SABİT HEADER (LOGO, YAZI, MENÜ VE BEYAZ METİNLİ MAVİ DÜĞME) */}
@@ -136,23 +152,35 @@ export default function App() {
         isOpen={formMode !== null}
         mode={formMode}
         onClose={handleCloseTrialForm}
+        onEscalateToModal={handleEscalateToModal}
       />
 
-      {/* 5. SAĞ TARAF: ARAYALIM BUTONU (SABIT) */}
-      {/* Kendi biçimi olduğu için size="none": renk/hover/odak varyanttan gelir. */}
-      <Button
-        size="none"
-        onClick={handleOpenTrialForm}
-        className="fixed right-0 top-1/2 -translate-y-1/2 px-4 py-10 rounded-l-2xl z-40 hidden sm:flex flex-col"
-      >
-        <Phone className="w-6 h-6" />
-        <span
-          className="text-[11px] font-bold whitespace-nowrap"
-          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+      {/* 5. SAĞ TARAF: ARAYALIM SEKMESİ (SABIT) — YALNIZCA MASAÜSTÜ */}
+      {/*
+        Görünürlük sekmenin kendisinde değil, bu sarmalayıcıda: Button'ın temel
+        sınıfları arasında `inline-flex` var ve `hidden` ile aynı özgüllükte
+        olduğu için className'e yazılan `hidden` kaybediyordu — sekme telefonda
+        da ekranın sağ kenarında duruyordu. Sarmalayıcı div'de böyle bir çakışma
+        yok. (Bkz. Button.tsx: projede tailwind-merge yok, ezme güvenilir değil.)
+        Kırılma noktası bilerek `sm`: kodun en başından beri yazdığı değer buydu,
+        yalnızca hiç uygulanamıyordu.
+      */}
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden sm:block">
+        {/* Kendi biçimi olduğu için size="none": renk/hover/odak varyanttan gelir. */}
+        <Button
+          size="none"
+          onClick={handleOpenTrialForm}
+          className="flex flex-col px-4 py-10 rounded-l-2xl"
         >
-          Sizi Arayalım
-        </span>
-      </Button>
+          <Phone className="w-6 h-6" />
+          <span
+            className="text-[11px] font-bold whitespace-nowrap"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            Sizi Arayalım
+          </span>
+        </Button>
+      </div>
 
       {/* 6. SAĞ ALT: WHATSAPP BUTONU (SABIT) */}
       <div className="fixed bottom-24 sm:bottom-6 right-6 z-40 group">
@@ -162,9 +190,9 @@ export default function App() {
           rel="noopener noreferrer"
           className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center block"
         >
-          <img 
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsb1L0gLGLPI8j2cMJ8xc3_11wDVCJJWJch7ZGRWUNlw&s=10" 
-            alt="WhatsApp" 
+          <img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsb1L0gLGLPI8j2cMJ8xc3_11wDVCJJWJch7ZGRWUNlw&s=10"
+            alt="WhatsApp"
             className="w-8 h-8 rounded-full"
           />
         </a>
@@ -177,14 +205,11 @@ export default function App() {
       </div>
 
       {/* 7. MOBİL YAPIŞKAN CTA BAR */}
-      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] p-3">
+      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <Button fullWidth size="lg" onClick={handleOpenTrialForm}>
           Ücretsiz Deneme Dersi Al
         </Button>
       </div>
-
-      {/* 8. ÇEREZ BİLDİRİMİ */}
-      <CookieBanner />
     </div>
   );
 }

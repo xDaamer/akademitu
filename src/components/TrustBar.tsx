@@ -26,11 +26,13 @@ export const TrustBar: React.FC = () => {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: index * 0.06 }}
                 /* Madde sayısı tekse mobildeki iki sütunlu ızgarada son madde
-                   tek başına kalır; onu iki sütuna yayıp ortalıyoruz. */
+                   tek başına kalır; iki sütuna yayılıyor ama ortalanmıyor:
+                   ortalandığında ikonu üstündeki ikonlarla aynı hizada
+                   durmuyor, üç ikonun oluşturduğu sol dikey hat kırılıyordu. */
                 className={`flex items-center gap-3${
                   trustItems.length % 2 === 1 &&
                   index === trustItems.length - 1
-                    ? ' col-span-2 justify-center sm:col-span-1 sm:justify-start'
+                    ? ' col-span-2 sm:col-span-1'
                     : ''
                 }`}
               >

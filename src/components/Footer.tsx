@@ -10,8 +10,10 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
+  /* Telefonda alt boşluk daha geniş: sabit WhatsApp düğmesi tam da telif
+     satırının üzerine oturuyor, sürüm numarasını örtüyordu. */
   return (
-    <footer className="bg-[#191F61] text-white pt-16 pb-12 border-t border-[#191F61]/80 relative overflow-hidden">
+    <footer className="bg-[#191F61] text-white pt-16 pb-20 sm:pb-12 border-t border-[#191F61]/80 relative overflow-hidden">
       
       {/* DEKORATİF ARKA PLAN YUMUŞATICI */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#B6D6CC]/5 rounded-full blur-3xl pointer-events-none" />

@@ -163,7 +163,7 @@ export async function updateLeadStep2(data: {
   }
 
   try {
-    const { error } = await supabase.rpc('update_lead_step2', {
+    const rpcArgs = {
       p_phone: data.phone,
       p_student_full_name: data.studentFullName,
       p_parent_full_name: data.parentFullName || '',
@@ -171,7 +171,25 @@ export async function updateLeadStep2(data: {
       p_grade_class: data.gradeClass,
       p_selected_subjects: data.selectedSubjects,
       p_website: data.website,
+    };
+
+    // exam_type step 1'de yazılıyor, ama mobildeki kısa ilk adım hedef sınavı
+    // sormaz (yalnızca ad + telefon alır) — o akışta soru step 2'de sorulur ve
+    // cevabı buradan geçer. p_exam_type NULL geldiğinde fonksiyon mevcut değeri
+    // korur, yani masaüstü akışında step 1'in yazdığı değer bozulmaz.
+    let { error } = await supabase.rpc('update_lead_step2', {
+      ...rpcArgs,
+      p_exam_type: data.examType || null,
     });
+
+    // Veritabanında henüz p_exam_type'lı sürüm yoksa (supabase-anon-lead-insert.sql
+    // yeniden çalıştırılmadıysa) PostgREST imzayı bulamaz ve PGRST202 döner.
+    // Eski imzayla yeniden denenir: form çalışmaya devam eder, sadece hedef sınav
+    // güncellenmemiş olur — başvurunun tamamen kaybolmasından iyidir.
+    if (error?.code === 'PGRST202') {
+      console.warn('[Supabase] update_lead_step2 henüz p_exam_type almıyor; eski imzayla denenecek.');
+      ({ error } = await supabase.rpc('update_lead_step2', rpcArgs));
+    }
 
     if (error) {
       console.error('[Supabase] Lead Step 2 update failed:', error.message, error);

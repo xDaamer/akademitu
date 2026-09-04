@@ -118,13 +118,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
 
           {/* SAĞ: CTA VE MOBİL MENÜ TETİKLEYİCİSİ */}
           <div className="ml-auto flex shrink-0 items-center gap-2">
-            <Button
-              onClick={onOpenTrialForm}
-              className="hidden md:inline-flex border border-[#c5a059]/40"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
-              <span>Ücretsiz Deneme Dersi</span>
-            </Button>
+            {/*
+              CTA'nın görünürlüğü butonun kendisinde değil bu sarmalayıcıda:
+              Button'ın temel sınıflarındaki `inline-flex`, className'e yazılan
+              `hidden` ile aynı özgüllükte olduğu için `hidden` kazanamıyordu.
+              Sonuç: buton telefonda da başlıkta duruyor, sağa taşıp yatay
+              kaydırma yaratıyor ve menü düğmesini ekran dışına itiyordu.
+              Telefonda çağrıyı zaten alttaki yapışkan çubuk ve menü içindeki
+              buton karşılıyor.
+            */}
+            <div className="hidden md:block">
+              <Button
+                onClick={onOpenTrialForm}
+                className="border border-[#c5a059]/40"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
+                <span>Ücretsiz Deneme Dersi</span>
+              </Button>
+            </div>
 
             <Button
               ref={menuTriggerRef}
