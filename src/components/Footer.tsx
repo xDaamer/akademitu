@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, Mail, Phone, MapPin } from 'lucide-react';
 import logoBlue from '../assets/logo-blue.png';
 import need from '../../need.json';
+import { Button } from './ui/Button';
 
 interface FooterProps {
   onOpenTrialForm: () => void;
@@ -85,12 +86,9 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
             </div>
             
             <div className="pt-2">
-              <button
-                onClick={onOpenTrialForm}
-                className="bg-[#B6D6CC] hover:bg-white text-[#191F61] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md"
-              >
+              <Button variant="mint" size="sm" onClick={onOpenTrialForm}>
                 Ücretsiz Deneme Dersi İste
-              </button>
+              </Button>
             </div>
           </div>
 

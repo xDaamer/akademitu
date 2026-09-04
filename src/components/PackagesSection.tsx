@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Check, Gift, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Button } from './ui/Button';
 
 interface PackagesSectionProps {
   onOpenTrialForm: () => void;
@@ -164,12 +165,15 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
               </div>
             </div>
 
-            <button
+            <Button
+              variant="soft"
+              size="lg"
+              fullWidth
               onClick={onOpenTrialForm}
-              className="mt-8 w-full bg-slate-100 hover:bg-[#191F61] text-[#191F61] hover:text-white py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm cursor-pointer"
+              className="mt-8"
             >
               Hemen Deneme Dersi Al
-            </button>
+            </Button>
           </motion.div>
 
           {/* 2. SAĞ PAKET (ÖNE ÇIKAN): ÖZEL DERS PAKETİ */}
@@ -255,13 +259,16 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
               </div>
             </div>
 
-            <button
+            <Button
+              variant="mint"
+              size="lg"
+              fullWidth
               onClick={onOpenTrialForm}
-              className="mt-8 w-full bg-[#B6D6CC] hover:bg-white text-[#191F61] py-4 rounded-2xl font-extrabold text-base shadow-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+              className="mt-8"
             >
               <span>İndirimli Derse Başla</span>
               <ArrowRight className="w-5 h-5" />
-            </button>
+            </Button>
           </motion.div>
 
           {/* 3. KOÇLUK PAKETİ */}
@@ -326,12 +333,15 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
               </div>
             </div>
 
-            <button
+            <Button
+              variant="softEmerald"
+              size="lg"
+              fullWidth
               onClick={onOpenTrialForm}
-              className="mt-8 w-full bg-emerald-100 hover:bg-[#191F61] text-emerald-700 hover:text-white py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm cursor-pointer"
+              className="mt-8"
             >
               Koçluk Başla
-            </button>
+            </Button>
           </motion.div>
 
         </div>

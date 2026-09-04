@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, CheckCircle, GraduationCap } from 'lucide-react';
 import { TeacherTicker } from './TeacherTicker';
+import { Button } from './ui/Button';
 
 interface HeroSectionProps {
   onOpenTrialForm: () => void;
@@ -50,13 +51,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenTrialForm }) => 
 
             {/* BEYAZ BUTON (İÇİNDE MAVİ YAZI) */}
             <div className="pt-2 sm:pt-4">
-              <button
+              <Button
+                variant="inverse"
+                size="lg"
                 onClick={onOpenTrialForm}
-                className="w-full sm:w-auto bg-white text-[#191F61] hover:bg-[#B6D6CC] hover:text-[#191F61] px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-sm sm:text-base lg:text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 cursor-pointer group border-b-2 border-[#c5a059]/30"
+                className="w-full sm:w-auto lg:text-lg group border-b-2 border-[#c5a059]/30"
               >
                 <span>Ücretsiz deneme dersi al</span>
-                <ArrowRight className="w-5 h-5 text-[#191F61] group-hover:translate-x-1 transition-transform" />
-              </button>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </div>
           </div>
 
