@@ -13,7 +13,9 @@ akademITU — a Turkish-language marketing site (YKS/LGS exam coaching) built as
 - `npm start` — runs the built `server-dist/server.cjs` (production mode, serves static `dist/` and falls back to `index.html` for SPA routes).
 - `npm run lint` — `tsc --noEmit`. There is no separate lint tool (no ESLint) and no test suite/framework in this repo — don't assume `npm test` exists.
 - `npm run clean` — removes `dist/`.
-- `npm run push` — plain `git push`, nothing more. **Version bumping is currently manual.** `scripts/push.cjs` and `scripts/version-bump-on-push.cjs` still exist and both auto-bump the patch version in `need.json` plus create a `chore: bump version` commit, but nothing calls them: `package.json`'s `push` script is just `git push` and `.husky/pre-push` is disabled. Either wire one of them back up (`"push": "node scripts/push.cjs && git push"`) or delete both — right now they are orphaned code that this file used to describe as live.
+- `npm run push` — plain `git push`, nothing more (a bare alias; `git push` works the same).
+
+**Versioning is manual, by design.** `need.json`'s `site.version` is the source of truth (the footer renders it). Bump it by hand when you want a new version to show. There used to be `scripts/push.cjs` and `scripts/version-bump-on-push.cjs` that auto-bumped the patch on every push; both were deleted on 2026-09-08 because nothing called them any more — `package.json`'s `push` script had become a plain `git push` and `.husky/pre-push` was disabled, so this file was documenting behaviour that hadn't existed for a while. Don't reintroduce automatic bumping without wiring it somewhere real.
 
 ## Architecture
 
