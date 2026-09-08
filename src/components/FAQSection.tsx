@@ -73,7 +73,7 @@ export const FAQSection: React.FC = () => {
             <span>Sıkça Sorulan Sorular</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#191F61] tracking-tight">
-            Aklınıza Takılan Sorular
+            YKS ve LGS Koçluğu Hakkında Sıkça Sorulan Sorular
           </h2>
           <p className="mt-2 text-slate-600 text-sm sm:text-base">
             akademITU koçluk ve özel ders sistemi hakkında bilmek istediğiniz her şey.
@@ -91,22 +91,30 @@ export const FAQSection: React.FC = () => {
                   isOpen ? 'border-[#191F61]/20' : 'border-slate-200/80'
                 }`}
               >
-                <button
-                  onClick={() => toggleFAQ(index)}
-                  aria-expanded={isOpen}
-                  /* focus:outline-none yerine görünür bir odak halkası:
-                     klavyeyle gezerken hangi soruda olunduğu belli olmalı. */
-                  className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-inset"
-                >
-                  <span className="font-bold text-base sm:text-lg text-[#191F61]">
-                    {faq.question}
-                  </span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-[#191F61] shrink-0 transition-transform duration-300 ${
-                      isOpen ? 'rotate-180 text-[#191F61]' : ''
-                    }`}
-                  />
-                </button>
+                {/*
+                  Soru metni görsel olarak zaten bir başlıktı ama `<span>`
+                  içindeydi: sayfanın başlık taslağında SSS bölümü tek bir
+                  H2'den ibaret görünüyor, ekran okuyucu kullanıcısı başlık
+                  listesiyle sorular arasında gezinemiyordu. `h3 > button`
+                  erişilebilirlikte tercih edilen kalıptır: başlık yapıya
+                  girer, buton açma/kapama davranışını taşımaya devam eder.
+                */}
+                <h3 className="font-bold text-base sm:text-lg text-[#191F61]">
+                  <button
+                    onClick={() => toggleFAQ(index)}
+                    aria-expanded={isOpen}
+                    /* focus:outline-none yerine görünür bir odak halkası:
+                       klavyeyle gezerken hangi soruda olunduğu belli olmalı. */
+                    className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-inset"
+                  >
+                    <span>{faq.question}</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-[#191F61] shrink-0 transition-transform duration-300 ${
+                        isOpen ? 'rotate-180 text-[#191F61]' : ''
+                      }`}
+                    />
+                  </button>
+                </h3>
 
                 <AnimatePresence initial={false}>
                   {isOpen && (

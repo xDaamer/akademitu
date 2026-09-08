@@ -1,23 +1,9 @@
 # robots.txt for akademITU
-# Allow Google and other search engines to crawl public pages
 
 User-agent: *
 Allow: /
-Allow: /index.html
-Allow: /sitemap.xml
-Allow: /public/
 
-# Disallow private/unnecessary routes
-Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /user/
-Disallow: /account/
-Disallow: /checkout/
-Disallow: /cart/
-Disallow: /.git/
-Disallow: /node_modules/
-Disallow: /src/
-Disallow: /dist/
+# Sunucu uçları taranmasın (SPA rewrite dışında kalan tek alan).
+Disallow: /api/
 
-Crawl-delay: 1
-Sitemap: https://akademitu.com/sitemap.xml
+Sitemap: https://www.akademitu.com/sitemap.xml

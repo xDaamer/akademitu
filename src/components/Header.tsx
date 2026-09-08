@@ -76,9 +76,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             }}
             className="flex shrink-0 items-center gap-3 group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
           >
+            {/* width/height: görsel inmeden yer ayrılır (CLS güvencesi).
+                alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
             <img
               src={logoWhite}
-              alt="akademITU Logo"
+              alt="akademITU"
+              width={512}
+              height={512}
               className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105"
             />
             <span className="text-2xl font-extrabold tracking-tight text-[#191F61]">
@@ -96,14 +100,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             aria-label="Ana menü"
             className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex"
           >
+            {/*
+              Menü ögeleri <a href> — <button> DEĞİL.
+              Eskiden onClick'li butonlardı; DOM'da href üretmedikleri için
+              (a) arama motoru sayfanın bölüm yapısını menüden okuyamıyor,
+              (b) kullanıcı orta tuşla/yeni sekmede açamıyor, bağlantıyı
+              kopyalayamıyordu. onClick yumuşak kaydırmayı korur; href hem
+              taranabilirliği hem doğal tarayıcı davranışını geri verir.
+            */}
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
               return (
                 <Button
                   key={item.id}
+                  href={`#${item.id}`}
                   variant="ghost"
                   size="sm"
-                  onClick={() => scrollToSection(item.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToSection(item.id);
+                  }}
                   aria-current={isActive ? 'true' : undefined}
                   className={`relative text-sm ${isActive ? 'text-[#191F61]' : ''}`}
                 >
@@ -142,7 +158,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
               variant="iconGhost"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden"
+              /* Dokunma hedefi 44x44 olmalı; size="icon" (p-2) 40x40 veriyordu. */
+              className="md:hidden w-11 h-11"
               aria-label="Menüyü aç"
               aria-expanded={mobileMenuOpen}
             >
@@ -206,6 +223,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                   variant="iconGhost"
                   size="icon"
                   onClick={() => setMobileMenuOpen(false)}
+                  className="w-11 h-11"
                   aria-label="Menüyü kapat"
                 >
                   <X className="w-6 h-6" />
@@ -216,9 +234,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                 {navItems.map((item) => {
                   const isActive = activeSection === item.id;
                   return (
-                    <button
+                    <a
                       key={item.id}
-                      onClick={() => scrollToSection(item.id)}
+                      href={`#${item.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        scrollToSection(item.id);
+                      }}
                       aria-current={isActive ? 'true' : undefined}
                       className={`flex items-center gap-2.5 rounded-xl px-3 py-3 text-left text-base transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] ${
                         isActive
@@ -230,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                         <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
                       )}
                       {item.label}
-                    </button>
+                    </a>
                   );
                 })}
               </nav>

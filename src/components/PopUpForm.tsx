@@ -129,7 +129,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ icon: Icon, label, value, onC
       <select
         value={value}
         onChange={onChange}
-        className="w-full appearance-none pl-11 pr-10 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] focus:border-transparent transition-all cursor-pointer"
+        className="w-full appearance-none pl-11 pr-10 py-3 text-base bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] focus:border-transparent transition-all cursor-pointer"
       >
         {children}
       </select>
@@ -561,7 +561,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                       </div>
                       <Button
                         variant="iconSoft"
-                        size="icon"
+                        size="icon" className="w-11 h-11"
                         onClick={onClose}
                         aria-label="Kapat"
                       >
@@ -611,7 +611,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                               placeholder="Örn: Ahmet Yılmaz"
                               value={fullName}
                               onChange={(e) => setFullName(e.target.value)}
-                              className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
+                              className="w-full pl-11 pr-4 py-3 text-base bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                               required
                             />
                           </div>
@@ -631,7 +631,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                               value={phone}
                               onChange={(e) => handlePhoneChange(e.target.value)}
                               maxLength={17}
-                              className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
+                              className="w-full pl-11 pr-4 py-3 text-base bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                               required
                             />
                           </div>
@@ -839,7 +839,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                     </div>
                     <Button
                       variant="iconSoft"
-                      size="icon"
+                      size="icon" className="w-11 h-11"
                       onClick={onClose}
                       aria-label="Kapat"
                     >
@@ -881,7 +881,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             placeholder="Örn: Ahmet Yılmaz"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
+                            className="w-full pl-11 pr-4 py-3 text-base bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                             required
                           />
                         </div>
@@ -901,7 +901,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             value={phone}
                             onChange={(e) => handlePhoneChange(e.target.value)}
                             maxLength={17}
-                            className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
+                            className="w-full pl-11 pr-4 py-3 text-base bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#191F61] transition-all"
                             required
                           />
                         </div>

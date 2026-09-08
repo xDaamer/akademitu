@@ -216,7 +216,8 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="py-12 sm:py-16 overflow-hidden bg-slate-50">
+    /* id: diğer dört bölümün aksine bu bölüm çapalanamıyordu. */
+    <section id="yorumlar" className="py-12 sm:py-16 overflow-hidden bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 bg-[#191F61]/10 text-[#191F61] border border-[#c5a059]/30 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold mb-3 shadow-sm">

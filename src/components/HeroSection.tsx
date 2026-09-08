@@ -22,18 +22,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenTrialForm }) => 
           {/* SOL YARI: METİN VE BEYAZ BUTON */}
           <div className="space-y-5 md:space-y-6 lg:pr-4">
             
-            {/* BAŞLIK */}
+            {/*
+              BAŞLIK
+              Title "YKS ve LGS Koçluğu ... Online Özel Ders" vaat ediyor;
+              H1 bunu doğrulamalı. Eski hâlde ("...Derece Hocaları ile
+              Hazırlan") ne "koçluk" ne "özel ders" geçiyordu — arayan kişi
+              SERP'te gördüğü ifadeyi sayfada bulamıyordu.
+            */}
             <h1 className="text-2xl sm:text-3xl md:text-3xl lg:text-5xl font-extrabold text-white leading-[1.18] tracking-tight">
-              YKS ve LGS için Derece Hocaları ile Hazırlan
+              Derece Hocalarıyla YKS ve LGS Koçluğu ve Birebir Özel Ders
             </h1>
 
-
-
-            {/* AVANTAJ MADDELERİ */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1 text-xs sm:text-sm text-slate-200">
+            {/* AVANTAJ MADDELERİ
+                text-xs (12px) yerine text-sm: bunlar sayfanın en ikna edici
+                ifadeleri ve mobilde en küçük punto ile gösteriliyorlardı. */}
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1 text-sm text-slate-200">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-[#B6D6CC] shrink-0" />
-                <span>YKS & LGS Birebir Ders</span>
+                {/* "Özel ders" ifadesinin ilk 100 kelimede geçmesi için:
+                    eskiden sadece "Birebir Ders" yazıyordu ve ifade ancak
+                    ~120. kelimede (paket kartında) ortaya çıkıyordu. */}
+                <span>YKS &amp; LGS Birebir Özel Ders</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-[#B6D6CC] shrink-0" />

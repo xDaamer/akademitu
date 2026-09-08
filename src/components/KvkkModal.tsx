@@ -46,7 +46,7 @@ export const KvkkModal: React.FC<KvkkModalProps> = ({ isOpen, onClose }) => {
               </div>
               <Button
                 variant="iconGhost"
-                size="icon"
+                size="icon" className="w-11 h-11"
                 onClick={onClose}
                 aria-label="Kapat"
               >

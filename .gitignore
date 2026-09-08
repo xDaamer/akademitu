@@ -16,3 +16,6 @@ graphify-output/
 *.graph.json
 *.graph.html
 *.graph.svg
+# scripts/generate-images.ts'in ürettiği duyarlı varyantlar (build çıktısı,
+# kaynak değil). Kaynak .jpg dosyaları depoda kalır.
+public/teachers/*-[0-9]*.webp

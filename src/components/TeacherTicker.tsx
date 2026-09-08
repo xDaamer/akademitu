@@ -18,6 +18,13 @@ const IMAGE_PRELOAD_TIMEOUT_MS = 3000;
 /** Ölçülemeyen görseller için makul bir portre oranı (4:5). */
 const FALLBACK_ASPECT_RATIO = 0.8;
 
+/**
+ * Tarayıcıya kartın çizileceği genişliği söyler; srcset'ten hangi varyantı
+ * indireceğine buna bakarak karar verir. Hero telefonda tek sütuna indiği
+ * için kart ~viewport'un yarısı, md'den itibaren sabit ~200px'lik sütun.
+ */
+const IMAGE_SIZES = '(max-width: 767px) 45vw, 200px';
+
 export interface TeacherTickerConfig {
   /** Saniyede kat edilen piksel. Verilirse hız kaynağı budur. */
   pixelsPerSecond: number | null;
@@ -191,6 +198,24 @@ export const TeacherTicker: React.FC = () => {
         img.onerror = () =>
           finish({ ...item, aspectRatio: FALLBACK_ASPECT_RATIO });
 
+        /*
+         * ÖLÇÜM İSTEĞİ, RENDER İSTEĞİYLE AYNI DOSYAYA GİTMELİ.
+         *
+         * Burası kartın en-boy oranını öğrenmek için görseli önceden indirir.
+         * Düz `img.src = item.imageUrl` yazıldığında orijinal JPEG iniyor,
+         * ardından <picture> srcset'ten WebP'yi bir kez daha indiriyordu —
+         * yani her fotoğraf iki kez. (Ölçülen etki: toplam sayfa ağırlığı
+         * 936 KB'den 1103 KB'ye çıkmıştı.)
+         *
+         * srcset/sizes'ı render'daki değerlerle birebir aynı verince tarayıcı
+         * aynı adayı seçiyor ve ikinci istek önbellekten karşılanıyor.
+         * srcset, src'den ÖNCE atanmalı; seçim algoritması src atandığında çalışır.
+         */
+        const srcSet = webpSrcSet(item.imageUrl);
+        if (srcSet) {
+          img.srcset = srcSet;
+          img.sizes = IMAGE_SIZES;
+        }
         img.src = item.imageUrl;
       });
 
@@ -484,11 +509,12 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({
             className="teacher-scroll-group"
             aria-hidden={copyIndex > 0 ? true : undefined}
           >
-            {items.map((item) => (
+            {items.map((item, itemIndex) => (
               <TeacherPhoto
                 key={`${copyIndex}-${item.id}`}
                 item={item}
                 priority={copyIndex === 0}
+                index={itemIndex}
               />
             ))}
           </div>
@@ -505,9 +531,28 @@ const ScrollColumn: React.FC<ScrollColumnProps> = ({
 interface TeacherPhotoProps {
   item: TeacherImageItem;
   priority: boolean;
+  /** Sütun içindeki sırası. Yalnızca ilk kare LCP adayıdır. */
+  index: number;
 }
 
-const TeacherPhoto: React.FC<TeacherPhotoProps> = ({ item, priority }) => {
+/**
+ * `/teachers/dila.jpg` -> `/teachers/dila-400.webp 400w, /teachers/dila-800.webp 800w`
+ *
+ * Varyantları `scripts/generate-images.ts` üretir ve hem `predev` hem
+ * `prebuild` adımında çalışır — yani dev'de de prod'da da dosyalar hazırdır.
+ * `<picture>` içinde bir `<source>` 404 verirse tarayıcı `<img>`'e geri
+ * DÜŞMEZ, görsel tamamen kırılır; bu yüzden varyant üretimi opsiyonel değil.
+ *
+ * Yalnızca /teachers/ altındaki gerçek fotoğraflar için srcset üretilir;
+ * hata durumunda devreye giren /logo-white.png gibi yollar dokunulmadan geçer.
+ */
+function webpSrcSet(url: string): string | null {
+  const match = url.match(/^(\/teachers\/[^/]+)\.(?:jpe?g|png)$/i);
+  if (!match) return null;
+  return `${match[1]}-400.webp 400w, ${match[1]}-800.webp 800w`;
+}
+
+const TeacherPhoto: React.FC<TeacherPhotoProps> = ({ item, priority, index }) => {
   const [imgSrc, setImgSrc] = useState(item.imageUrl);
   const [hasError, setHasError] = useState(false);
 
@@ -527,6 +572,7 @@ const TeacherPhoto: React.FC<TeacherPhotoProps> = ({ item, priority }) => {
 
   // Şeffaf logo, fotoğraf gibi kırpılmamalı; arkasına da bir plaka gerekir.
   const isPlate = imgSrc.toLowerCase().includes('logo');
+  const srcSet = webpSrcSet(imgSrc);
 
   return (
     <div
@@ -540,23 +586,51 @@ const TeacherPhoto: React.FC<TeacherPhotoProps> = ({ item, priority }) => {
       }}
     >
       {!hasError ? (
-        <img
-          src={imgSrc}
-          /* Fotoğraflar dekoratif: erişilebilir ad dıştaki
-             role="img" sarmalayıcısında bir kez veriliyor. */
-          alt=""
-          width={item.naturalWidth}
-          height={item.naturalHeight}
-          onError={handleError}
-          draggable={false}
-          decoding="async"
-          fetchPriority={priority ? 'high' : 'auto'}
-          className={
-            isPlate
-              ? 'w-4/5 h-4/5 object-contain'
-              : 'w-full h-full object-cover'
-          }
-        />
+        /*
+         * <picture>: WebP varyantları srcset ile, orijinal JPEG yedek olarak.
+         * Mobilde 400w sürüm iniyor — eskiden 352px'lik ekrana 800px'lik JPEG
+         * gidiyordu ve 7 fotoğraf toplam 637 KB tutuyordu (400w WebP: 193 KB).
+         *
+         * sizes: hero'nun sağ yarısı iki sütuna bölünür. Telefonda hero tek
+         * sütuna indiği için kart genişliği ~viewport'un yarısı, masaüstünde
+         * sabit ~200px'lik bir sütun.
+         *
+         * display:contents — <picture> düzende bir kutu oluşturmaz, <img>
+         * ebeveynin flex'ine doğrudan katılır (eski yapıyla birebir aynı).
+         */
+        <picture className="contents">
+          {srcSet && (
+            <source type="image/webp" srcSet={srcSet} sizes={IMAGE_SIZES} />
+          )}
+          <img
+            src={imgSrc}
+            /* Fotoğraflar dekoratif: erişilebilir ad dıştaki
+               role="img" sarmalayıcısında bir kez veriliyor. */
+            alt=""
+            width={item.naturalWidth}
+            height={item.naturalHeight}
+            onError={handleError}
+            draggable={false}
+            decoding="async"
+            /*
+             * Yalnızca ilk kopyanın İLK karesi LCP adayı. Eskiden ilk kopyanın
+             * TÜM kareleri fetchPriority="high" alıyordu — 7 görsel aynı anda
+             * yüksek öncelikte yarışıyordu.
+             */
+            fetchPriority={priority && index === 0 ? 'high' : 'auto'}
+            /*
+             * `loading` daha önce hiç kullanılmıyordu: şeritte aynı anda 2-3
+             * kart görünürken 7'si birden iniyordu. LCP adayına lazy vermek
+             * metriği bozar, o yüzden ilk iki kare eager kalır.
+             */
+            loading={priority && index < 2 ? 'eager' : 'lazy'}
+            className={
+              isPlate
+                ? 'w-4/5 h-4/5 object-contain'
+                : 'w-full h-full object-cover'
+            }
+          />
+        </picture>
       ) : (
         <div className="py-6 px-3 text-center text-slate-300 text-xs font-mono">
           <ImageIcon className="w-6 h-6 mx-auto mb-1 text-slate-400" />

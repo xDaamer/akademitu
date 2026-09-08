@@ -6,6 +6,9 @@ import { PackagesSection } from '../components/PackagesSection';
 import { WhyUsSection } from '../components/WhyUsSection';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 import { FAQSection } from '../components/FAQSection';
+import { PageMeta, seoPage } from '../components/PageMeta';
+
+const page = seoPage('home');
 
 interface HomePageProps {
   onOpenTrialForm: () => void;
@@ -27,6 +30,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onOpenTrialForm }) => {
 
   return (
     <main className="flex-grow">
+      {/* Yasal sayfadan ana sayfaya dönüldüğünde <head>'in ana sayfaya ait
+          değerlere geri dönmesi için burada da gerekli — React 19 en son
+          render edilen etiketi uygular. */}
+      <PageMeta
+        title={page.title}
+        description={page.description}
+        path={page.path}
+      />
       <HeroSection onOpenTrialForm={onOpenTrialForm} />
       <TrustBar />
       <PackagesSection onOpenTrialForm={onOpenTrialForm} />

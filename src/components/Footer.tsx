@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { GraduationCap, Mail, Phone, MapPin } from 'lucide-react';
+import { Phone, MapPin } from 'lucide-react';
 import logoBlue from '../assets/logo-blue.png';
 import need from '../../need.json';
 import { Button } from './ui/Button';
@@ -9,24 +9,66 @@ interface FooterProps {
   onOpenTrialForm: () => void;
 }
 
+/*
+ * Bölüm bağlantıları düz `<a href="#paketler">` DEĞİL, `<Link to="/" state=…>`.
+ * -----------------------------------------------------------------------------
+ * Footer her sayfada ortak. Yasal sayfalarda `#paketler` diye bir element
+ * olmadığı için eski düz çapa bağlantıları oralarda HİÇBİR ŞEY yapmıyordu.
+ * Header aynı problemi `navigate('/', { state: { scrollTo } })` ile çözmüştü;
+ * footer bu mantığı hiç almamıştı. `Link` hem her sayfadan çalışır hem de
+ * DOM'da taranabilir bir `href` üretir.
+ */
+const sectionLinks = [
+  { id: 'ana-sayfa', label: 'Ana Sayfa' },
+  { id: 'paketler', label: 'Paketler & Fiyatlar' },
+  { id: 'neden-biz', label: 'Neden akademITU?' },
+  { id: 'sss', label: 'Sıkça Sorulan Sorular' },
+];
+
+/*
+ * "Programlarımız" sitenin en kelime zengini metniydi ve hiçbir yere
+ * bağlanmıyordu — üstelik yanındaki sütun bağlantı olduğu için kullanıcıya
+ * bağlantı gibi görünüyor ama tıklanmıyordu. Artık her biri ilgili bölüme
+ * gidiyor; anchor text zaten idealdi, sadece `<a>` içine alınması gerekiyordu.
+ */
+const programLinks = [
+  { id: 'paketler', label: 'YKS Sayısal / Eşit Ağırlık Koçluğu' },
+  { id: 'paketler', label: 'LGS Birebir Hazırlık & Mentörlük' },
+  { id: 'paketler', label: 'Matematik & Geometri Özel Ders' },
+  { id: 'paketler', label: 'Fizik, Kimya, Biyoloji Dersleri' },
+  { id: 'neden-biz', label: 'Sınav Stresi & Zaman Yönetimi' },
+];
+
+/* Metin bağlantılarının dokunma hedefi 16-17px yüksekliğindeydi; parmakla
+   isabetli tıklamak zordu, aralarındaki boşluk da ~10px'ti. `min-h-[44px]`
+   görsel tasarımı bozmadan tıklanabilir alanı standarda çıkarır — liste
+   aralığı (space-y) buna karşılık sıfırlandı, yükseklik artık padding'den
+   geliyor. */
+const linkClass =
+  'inline-flex items-center min-h-[44px] hover:text-[#B6D6CC] transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#191F61]';
+
 export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
   /* Telefonda alt boşluk daha geniş: sabit WhatsApp düğmesi tam da telif
      satırının üzerine oturuyor, sürüm numarasını örtüyordu. */
   return (
     <footer className="bg-[#191F61] text-white pt-16 pb-20 sm:pb-12 border-t border-[#191F61]/80 relative overflow-hidden">
-      
+
       {/* DEKORATİF ARKA PLAN YUMUŞATICI */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#B6D6CC]/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
-          
+
           {/* MARKA BİLGİSİ */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <img 
-                src={logoBlue} 
-                alt="akademITU Logo" 
+              {/* width/height: görsel inmeden yer ayrılır.
+                  alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
+              <img
+                src={logoBlue}
+                alt="akademITU"
+                width={512}
+                height={512}
                 className="h-11 md:h-12 w-auto object-contain"
               />
               <span className="text-2xl font-extrabold tracking-tight text-white">
@@ -38,57 +80,78 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
             </p>
           </div>
 
-          {/* HIZLI BAĞLANTILAR */}
+          {/* HIZLI BAĞLANTILAR
+              h4 -> h3: sayfadaki son başlık H2 olduğu için H4 bir seviye
+              atlıyordu (H2 -> H4). Üç sayfada birden oluşan bir sıçramaydı. */}
           <div>
-            <h4 className="font-bold text-lg text-white mb-4">
+            <h3 className="font-bold text-lg text-white mb-4">
               Hızlı Bağlantılar
-            </h4>
-            <ul className="space-y-2.5 text-sm text-slate-300">
-              <li>
-                <a href="#ana-sayfa" className="hover:text-[#B6D6CC] transition-colors">Ana Sayfa</a>
-              </li>
-              <li>
-                <a href="#paketler" className="hover:text-[#B6D6CC] transition-colors">Paketler & Fiyatlar</a>
-              </li>
-              <li>
-                <a href="#neden-biz" className="hover:text-[#B6D6CC] transition-colors">Neden akademITU?</a>
-              </li>
-              <li>
-                <a href="#sss" className="hover:text-[#B6D6CC] transition-colors">Sıkça Sorulan Sorular</a>
-              </li>
+            </h3>
+            <ul className="text-sm text-slate-300">
+              {sectionLinks.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    /* pathname + hash: DOM'da `/#paketler` üretir, yani
+                       tarayıcı da arama motoru da bağlantının hangi bölüme
+                       gittiğini görür. Sadece `to="/"` yazılsaydı dokuz
+                       bağlantının dokuzu da `/` gösterirdi. */
+                    to={{ pathname: '/', hash: `#${item.id}` }}
+                    state={{ scrollTo: item.id }}
+                    className={linkClass}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* DERSLER & PROGRAMLAR */}
           <div>
-            <h4 className="font-bold text-lg text-white mb-4">
+            <h3 className="font-bold text-lg text-white mb-4">
               Programlarımız
-            </h4>
-            <ul className="space-y-2.5 text-sm text-slate-300">
-              <li>YKS Sayısal / Eşit Ağırlık Koçluğu</li>
-              <li>LGS Birebir Hazırlık & Mentörlük</li>
-              <li>Matematik & Geometri Özel Ders</li>
-              <li>Fizik, Kimya, Biyoloji Dersleri</li>
-              <li>Sınav Stresi & Zaman Yönetimi</li>
+            </h3>
+            <ul className="text-sm text-slate-300">
+              {programLinks.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    /* pathname + hash: DOM'da `/#paketler` üretir, yani
+                       tarayıcı da arama motoru da bağlantının hangi bölüme
+                       gittiğini görür. Sadece `to="/"` yazılsaydı dokuz
+                       bağlantının dokuzu da `/` gösterirdi. */
+                    to={{ pathname: '/', hash: `#${item.id}` }}
+                    state={{ scrollTo: item.id }}
+                    className={linkClass}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* İLETİŞİM BİLGİLERİ */}
           <div className="space-y-3">
-            <h4 className="font-bold text-lg text-white mb-4">
+            <h3 className="font-bold text-lg text-white mb-4">
               İletişim & Destek
-            </h4>
+            </h3>
+            {/* Telefon artık tıklanabilir: mobilde numarayı elle kopyalamak
+                gerekmiyor. `tel:` E.164 biçimini ister. */}
             <div className="flex items-center gap-3 text-sm text-slate-300">
               <Phone className="w-4 h-4 text-[#B6D6CC] shrink-0" />
-              <span>05303699539</span>
+              <a href="tel:+905303699539" className={linkClass}>
+                {need.contact.phoneFormatted}
+              </a>
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-300">
               <MapPin className="w-4 h-4 text-[#B6D6CC] shrink-0" />
-              <span>Katar Caddesi Maslak/İstanbul</span>
+              <span>
+                {need.contact.address.street}, Maslak/{need.contact.address.city}
+              </span>
             </div>
-            
+
             <div className="pt-2">
-              <Button variant="mint" size="sm" onClick={onOpenTrialForm}>
+              <Button variant="mint" size="md" className="min-h-[44px]" onClick={onOpenTrialForm}>
                 Ücretsiz Deneme Dersi İste
               </Button>
             </div>
@@ -100,9 +163,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 text-center sm:text-left">
           <p>© {new Date().getFullYear()} akademITU. Tüm hakları saklıdır.</p>
           <div className="flex items-center gap-4">
-            <Link to="/gizlilik-politikasi" className="hover:text-[#B6D6CC] transition-colors">Gizlilik Politikası</Link>
-            <Link to="/kullanim-kosullari" className="hover:text-[#B6D6CC] transition-colors">Kullanım Koşulları</Link>
-            <p className="text-slate-500">v{need.site.version}</p>
+            <Link to="/gizlilik-politikasi" className={linkClass}>Gizlilik Politikası</Link>
+            <Link to="/kullanim-kosullari" className={linkClass}>Kullanım Koşulları</Link>
+            {/* text-slate-500 lacivert zeminde 2.82:1 kontrast veriyordu
+                (axe-core'un tespit ettiği tek gerçek ihlal). */}
+            <p className="text-slate-400">v{need.site.version}</p>
           </div>
         </div>
       </div>

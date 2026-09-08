@@ -1,16 +1,26 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, MessageCircle } from 'lucide-react';
 import need from '../../need.json';
 import { Button, buttonClasses } from '../components/ui/Button';
+import { PageMeta } from '../components/PageMeta';
 
 export const NotFoundPage: React.FC = () => {
-  useEffect(() => {
-    document.title = `Sayfa Bulunamadı | ${need.site.name}`;
-  }, []);
-
   return (
     <main className="flex-grow flex items-center justify-center px-4 py-16 sm:py-24 bg-slate-50">
+      {/*
+        noIndex: SPA'da var olmayan bir URL statik hosting'de 404 DEĞİL 200
+        döner (vercel.json rewrite her şeyi index.html'e veriyor) ve eskiden
+        `index, follow` ile birlikte geliyordu — Google bunu soft 404 olarak
+        işaretliyordu. Durum kodu bu mimaride düzeltilemez; noindex ile
+        "bunu dizine alma" demek elimizdeki tek doğru sinyal.
+      */}
+      <PageMeta
+        title={`Sayfa Bulunamadı | ${need.site.name}`}
+        description="Aradığınız sayfa bulunamadı. akademITU ana sayfasından YKS ve LGS koçluk paketlerimize ulaşabilirsiniz."
+        path="/404"
+        noIndex
+      />
       <div className="max-w-xl w-full">
         <div className="bg-gradient-to-br from-[#101442] via-[#1a1f5a] to-[#2a3080] rounded-3xl sm:rounded-[2.5rem] p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden border border-white/10 text-center">
           {/* DEKORATİF ARKA PLAN VURGUSU */}

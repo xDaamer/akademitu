@@ -32,28 +32,24 @@ fs.writeFileSync(
 console.log("✅ Generated: public/sitemap.xml");
 
 // Generate robots.txt
+/*
+ * Yalnızca bu sitede GERÇEKTEN var olan yollar listelenir.
+ * Eskiden /admin/, /cart/, /src/, /dist/, /node_modules/ gibi bu projede
+ * hiç yayınlanmayan yollar ve Google'ın yok saydığı `Crawl-delay` vardı;
+ * var olmayan kuralları listelemek dosyayı okunmaz yapıyor ve gerçek bir
+ * kural eklendiğinde gözden kaçmasına yol açıyordu.
+ *
+ * /assets/ ve /teachers/ bilinçli olarak AÇIK: Google sayfayı render
+ * edebilmek için JS, CSS ve görsellere erişmek zorunda.
+ */
 const robotsTxt = `# robots.txt for ${need.site.name}
-# Allow Google and other search engines to crawl public pages
 
 User-agent: *
 Allow: /
-Allow: /index.html
-Allow: /sitemap.xml
-Allow: /public/
 
-# Disallow private/unnecessary routes
-Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /user/
-Disallow: /account/
-Disallow: /checkout/
-Disallow: /cart/
-Disallow: /.git/
-Disallow: /node_modules/
-Disallow: /src/
-Disallow: /dist/
+# Sunucu uçları taranmasın (SPA rewrite dışında kalan tek alan).
+Disallow: /api/
 
-Crawl-delay: 1
 Sitemap: ${need.site.domain}/sitemap.xml`;
 
 fs.writeFileSync(

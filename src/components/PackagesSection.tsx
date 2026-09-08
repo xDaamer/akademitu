@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Check, Gift, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { SITE_URL } from '../config';
 import { Button } from './ui/Button';
 
 interface PackagesSectionProps {
@@ -10,67 +11,87 @@ interface PackagesSectionProps {
 export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialForm }) => {
   // SEO: Add Service Schema for packages
   useEffect(() => {
+    /*
+     * ŞEMA KURALLARI — bozmadan önce okuyun:
+     *
+     * 1) Fiyat `Service` üzerinde DEĞİL, `offers` altındaki `Offer` üzerinde
+     *    durur. Eskiden `Service.price` / `Service.priceSpecification`
+     *    yazılıydı; bunlar Service'in özellikleri olmadığı için Google
+     *    hepsini yok sayıyordu — yani sayfanın en güçlü ticari sinyali
+     *    (şeffaf fiyat) yapılandırılmış veri olarak hiç iletilmiyordu.
+     *
+     * 2) Her hizmetin `@id`'si BENZERSİZ olmalı. Eskiden "Ücretsiz Deneme
+     *    Dersi" ile "Özel Ders Paketi" aynı `#ozel-ders` kimliğini
+     *    paylaşıyordu; ayrıştırıcı ikisini tek varlık sanıp birleştiriyordu.
+     *
+     * 3) `itemListElement` ögeleri `ListItem` + `position` ile sarılır;
+     *    böylece sıralama (hangisi öne çıkan paket) da iletilir.
+     *
+     * 4) `unitCode` UN/CEFACT Rec 20 kodu bekler. "MON" (ay) geçerlidir;
+     *    eskiden yazan "H27" o listede yok. "Ders başına" için standart bir
+     *    kod olmadığından serbest metin alanı `unitText` kullanılıyor.
+     */
+    const provider = { "@id": `${SITE_URL}/#organization` };
+
+    const services = [
+      {
+        id: 'deneme-dersi',
+        name: 'Ücretsiz Deneme Dersi',
+        description:
+          'Hedefinize ve seviyenize uygun derece koçunuz ile 30-40 dakikalık tanışma seansı. Hiçbir ücret veya taahhüt ödemezsiniz.',
+        price: '0',
+        unitText: 'ders',
+      },
+      {
+        id: 'ozel-ders-paketi',
+        name: 'Özel Ders Paketi',
+        description:
+          'Haftalık belirlenmiş saatlerde derece hocalarımızdan online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.',
+        price: '950',
+        unitText: 'ders',
+      },
+      {
+        id: 'kocluk-programi',
+        name: 'Koçluk Programı',
+        description:
+          'Haftalık revizyon ve planlama görüşmesi ile kişiye özel çalışma planı. Farklı teknikler ile en verimli çalışma yolunu keşfet.',
+        price: '3150',
+        unitCode: 'MON',
+      },
+    ];
+
     const serviceSchema = {
       "@context": "https://schema.org",
       "@type": "ItemList",
-      "itemListElement": [
-        {
+      "name": "YKS ve LGS özel ders ve koçluk paketleri",
+      "itemListElement": services.map((service, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
           "@type": "Service",
-          "@id": "https://www.akademitu.com/#ozel-ders",
-          "name": "Ücretsiz Deneme Dersi",
-          "description": "Hedefinize ve seviyenize uygun derece koçunuz ile 30-40 dakikalık tanışma seansı. Hiçbir ücret veya taahhüt ödemezsiniz.",
-          "provider": {
-            "@type": "Organization",
-            "name": "akademITU"
-          },
-          "priceCurrency": "TRY",
-          "price": "0"
-        },
-        {
-          "@type": "Service",
-          "@id": "https://www.akademitu.com/#ozel-ders",
-          "name": "Özel Ders Paketi",
-          "description": "Haftalık belirlenmiş saatlerde derece hocalarımızdan online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.",
-          "provider": {
-            "@type": "Organization",
-            "name": "akademITU"
-          },
-          "priceCurrency": "TRY",
-          "price": "950",
-          "priceSpecification": {
-            "@type": "PriceSpecification",
-            "price": "950",
+          "@id": `${SITE_URL}/#${service.id}`,
+          "name": service.name,
+          "description": service.description,
+          "serviceType": "Online özel ders ve sınav koçluğu",
+          "provider": provider,
+          "areaServed": { "@type": "Country", "name": "Türkiye" },
+          "offers": {
+            "@type": "Offer",
+            "price": service.price,
             "priceCurrency": "TRY",
-            "eligibleQuantity": {
-              "@type": "QuantitativeValue",
-              "unitCode": "H27",
-              "value": "1"
-            }
-          }
-        },
-        {
-          "@type": "Service",
-          "@id": "https://www.akademitu.com/#kocluk",
-          "name": "Koçluk Programı",
-          "description": "Haftalık revizyon ve planlama görüşmesi ile kişiye özel çalışma planı. Farklı teknikler ile en verimli çalışma yolunu keşfet.",
-          "provider": {
-            "@type": "Organization",
-            "name": "akademITU"
+            "availability": "https://schema.org/InStock",
+            "url": `${SITE_URL}/#paketler`,
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": service.price,
+              "priceCurrency": "TRY",
+              ...(service.unitCode
+                ? { "unitCode": service.unitCode }
+                : { "unitText": service.unitText }),
+            },
           },
-          "priceCurrency": "TRY",
-          "price": "3150",
-          "priceSpecification": {
-            "@type": "PriceSpecification",
-            "price": "3150",
-            "priceCurrency": "TRY",
-            "eligibleQuantity": {
-              "@type": "QuantitativeValue",
-              "unitCode": "MON",
-              "value": "1"
-            }
-          }
-        }
-      ]
+        },
+      })),
     };
 
     const script = document.createElement('script');
@@ -92,8 +113,10 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
             <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
             <span>Sana En Uygun Eğitim Paketi</span>
           </div>
+          {/* H2'ler hedef ifadeleri taşımalı: eskiden dört H2'nin hiçbirinde
+              "YKS", "LGS", "koçluk" veya "özel ders" geçmiyordu. */}
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#191F61] tracking-tight">
-            Şeffaf ve Esnek Paket Seçenekleri
+            YKS ve LGS Özel Ders ve Koçluk Paketleri
           </h2>
           <p className="mt-3 text-slate-600 text-base sm:text-lg">
             Derece hocalarımızla hedeflerine adım adım yaklaş. Sürpriz ücret yok!

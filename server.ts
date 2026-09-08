@@ -17,6 +17,14 @@ import { createClient } from "@supabase/supabase-js";
 // back to a minimal shape keeps the function alive even if the file can't
 // be read, so at least the actual error is diagnosable from server logs
 // instead of a blanket crash.
+//
+// VERCEL NOTU: bu okuma bir ÇALIŞMA ANI yol ifadesidir. Vercel'in dosya
+// izleyicisi (nft) yalnızca statik import'ları takip eder, `process.cwd()` ile
+// kurulan bir yolu göremez — dolayısıyla need.json'ı fonksiyon paketine
+// kendiliğinden koymaz ve aşağıdaki catch'e düşülür (/api/config boş döner).
+// Bu yüzden vercel.json'da açıkça bildiriliyor:
+//     "functions": { "api/**": { "includeFiles": "need.json" } }
+// O satır silinirse burası sessizce boş nesneye düşer.
 let need: any = { site: {}, contact: {}, social: {}, seo: { pages: [] } };
 try {
   need = JSON.parse(readFileSync(path.join(process.cwd(), "need.json"), "utf-8"));
@@ -126,65 +134,17 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", supabaseConfigured: !!supabase });
 });
 
-// SEO: Dynamic Sitemap from need.json
-app.get("/sitemap.xml", (_req, res) => {
-  res.type("application/xml");
-  
-  const sitemapEntries = need.seo.pages
-    .map(page => `
-  <url>
-    <loc>${need.site.domain}${page.path}</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>${page.changefreq}</changefreq>
-    <priority>${page.priority}</priority>
-  </url>`)
-    .join("");
-
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:mobile="http://www.mobile.googlebot.org/schemas/mobile/1.0">
-${sitemapEntries}
-</urlset>`;
-
-  res.send(sitemap);
-});
-
-// SEO: Dynamic robots.txt from need.json
-app.get("/robots.txt", (_req, res) => {
-  res.type("text/plain");
-  
-  const robotsTxt = `# robots.txt for ${need.site.name}
-# Allow Google and other search engines to crawl public pages
-
-User-agent: *
-Allow: /
-Allow: /index.html
-Allow: /sitemap.xml
-Allow: /public/
-
-# Disallow private/unnecessary routes
-Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /user/
-Disallow: /account/
-Disallow: /checkout/
-Disallow: /cart/
-Disallow: /.git/
-Disallow: /node_modules/
-Disallow: /src/
-Disallow: /dist/
-Disallow: /build/
-
-# Crawl delay
-Crawl-delay: 1
-
-# Sitemap location
-Sitemap: ${need.site.domain}/sitemap.xml
-`;
-
-  res.send(robotsTxt);
-});
+/*
+ * SEO: /sitemap.xml ve /robots.txt BU DOSYADAN SERVİS EDİLMEZ.
+ * -------------------------------------------------------------------------
+ * İkisini de `scripts/generate-seo.ts` build öncesi `public/` altına yazar
+ * ve statik dosya olarak sunulurlar. Buradaki Express route'ları aynı işi
+ * ikinci kez yapıyordu; üstelik Vercel'de bu fonksiyon çalışmadığı için
+ * (bkz. CLAUDE.md) hiçbir zaman devreye girmiyorlardı. Dev'de ise statik
+ * dosyaları gölgeleyip prod'dan farklı çıktı üretiyorlardı.
+ *
+ * Tek kaynak: need.json -> scripts/generate-seo.ts -> public/
+ */
 
 // API endpoint to get site config (for frontend)
 app.get("/api/config", (_req, res) => {

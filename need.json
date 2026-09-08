@@ -2,11 +2,11 @@
   "site": {
     "name": "akademITU",
     "version": "2.0.0",
-    "domain": "https://akademitu.com",
-    "domainLocal": "akademitu.com",
-    "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
-    "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı ve takip sistemi.",
-    "keywords": "YKS koçluk, LGS koçluk, özel ders, YKS özel ders, LGS özel ders, TYT koçu, AYT koçu, koçluk programı",
+    "domain": "https://www.akademitu.com",
+    "domainLocal": "www.akademitu.com",
+    "title": "YKS ve LGS Koçluğu | Derece Hocalarıyla Online Özel Ders",
+    "description": "Derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve koçluk. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
+    "keywords": "YKS koçluk, LGS koçluk, online YKS özel ders, online LGS özel ders, TYT matematik özel ders, AYT matematik özel ders, LGS matematik özel ders, üniversite hazırlık koçluğu",
     "language": "tr_TR",
     "themeColor": "#191F61",
     "logoUrl": "/logo.png"
@@ -32,8 +32,8 @@
       {
         "id": "home",
         "path": "/",
-        "title": "YKS Koçluk & LGS Özel Ders | Derece Öğrencileri ile Koçluk Programı",
-        "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders alın. Başarı garantili çalışma programı.",
+        "title": "YKS ve LGS Koçluğu | Derece Hocalarıyla Online Özel Ders",
+        "description": "Derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve koçluk. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
         "changefreq": "weekly",
         "priority": 1
       },
@@ -54,5 +54,9 @@
         "priority": 0.3
       }
     ]
+  },
+  "legal": {
+    "lastUpdated": "21.08.2026",
+    "note": "Yasal metinleri değiştirdiğinizde bu tarihi güncelleyin; sayfalar buradan okur."
   }
 }

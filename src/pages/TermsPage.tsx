@@ -1,15 +1,20 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
 import { FileText } from 'lucide-react';
 import need from '../../need.json';
+import { PageMeta, seoPage } from '../components/PageMeta';
+import { LegalBreadcrumb, LegalPageFooter } from '../components/LegalPageChrome';
+
+const page = seoPage('terms');
 
 export const TermsPage: React.FC = () => {
-  useEffect(() => {
-    document.title = `Kullanım Koşulları | ${need.site.name}`;
-  }, []);
-
   return (
     <main className="flex-grow bg-slate-50 px-4 py-16 sm:py-24">
+      <PageMeta
+        title={page.title}
+        description={page.description}
+        path={page.path}
+      />
+      <LegalBreadcrumb page={page} label="Kullanım Koşulları" />
       <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10 text-slate-700">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-11 h-11 rounded-2xl bg-[#191F61]/10 text-[#191F61] flex items-center justify-center shrink-0">
@@ -79,15 +84,9 @@ export const TermsPage: React.FC = () => {
             </p>
           </section>
 
-          <p className="text-xs text-slate-400 pt-4 border-t border-slate-100">
-            Son güncelleme: 13.08.2026
-          </p>
-        </div>
-
-        <div className="pt-8">
-          <Link to="/" className="text-[#191F61] font-semibold hover:underline text-sm">
-            &larr; Ana sayfaya dön
-          </Link>
+          <LegalPageFooter
+            sibling={{ path: '/gizlilik-politikasi', label: 'Gizlilik Politikası' }}
+          />
         </div>
       </div>
     </main>

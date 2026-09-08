@@ -1,16 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Phone } from 'lucide-react';
+import need from '../need.json';
+import { SITE_URL } from './config';
+import { WhatsAppIcon } from './components/ui/WhatsAppIcon';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { PopUpForm } from './components/PopUpForm';
 import { HomePage } from './pages/HomePage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { Button } from './components/ui/Button';
+
+/*
+ * PopUpForm (1073 satır) + içindeki KvkkModal ilk render'da asla görünmüyor
+ * ama ana bundle'ın içindeydiler. Lighthouse bundle'ın %58'inin (117 KB)
+ * kullanılmadığını ölçüyordu. React.lazy ile ayrı bir parçaya çıkıyorlar;
+ * kullanıcı formu açtığında (scroll ya da butonla) indiriliyorlar.
+ *
+ * Suspense fallback yok (null): pop-up zaten görünmez durumdan açılıyor,
+ * araya bir yükleniyor göstergesi koymak kaymaya yol açardı.
+ */
+const PopUpForm = lazy(() =>
+  import('./components/PopUpForm').then((m) => ({ default: m.PopUpForm }))
+);
 
 export default function App() {
   const [formMode, setFormMode] = useState<'scroll' | 'button' | null>(null);
@@ -21,36 +36,59 @@ export default function App() {
 
   // SEO: Add Organization & WebSite Schema to document head
   useEffect(() => {
+    /*
+     * Tip `EducationalOrganization`: schema.org'da Organization'ın alt tipi ve
+     * eğitim hizmeti veren bir kuruluşu Organization'dan daha isabetli anlatır.
+     *
+     * `@id` şart: paket şemalarındaki `Service.provider` bu kimliğe referans
+     * verir. Eskiden sadece isimle bağlanıyordu ve grafik parçalı kalıyordu.
+     */
     const organizationSchema = {
       "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "akademITU",
-      "url": "https://www.akademitu.com",
-      "logo": "https://www.akademitu.com/logo.png",
-      "description": "YKS ve LGS hazırlık için derece yapmış öğrencilerden kişiye özel koçluk ve özel ders",
-      "telephone": "+90-530-369-9539",
+      "@type": "EducationalOrganization",
+      "@id": `${SITE_URL}/#organization`,
+      "name": need.site.name,
+      "url": `${SITE_URL}/`,
+      "logo": `${SITE_URL}${need.site.logoUrl}`,
+      "image": `${SITE_URL}/og-image.png`,
+      "description": need.site.description,
+      // E.164: tireli biçim yerine uluslararası standart.
+      "telephone": "+905303699539",
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "İstanbul",
-        "addressRegion": "İstanbul",
-        "addressCountry": "TR"
+        "streetAddress": need.contact.address.street,
+        "addressLocality": need.contact.address.city,
+        "addressRegion": need.contact.address.region,
+        "addressCountry": need.contact.address.country
       },
-      "sameAs": ["https://www.instagram.com/akademitu", "https://www.youtube.com/@akademitu"]
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+905303699539",
+        "contactType": "customer service",
+        "areaServed": "TR",
+        "availableLanguage": ["Turkish"]
+      },
+      "sameAs": [
+        need.social.instagram,
+        need.social.youtube,
+        need.social.twitter
+      ]
     };
 
+    /*
+     * `potentialAction`/`SearchAction` kaldırıldı: sitede arama kutusu yok ve
+     * `?q=` parametresini işleyen hiçbir kod yok. Var olmayan bir işlevi
+     * işaretlemek yapılandırılmış veri politikası ihlali riskidir; ayrıca
+     * Google Sitelinks Searchbox'ı 2024'te büyük ölçüde kullanımdan kaldırdı.
+     */
     const websiteSchema = {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "akademITU",
-      "url": "https://www.akademitu.com",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://www.akademitu.com/?q={search_term_string}"
-        },
-        "query-input": "required name=search_term_string"
-      }
+      "@id": `${SITE_URL}/#website`,
+      "name": need.site.name,
+      "url": `${SITE_URL}/`,
+      "inLanguage": "tr-TR",
+      "publisher": { "@id": `${SITE_URL}/#organization` }
     };
 
     // Create script tags
@@ -170,12 +208,18 @@ export default function App() {
       <Footer onOpenTrialForm={handleOpenTrialForm} />
 
       {/* 4. ÇİFT MODLU DERECE KOÇLUĞU FORMU */}
-      <PopUpForm
-        isOpen={formMode !== null}
-        mode={formMode}
-        onClose={handleCloseTrialForm}
-        onEscalateToModal={handleEscalateToModal}
-      />
+      {/* formMode null iken hiç mount edilmiyor: parçanın indirilmesi de
+          kullanıcı formu ilk kez açana kadar ertelenir. */}
+      {formMode !== null && (
+        <Suspense fallback={null}>
+          <PopUpForm
+            isOpen
+            mode={formMode}
+            onClose={handleCloseTrialForm}
+            onEscalateToModal={handleEscalateToModal}
+          />
+        </Suspense>
+      )}
 
       {/* 5. SAĞ TARAF: ARAYALIM SEKMESİ (SABIT) — YALNIZCA MASAÜSTÜ */}
       {/*
@@ -207,16 +251,13 @@ export default function App() {
       {/* 6. SAĞ ALT: WHATSAPP BUTONU (SABIT) */}
       <div className="fixed bottom-24 sm:bottom-6 right-6 z-40 group">
         <a
-          href="https://wa.me/905303699539?text=Merhaba! AkademITU için bilgi almak istiyorum."
+          href={need.contact.whatsapp}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center block"
+          aria-label="WhatsApp'tan yazın"
+          className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
         >
-          <img
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsb1L0gLGLPI8j2cMJ8xc3_11wDVCJJWJch7ZGRWUNlw&s=10"
-            alt="WhatsApp"
-            className="w-8 h-8 rounded-full"
-          />
+          <WhatsAppIcon className="w-8 h-8" />
         </a>
 
         {/* WHATSAPP TOOLTIP */}

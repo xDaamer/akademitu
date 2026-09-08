@@ -41,7 +41,7 @@ const DISMISS_DISTANCE_PX = 90;
 const DISMISS_VELOCITY_PX_PER_S = 600;
 
 const FIELD_CLASSES =
-  'w-full h-12 pl-11 pr-4 text-sm bg-slate-50 border border-slate-200 rounded-xl ' +
+  'w-full h-12 pl-11 pr-4 text-base bg-slate-50 border border-slate-200 rounded-xl ' +
   'text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none ' +
   'focus:ring-2 focus:ring-[#191F61] focus:border-transparent transition-all';
 
@@ -103,7 +103,7 @@ export const MobileLeadSheet: React.FC<MobileLeadSheetProps> = ({
             Adım 1/2
           </span>
         </div>
-        <Button variant="iconSoft" size="icon" onClick={onClose} aria-label="Kapat">
+        <Button variant="iconSoft" size="icon" className="w-11 h-11" onClick={onClose} aria-label="Kapat">
           <X className="w-5 h-5" />
         </Button>
       </div>
