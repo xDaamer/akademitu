@@ -13,7 +13,7 @@ akademITU — a Turkish-language marketing site (YKS/LGS exam coaching) built as
 - `npm start` — runs the built `server-dist/server.cjs` (production mode, serves static `dist/` and falls back to `index.html` for SPA routes).
 - `npm run lint` — `tsc --noEmit`. There is no separate lint tool (no ESLint) and no test suite/framework in this repo — don't assume `npm test` exists.
 - `npm run clean` — removes `dist/`.
-- `npm run push` — runs `scripts/push.cjs`, which auto-bumps the patch version in `need.json` and creates a `chore: bump version` commit before pushing (this is how versions in `need.json`/`package.json` get incremented; not manual).
+- `npm run push` — plain `git push`, nothing more. **Version bumping is currently manual.** `scripts/push.cjs` and `scripts/version-bump-on-push.cjs` still exist and both auto-bump the patch version in `need.json` plus create a `chore: bump version` commit, but nothing calls them: `package.json`'s `push` script is just `git push` and `.husky/pre-push` is disabled. Either wire one of them back up (`"push": "node scripts/push.cjs && git push"`) or delete both — right now they are orphaned code that this file used to describe as live.
 
 ## Architecture
 

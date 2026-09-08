@@ -1,3 +1,8 @@
 #!/bin/bash
-# Pre-push hook disabled — use 'npm run push' instead
+# Pre-push hook disabled.
+#
+# NOT: burada eskiden sürüm bump'ı yapılıyordu ve yorumda "use 'npm run push'
+# instead" yazıyordu. O yönlendirme artık yanlış: `npm run push` düz `git push`,
+# sürüm bump'ı yapmıyor. scripts/push.cjs ve scripts/version-bump-on-push.cjs
+# duruyor ama hiçbir yerden çağrılmıyor. Sürüm şu an ELLE artırılıyor.
 exit 0
