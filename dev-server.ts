@@ -8,7 +8,10 @@
 // break the deployed function at runtime. Keeping it here instead means
 // it's structurally impossible for it to leak into the Vercel build.
 import { createServer as createViteServer } from "vite";
-import app from "./server";
+// `.js` uzantısı: api/[...path].ts ile aynı gerekçe (proje "type": "module").
+// tsx uzantısız hâli de çözerdi, ancak iki giriş noktasının aynı biçimi
+// kullanması, ESM specifier hatasının bir daha fark edilmeden girmesini önler.
+import app from "./server.js";
 
 const PORT = 3000;
 
