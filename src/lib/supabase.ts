@@ -1,54 +1,21 @@
 /**
- * Supabase integration with localStorage fail-safe fallback.
+ * LEAD KAYDI — ARTIK KENDİ API KATMANIMIZ ÜZERİNDEN
+ * ============================================================================
+ * Eskiden bu dosya tarayıcıdan DOĞRUDAN Supabase'e yazıyordu (anon anahtarıyla),
+ * çünkü Vercel'deki serverless fonksiyon her istekte çöküyordu. O hata
+ * 2026-09-08'de giderildi (ESM modül çözümlemesi, bkz. api/[...path].ts) ve
+ * artık istek /api/leads üzerinden gidiyor.
  *
- * Writes go straight from the browser to Supabase using the anon/publishable
- * key (see supabaseClient.ts) — NOT through a server proxy. This is
- * intentional: the Vercel serverless function that used to sit in front of
- * this (server.ts, via api/[...path].ts) throws FUNCTION_INVOCATION_FAILED
- * on every invocation in production and the root cause couldn't be diagnosed
- * without access to Vercel's function logs. See supabase-anon-lead-insert.sql
- * for the RLS policies that make this safe: anon can only INSERT/UPDATE
- * `leads` (never SELECT/DELETE — no way to read back or enumerate rows) and
- * only SELECT published `testimonials`.
+ * Kazanç anahtarın "gizlenmesi" değil — Supabase'in anon anahtarı zaten gizli
+ * bir sır değil. Kazanç şu: anon rolünün `leads` üzerindeki INSERT yetkisi
+ * tamamen kaldırılabildi (bkz. supabase-portal-auth.sql), yani o anahtarla
+ * artık hiçbir şey yapılamıyor. Ayrıca doğrulama ve hız limiti sunucuda,
+ * IP başına uygulanabiliyor.
  *
- * If you haven't run supabase-anon-lead-insert.sql yet, run it in your
- * Supabase project's SQL Editor before this will work. The `leads` table
- * itself:
- *
- * CREATE TABLE public.leads (
- *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
- *   created_at TIMESTAMPTZ DEFAULT NOW(),
- *   updated_at TIMESTAMPTZ DEFAULT NOW(),
- *   full_name TEXT,
- *   phone TEXT, -- not UNIQUE: repeat submissions are allowed, see below
- *   exam_type TEXT,
- *   student_full_name TEXT,
- *   parent_full_name TEXT,
- *   user_role TEXT,
- *   grade_class TEXT,
- *   selected_subjects TEXT[],
- *   step INT DEFAULT 1,
- *   website TEXT, -- honeypot column, see supabase-anon-lead-insert.sql
- *   is_repeat_submission BOOLEAN DEFAULT false, -- set by a DB trigger, never by the client
- *   first_seen_lead_id UUID -- ditto; points at this phone's earliest lead row
- * );
- *
- * The `testimonials` table is read the same way, straight from the browser
- * now too (see TestimonialsSection.tsx) — RLS restricts anon to
- * `is_published = true` rows only.
+ * localStorage yedeği KORUNDU: ağ koparsa ya da sunucu hata verirse kullanıcının
+ * girdiği bilgi yine de bir yerde duruyor.
  */
-import { supabase } from './supabaseClient';
-
-// Never show a raw Postgres/PostgREST error straight to the user (leaks
-// schema/constraint names, is usually in English). The one exception is the
-// rate-limit trigger's RAISE EXCEPTION (code P0001): that message is our own
-// Turkish, user-safe text, written specifically to be shown as-is.
-function friendlyErrorMessage(error: { code?: string; message?: string } | null | undefined): string {
-  if (error?.code === 'P0001' && error.message) {
-    return error.message;
-  }
-  return 'Form gönderilirken bir sorun oluştu. Lütfen tekrar deneyin ya da bizi WhatsApp üzerinden arayın.';
-}
+import { apiFetch, ApiRequestError } from './api';
 
 // Helper to save backup to LocalStorage so no user data is ever lost
 function saveLocalLead(payload: any): string {
@@ -72,7 +39,8 @@ function saveLocalLead(payload: any): string {
 }
 
 /**
- * Step 1: Save initial lead contact info, direct to Supabase (anon INSERT).
+ * Adım 1: ad + telefon. İstek /api/leads'e gider; sunucu doğrulamayı, hız
+ * limitini ve Supabase yazımını üstlenir.
  */
 export async function saveLeadStep1(data: {
   fullName: string;
@@ -80,7 +48,7 @@ export async function saveLeadStep1(data: {
   examType?: string;
   website: string;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
-  // Always back up locally first
+  // Her şeyden önce yerel yedek: ağ koparsa bile bilgi kaybolmasın.
   const localId = saveLocalLead({
     full_name: data.fullName,
     phone: data.phone,
@@ -89,47 +57,36 @@ export async function saveLeadStep1(data: {
     created_at: new Date().toISOString(),
   });
 
-  if (!supabase) {
-    return { success: false, error: 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.' };
-  }
-
   try {
-    // No .select() after insert: RLS-enabled tables require SELECT privilege
-    // to return the inserted row (Postgres's RETURNING-under-RLS rule), and
-    // anon intentionally has none — it can never read leads back, only add/
-    // update them. We don't need the real id anyway: updateLeadStep2 below
-    // keys off `phone` (no longer UNIQUE — a DB trigger now targets the
-    // right pending row instead, see supabase-anon-lead-insert.sql), so the
-    // local fallback id is enough.
-    const { error } = await supabase.from('leads').insert({
-      full_name: data.fullName,
-      phone: data.phone,
-      exam_type: data.examType || 'YKS',
-      website: data.website,
-      step: 1,
+    const result = await apiFetch<{ id?: string }>('/api/leads', {
+      method: 'POST',
+      body: {
+        fullName: data.fullName,
+        phone: data.phone,
+        examType: data.examType || 'YKS',
+        website: data.website,
+      },
     });
 
-    if (error) {
-      console.error('[Supabase] Lead Step 1 insert failed:', error.message, error);
-      return { success: false, error: friendlyErrorMessage(error) };
-    }
-
-    return { success: true, id: localId };
+    /*
+     * Sunucu artık gerçek satır id'sini dönebiliyor (servis rolü RLS'e
+     * takılmadan .select() yapabiliyor). Adım 2 bu id'yi kullanarak doğru
+     * satırı güncelliyor; yoksa yerel yedek id'ye düşülüyor.
+     */
+    return { success: true, id: result.id || localId };
   } catch (err) {
-    console.warn('Supabase unavailable:', err);
+    const message =
+      err instanceof ApiRequestError
+        ? err.message
+        : 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.';
+    console.error('[API] Lead adım 1 başarısız:', message);
+    return { success: false, error: message };
   }
-  return { success: false, error: 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.' };
 }
 
 /**
- * Step 2: Update lead with detailed student and grade information via the
- * update_lead_step2 RPC (a SECURITY DEFINER Postgres function — see
- * supabase-anon-lead-insert.sql). Not a raw table UPDATE: Postgres requires
- * SELECT privilege on any column referenced in an UPDATE's WHERE clause
- * (independent of RLS), and granting that — even scoped to just `phone` —
- * would let anon enumerate every phone number ever submitted. The RPC runs
- * server-side with elevated privileges internally, so anon keeps zero
- * SELECT on `leads`.
+ * Adım 2: öğrenci detayları. Sunucu, doğru satırı hedeflemek için
+ * update_lead_step2 RPC'sini çağırır (bkz. server.ts'teki açıklama).
  */
 export async function updateLeadStep2(data: {
   leadId?: string;
@@ -143,8 +100,8 @@ export async function updateLeadStep2(data: {
   selectedSubjects: string[];
   website: string;
 }): Promise<{ success: boolean; error?: string }> {
-  // Always back up locally. fullName/examType are included so the local
-  // backup stays complete even if step 1's insert never landed.
+  // fullName/examType yerel yedeğe de yazılıyor ki adım 1 hiç ulaşmamış olsa
+  // bile buradaki kayıt eksiksiz kalsın.
   saveLocalLead({
     phone: data.phone,
     full_name: data.fullName || '',
@@ -158,47 +115,30 @@ export async function updateLeadStep2(data: {
     updated_at: new Date().toISOString(),
   });
 
-  if (!supabase) {
-    return { success: false, error: 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.' };
-  }
-
   try {
-    const rpcArgs = {
-      p_phone: data.phone,
-      p_student_full_name: data.studentFullName,
-      p_parent_full_name: data.parentFullName || '',
-      p_user_role: data.userRole,
-      p_grade_class: data.gradeClass,
-      p_selected_subjects: data.selectedSubjects,
-      p_website: data.website,
-    };
-
-    // exam_type step 1'de yazılıyor, ama mobildeki kısa ilk adım hedef sınavı
-    // sormaz (yalnızca ad + telefon alır) — o akışta soru step 2'de sorulur ve
-    // cevabı buradan geçer. p_exam_type NULL geldiğinde fonksiyon mevcut değeri
-    // korur, yani masaüstü akışında step 1'in yazdığı değer bozulmaz.
-    let { error } = await supabase.rpc('update_lead_step2', {
-      ...rpcArgs,
-      p_exam_type: data.examType || null,
+    await apiFetch('/api/leads/step2', {
+      method: 'POST',
+      body: {
+        leadId: data.leadId,
+        phone: data.phone,
+        fullName: data.fullName,
+        examType: data.examType,
+        studentFullName: data.studentFullName,
+        parentFullName: data.parentFullName || '',
+        userRole: data.userRole,
+        gradeClass: data.gradeClass,
+        selectedSubjects: data.selectedSubjects,
+        website: data.website,
+      },
     });
-
-    // Veritabanında henüz p_exam_type'lı sürüm yoksa (supabase-anon-lead-insert.sql
-    // yeniden çalıştırılmadıysa) PostgREST imzayı bulamaz ve PGRST202 döner.
-    // Eski imzayla yeniden denenir: form çalışmaya devam eder, sadece hedef sınav
-    // güncellenmemiş olur — başvurunun tamamen kaybolmasından iyidir.
-    if (error?.code === 'PGRST202') {
-      console.warn('[Supabase] update_lead_step2 henüz p_exam_type almıyor; eski imzayla denenecek.');
-      ({ error } = await supabase.rpc('update_lead_step2', rpcArgs));
-    }
-
-    if (error) {
-      console.error('[Supabase] Lead Step 2 update failed:', error.message, error);
-      return { success: false, error: friendlyErrorMessage(error) };
-    }
 
     return { success: true };
   } catch (err) {
-    console.warn('Supabase unavailable for Step 2:', err);
+    const message =
+      err instanceof ApiRequestError
+        ? err.message
+        : 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.';
+    console.error('[API] Lead adım 2 başarısız:', message);
+    return { success: false, error: message };
   }
-  return { success: false, error: 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.' };
 }

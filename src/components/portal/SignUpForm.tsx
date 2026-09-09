@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail } from 'lucide-react';
 import { Button, buttonClasses } from '../ui/Button';
 import { Field, FIELD_ICON_CLASSES } from '../ui/Field';
@@ -7,6 +7,8 @@ import { PhoneField } from '../ui/PhoneField';
 import { PasswordField } from '../ui/PasswordField';
 import { KvkkModal } from '../KvkkModal';
 import { isValidTurkishMobilePhone } from '../../lib/phone';
+import { useAuth } from '../../context/AuthContext';
+import { ApiRequestError } from '../../lib/api';
 
 /*
  * E-POSTA İLE KAYIT
@@ -31,6 +33,8 @@ type Errors = Partial<
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const SignUpForm: React.FC = () => {
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -41,6 +45,7 @@ export const SignUpForm: React.FC = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [kvkkOpen, setKvkkOpen] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const clearError = (key: keyof Errors) => {
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -86,13 +91,66 @@ export const SignUpForm: React.FC = () => {
     if (Object.keys(found).length > 0 || website) return;
 
     setIsSubmitting(true);
-    // TODO (Faz 2): AuthContext.signUp(...) — /api/auth/signup.
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    setIsSubmitting(false);
-    setErrors({
-      form: 'Kayıt henüz açılmadı. Panel yayına alındığında bu ekran çalışacak.',
-    });
+    setErrors({});
+
+    try {
+      const { requiresEmailConfirmation } = await signUp({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone,
+        password,
+        website,
+      });
+
+      if (requiresEmailConfirmation) {
+        setConfirmationSent(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      navigate('/portal/panel', { replace: true });
+    } catch (err) {
+      setErrors({
+        form:
+          err instanceof ApiRequestError
+            ? err.message
+            : 'Hesap oluşturulamadı. Lütfen tekrar deneyin.',
+      });
+      setIsSubmitting(false);
+    }
   };
+
+  /*
+   * Boş ekran değil, yönlendirme: kişi ne olduğunu ve şimdi ne yapması
+   * gerektiğini görüyor. Adres de yazılı, çünkü yazım hatası bu akıştaki en
+   * sık takılma noktası.
+   */
+  if (confirmationSent) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#B6D6CC]/40 text-[#191F61]">
+          <Mail className="h-7 w-7" aria-hidden="true" />
+        </div>
+
+        <h2 className="text-2xl font-extrabold tracking-tight text-[#191F61]">
+          Hesabın açıldı
+        </h2>
+
+        <p className="text-sm leading-relaxed text-slate-600">
+          <span className="font-semibold text-slate-800">{email.trim()}</span>{' '}
+          adresine bir doğrulama bağlantısı gönderdik. Bağlantıya tıkladıktan
+          sonra telefon numaranla giriş yapabilirsin.
+        </p>
+
+        <Link
+          to="/portal"
+          className={buttonClasses({ variant: 'primary', size: 'lg', fullWidth: true })}
+        >
+          Giriş ekranına dön
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>

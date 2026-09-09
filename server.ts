@@ -2,7 +2,19 @@ import express from "express";
 import path from "path";
 import { readFileSync } from "fs";
 import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
+import cookieParser from "cookie-parser";
+/*
+ * `.js` uzantısı ZORUNLU (bkz. api/[...path].ts'teki uzun açıklama): proje
+ * "type": "module" ve Node'un ESM çözümleyicisi uzantı tahmin etmez.
+ * tsconfig "moduleResolution": "bundler" olduğu için tsc bunu YAKALAMAZ —
+ * eksik uzantı ancak canlıda cold start'ta patlar. Disiplin elle.
+ *
+ * Bu modüllerin hiçbiri `vite` import etmez; etseydi Vercel'in izleyicisi
+ * onu fonksiyon paketine çeker ve fonksiyonu çökertirdi.
+ */
+import authRouter from "./server/routes/auth.js";
+import { serviceClient, describeConfiguration } from "./server/supabase.js";
+import { requireTrustedOrigin } from "./server/security.js";
 
 // Plain readFileSync+JSON.parse instead of `import ... with { type: "json" }` or
 // createRequire(import.meta.url): both rely on syntax/semantics that can break
@@ -42,6 +54,8 @@ const PORT = 3000;
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(express.json({ limit: "16kb" }));
+/* Oturum jetonları httpOnly çerezde taşınıyor (bkz. server/cookies.ts). */
+app.use(cookieParser());
 
 const allowedOrigins = new Set(
   (process.env.ALLOWED_ORIGINS || "")
@@ -55,6 +69,14 @@ app.use((req, res, next) => {
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("X-Frame-Options", "DENY");
 
+  /*
+   * Bu kontrol yalnızca `Origin` VARSA bakar, yoksa geçirir — dolayısıyla
+   * CSRF koruması DEĞİLDİR ve öyle sayılmamalı. Çerez tabanlı oturuma geçtiğimiz
+   * için gerçek koruma requireTrustedOrigin() ile /api/auth altında ayrıca
+   * uygulanıyor (durum değiştiren isteklerde Origin ZORUNLU).
+   * Buradaki hâli, tanımlı bir liste varken yanlış kaynaktan gelen istekleri
+   * erkenden elemek için korunuyor.
+   */
   const origin = req.get("origin");
   if (origin && allowedOrigins.size > 0 && !allowedOrigins.has(origin)) {
     return res.status(403).json({ success: false, error: "Geçersiz istek kaynağı." });
@@ -91,36 +113,38 @@ function isValidTurkishMobile(value: string) {
   return /^0?5\d{9}$/.test(value.replace(/\D/g, ""));
 }
 
-// Server-side Supabase client (hidden from browser/frontend).
-// Intentionally uses ONLY the service-role key: it bypasses Row Level
-// Security, so this is the sole path allowed to touch `leads`/`testimonials`.
-// Never fall back to an anon key here — anon has zero table privileges by
-// design (see supabase-security-lockdown.sql), so a fallback would only
-// mask a misconfigured deployment instead of failing loudly.
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const LEAD_GENERIC_ERROR =
+  "Form gönderilirken bir sorun oluştu. Lütfen tekrar deneyin ya da bizi WhatsApp üzerinden arayın.";
 
-// A small function (rather than the try/catch inline) so `supabase`'s type
-// is still inferred straight from the real createClient(url, key) call,
-// same as the plain ternary this replaced — inlining the try/catch around
-// a pre-declared `let supabase: ReturnType<typeof createClient> | null`
-// loses that inference and turns every later .insert()/.upsert() row type
-// into `never`.
-function createSupabaseClient() {
-  if (!supabaseUrl || !supabaseKey || !supabaseUrl.startsWith("http")) return null;
-  try {
-    return createClient(supabaseUrl, supabaseKey);
-  } catch (err: any) {
-    // createClient() can throw synchronously on a malformed URL. Never let
-    // that take down the whole function at cold start (see the need.json
-    // note above) — fail open to null instead, same as when it's simply
-    // not configured.
-    console.error("[Server API] Failed to create Supabase client:", err?.message || err);
-    return null;
-  }
+/*
+ * Lead route'ları eskiden HATA DURUMUNDA DA `success: true` dönüyordu (hatalar
+ * yalnızca log'a gidiyordu). O davranış, istemci doğrudan Supabase'e giderken
+ * fark etmiyordu; artık form buradan geçtiği için düşen bir başvuruda kullanıcı
+ * "kaydedildi" görürdü — sessiz veri kaybı. Artık hata gerçekten hata dönüyor.
+ *
+ * Ham Postgres/PostgREST mesajı kullanıcıya GÖSTERİLMEZ (şema ve kısıt adlarını
+ * sızdırır, üstelik İngilizcedir). Tek istisna P0001: bu, hız limiti
+ * trigger'ımızın RAISE EXCEPTION ile ürettiği, kullanıcıya gösterilmek üzere
+ * Türkçe yazılmış kendi metnimiz. (İstemci tarafındaki friendlyErrorMessage ile
+ * aynı kural.)
+ */
+function friendlyLeadError(error: { code?: string; message?: string } | null | undefined): string {
+  if (error?.code === "P0001" && error.message) return error.message;
+  return LEAD_GENERIC_ERROR;
 }
 
-const supabase = createSupabaseClient();
+/*
+ * Servis rolü istemcisi — RLS'i baypas eder.
+ * Fabrika artık server/supabase.ts'te; oradaki yorum hangi istemcinin ne
+ * zaman kullanılacağını anlatıyor. Buradaki `supabase` yalnızca KULLANICIYA
+ * AİT OLMAYAN işler için: lead kaydı (henüz kimse giriş yapmamış) ve
+ * yayınlanmış yorumların okunması. Giriş yapmış kullanıcının verisine bununla
+ * dokunulmaz — o iş userClient(accessToken) ile yapılır.
+ *
+ * VITE_SUPABASE_URL yedeği kaldırıldı: o değişkenler artık hiç tanımlı değil
+ * (Faz 2'nin amacı zaten anahtarları tarayıcı bundle'ından çıkarmaktı).
+ */
+const supabase = serviceClient();
 
 if (!supabase) {
   console.warn(
@@ -128,6 +152,20 @@ if (!supabase) {
     "Leads will only be logged/stored locally and /api/testimonials will return an empty list.",
   );
 }
+
+if (!describeConfiguration().anonKey) {
+  console.warn(
+    "[Server API] SUPABASE_ANON_KEY tanımlı değil — /api/auth/* çalışmayacak. " +
+    "Bu anahtar artık SUNUCU tarafında yaşıyor (eskiden VITE_SUPABASE_ANON_KEY idi).",
+  );
+}
+
+/*
+ * Kimlik doğrulama uçları. requireTrustedOrigin yalnızca burada: durum
+ * değiştiren auth istekleri CSRF'e karşı en hassas olanlar ve tarayıcı bu
+ * isteklerde Origin başlığını her zaman gönderir.
+ */
+app.use("/api/auth", requireTrustedOrigin, authRouter);
 
 // API Routes
 app.get("/api/health", (_req, res) => {
@@ -196,9 +234,15 @@ app.post("/api/leads", limitLeadRequests, async (req, res) => {
     created_at: new Date().toISOString(),
   };
 
+  /*
+   * Yapılandırma eksikse SESSİZCE BAŞARILI DÖNÜLMEZ. Eskiden dönülüyordu ve
+   * sonuç şuydu: kullanıcı "kaydedildi" görüyor, başvuru yalnızca kendi
+   * tarayıcısındaki localStorage'da kalıyor ve kimse oraya bakmıyor — yani
+   * sessiz veri kaybı. Yanlış yapılandırılmış bir dağıtım gürültü çıkarmalı.
+   */
   if (!supabase) {
-    console.log("[Server API] Lead Step 1 received (Supabase not configured):", payload);
-    return res.json({ success: true, id: "srv_" + Date.now() });
+    console.error("[Server API] Lead Step 1 reddedildi: Supabase yapılandırılmamış.", payload);
+    return res.status(503).json({ success: false, error: LEAD_GENERIC_ERROR });
   }
 
   try {
@@ -210,8 +254,7 @@ app.post("/api/leads", limitLeadRequests, async (req, res) => {
 
     if (error) {
       // Full detail (message/code/details/hint) so a misconfigured service-role
-      // key, schema mismatch, or RLS issue is diagnosable from Vercel/server logs
-      // even though the client always gets success:true (see file header note).
+      // key, schema mismatch, or RLS issue is diagnosable from Vercel/server logs.
       console.error("[Server API] Supabase Step 1 INSERT failed:", {
         message: error.message,
         code: error.code,
@@ -219,13 +262,13 @@ app.post("/api/leads", limitLeadRequests, async (req, res) => {
         hint: error.hint,
         payload,
       });
-      return res.json({ success: true, id: "srv_" + Date.now(), warning: error.message });
+      return res.status(502).json({ success: false, error: friendlyLeadError(error) });
     }
 
     return res.json({ success: true, id: data?.id });
   } catch (err: any) {
     console.error("[Server API] Supabase Exception Step 1:", err?.message || err, { payload });
-    return res.json({ success: true, id: "srv_" + Date.now() });
+    return res.status(502).json({ success: false, error: LEAD_GENERIC_ERROR });
   }
 });
 
@@ -262,8 +305,8 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
   };
 
   if (!supabase) {
-    console.log("[Server API] Lead Step 2 received (Supabase not configured):", payload);
-    return res.json({ success: true });
+    console.error("[Server API] Lead Step 2 reddedildi: Supabase yapılandırılmamış.", payload);
+    return res.status(503).json({ success: false, error: LEAD_GENERIC_ERROR });
   }
 
   try {
@@ -276,21 +319,57 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
         .eq("id", leadId);
       error = resUpdate.error;
     } else {
-      // Step 1 either never ran (leadId missing) or its insert failed and we
-      // only have a fake fallback id ("srv_"/"lead_" prefixed) - there may or
-      // may not already be a row for this phone. `phone` is UNIQUE, so upsert
-      // on that conflict key does the right thing atomically in one round
-      // trip: update the existing row, or insert a new one if none exists.
-      // Carrying full_name/exam_type here too means the row is complete even
-      // when step 1's insert never landed (see saveLeadStep1 in supabase.ts).
-      const upsertPayload: Record<string, unknown> = { ...payload };
-      if (fullName) upsertPayload.full_name = String(fullName).trim();
-      if (examType && ALLOWED_EXAM_TYPES.has(String(examType))) upsertPayload.exam_type = String(examType);
+      /*
+       * Adım 1 ya hiç çalışmadı (leadId yok) ya da insert'i başarısız oldu ve
+       * elimizde yalnızca sahte bir yedek id var ("srv_"/"lead_" önekli).
+       *
+       * BURASI ESKİDEN `upsert(..., { onConflict: "phone" })` İDİ VE ÇALIŞMIYORDU:
+       * yorumu "phone UNIQUE" diyordu ama supabase-anon-lead-insert.sql o kısıtı
+       * (leads_phone_key) düşürdü — aynı numarayla tekrar başvuruya izin vermek
+       * için. Eşleşen unique kısıt olmadığında Postgres 42P10 veriyor ("there is
+       * no unique or exclusion constraint matching the ON CONFLICT
+       * specification"), hata da yutulduğu için adım 2 sessizce kayboluyordu.
+       *
+       * Doğrusu istemcinin kullandığı RPC'yi çağırmak: update_lead_step2 bu
+       * telefonun EN SON step=1 satırını hedefliyor, yani "hangi satır" sorusunu
+       * unique kısıta ihtiyaç duymadan doğru cevaplıyor. Servis rolü bu
+       * fonksiyonu anon GRANT'ından bağımsız olarak çalıştırabilir.
+       */
+      const resRpc = await supabase.rpc("update_lead_step2", {
+        p_phone: payload.phone,
+        p_student_full_name: payload.student_full_name,
+        p_parent_full_name: payload.parent_full_name,
+        p_user_role: payload.user_role,
+        p_grade_class: payload.grade_class,
+        p_selected_subjects: payload.selected_subjects,
+        p_website: "",
+        p_exam_type:
+          examType && ALLOWED_EXAM_TYPES.has(String(examType)) ? String(examType) : null,
+      });
+      error = resRpc.error;
 
-      const resUpsert = await supabase
-        .from("leads")
-        .upsert(upsertPayload, { onConflict: "phone" });
-      error = resUpsert.error;
+      /*
+       * RPC yalnızca step=1 satırını günceller; öyle bir satır yoksa sessizce
+       * çıkar. Adım 1 hiç ulaşmamışsa başvuru tamamen kaybolmasın diye burada
+       * yeni bir satır açılıyor (fullName de bu yüzden taşınıyor).
+       */
+      if (!error) {
+        const { count } = await supabase
+          .from("leads")
+          .select("id", { count: "exact", head: true })
+          .eq("phone", payload.phone)
+          .eq("step", 2);
+
+        if ((count ?? 0) === 0) {
+          const insertPayload: Record<string, unknown> = { ...payload };
+          if (fullName) insertPayload.full_name = String(fullName).trim();
+          if (examType && ALLOWED_EXAM_TYPES.has(String(examType))) {
+            insertPayload.exam_type = String(examType);
+          }
+          const resInsert = await supabase.from("leads").insert(insertPayload);
+          error = resInsert.error;
+        }
+      }
     }
 
     if (error) {
@@ -302,12 +381,13 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
         leadId,
         payload,
       });
+      return res.status(502).json({ success: false, error: friendlyLeadError(error) });
     }
 
     return res.json({ success: true });
   } catch (err: any) {
     console.error("[Server API] Supabase Exception Step 2:", err?.message || err, { leadId, payload });
-    return res.json({ success: true });
+    return res.status(502).json({ success: false, error: LEAD_GENERIC_ERROR });
   }
 });
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Quote, Star } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { apiFetch } from '../lib/api';
 
 interface Testimonial {
   id: string;
@@ -129,24 +129,17 @@ export function TestimonialsSection() {
   }, [testimonials.length]);
 
   async function fetchTestimonials() {
-    if (!supabase) {
-      setTestimonials([]);
-      setIsLoading(false);
-      return;
-    }
-
+    /*
+     * Yorumlar artık /api/testimonials'tan geliyor, doğrudan Supabase'den
+     * değil. Sunucu birebir aynı kolonları ve sıralamayı kullanıyor, dolayısıyla
+     * bileşenin geri kalanı değişmedi. Hata durumunda boş liste: bileşen zaten
+     * boş listede null render ediyor, yani sayfa kaymadan sessizce küçülüyor.
+     */
     try {
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('id, student_name, student_grade, content, rating')
-        .eq('is_published', true)
-        .order('display_order', { ascending: true });
-
-      if (error) throw error;
-
-      setTestimonials(data || []);
+      const data = await apiFetch<{ testimonials: Testimonial[] }>('/api/testimonials');
+      setTestimonials(data.testimonials || []);
     } catch (error) {
-      console.error('Error fetching testimonials:', error);
+      console.error('Yorumlar yüklenemedi:', error);
       setTestimonials([]);
     } finally {
       setIsLoading(false);

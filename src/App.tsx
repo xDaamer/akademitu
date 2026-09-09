@@ -13,6 +13,8 @@ import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PortalLoginPage } from './pages/PortalLoginPage';
+import { PortalDashboardPage } from './pages/PortalDashboardPage';
+import { RequireAuth } from './components/portal/RequireAuth';
 import { Button } from './components/ui/Button';
 
 /*
@@ -221,6 +223,14 @@ export default function App() {
         <Route path="/kullanim-kosullari" element={<TermsPage />} />
         <Route path="/portal" element={<PortalLoginPage mode="login" />} />
         <Route path="/portal/kayit" element={<PortalLoginPage mode="signup" />} />
+        <Route
+          path="/portal/panel"
+          element={
+            <RequireAuth>
+              <PortalDashboardPage />
+            </RequireAuth>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 

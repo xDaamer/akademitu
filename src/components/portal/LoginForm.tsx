@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { Button, buttonClasses } from '../ui/Button';
 import { PhoneField } from '../ui/PhoneField';
 import { PasswordField } from '../ui/PasswordField';
 import { isValidTurkishMobilePhone } from '../../lib/phone';
+import { useAuth } from '../../context/AuthContext';
+import { ApiRequestError } from '../../lib/api';
 
 /*
  * TELEFON İLE GİRİŞ
  * ---------------------------------------------------------------------------
- * FAZ 1: burada gerçek kimlik doğrulama YOK. onSubmit yalnızca alan
- * doğrulamasını, yükleniyor durumunu ve hata satırını çalıştırır. Sunucu
- * bağlantısı (AuthContext.login) Faz 2'de bu dosyanın tek bir yerine girecek
- * — aşağıdaki TODO'nun olduğu satıra.
+ * Sunucuya /api/auth/login ile gidiyor; oturum jetonu httpOnly çerezde
+ * dönüyor, bu bileşen jetonu hiç görmüyor.
+ *
+ * Sunucu "numara kayıtlı değil" ile "şifre yanlış" ayrımını BİLEREK yapmıyor
+ * (ikisi de aynı mesaj): ayrıştırmak, saldırgana hangi numaraların kayıtlı
+ * olduğunu tek tek sorgulatırdı. Burada da mesaj olduğu gibi gösteriliyor.
  */
 
 type Errors = Partial<Record<'phone' | 'password' | 'form', string>>;
 
 export const LoginForm: React.FC = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   /* Honeypot: gerçek kullanıcı görmez, bot doldurur. PopUpForm'daki
@@ -45,12 +51,21 @@ export const LoginForm: React.FC = () => {
     if (Object.keys(found).length > 0 || website) return;
 
     setIsSubmitting(true);
-    // TODO (Faz 2): AuthContext.login(phone, password) — /api/auth/login.
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    setIsSubmitting(false);
-    setErrors({
-      form: 'Giriş henüz açılmadı. Panel yayına alındığında bu ekran çalışacak.',
-    });
+    setErrors({});
+
+    try {
+      await login(phone, password, website);
+      /* replace: geri tuşuyla giriş ekranına dönmek, oturum açıkken anlamsız. */
+      navigate('/portal/panel', { replace: true });
+    } catch (err) {
+      setErrors({
+        form:
+          err instanceof ApiRequestError
+            ? err.message
+            : 'Giriş yapılamadı. Lütfen tekrar deneyin.',
+      });
+      setIsSubmitting(false);
+    }
   };
 
   return (
