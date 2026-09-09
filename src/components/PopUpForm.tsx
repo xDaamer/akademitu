@@ -3,6 +3,12 @@ import { X, CheckCircle2, Phone, User, ArrowRight, ShieldCheck, Check, Gift, Loc
 import { motion, AnimatePresence } from 'motion/react';
 import { LeadFormData } from '../types';
 import { saveLeadStep1, updateLeadStep2 } from '../lib/supabase';
+import {
+  normalizeTurkishMobile,
+  isValidTurkishMobilePhone,
+  extractSignificantPhoneDigits,
+  formatPhoneDisplay,
+} from '../lib/phone';
 import { KvkkModal } from './KvkkModal';
 import { MobileLeadSheet } from './MobileLeadSheet';
 import logoWhite from '../assets/logo-white.png';
@@ -77,36 +83,11 @@ const renderSubjectOptions = (examType: 'YKS' | 'LGS' | 'Diğer') => {
   ));
 };
 
-const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
-
-const normalizeTurkishMobile = (value: string) => {
-  const digits = normalizePhoneNumber(value).replace(/^0+/, '');
-  return `0${digits}`.slice(0, 11);
-};
-
-const isValidTurkishMobilePhone = (value: string) => {
-  const digits = normalizePhoneNumber(value);
-  return /^05\d{9}$/.test(digits);
-};
-
-// Significant digits only: the 10 digits after the leading 0 (e.g. "532xxxxxxx").
-// Used to drive the live "0 (5XX) XXX XX XX" mask below.
-const extractSignificantPhoneDigits = (value: string) =>
-  normalizePhoneNumber(value).replace(/^0+/, '').slice(0, 10);
-
-const formatPhoneDisplay = (digits: string) => {
-  if (!digits) return '';
-  const area = digits.slice(0, 3);
-  const mid1 = digits.slice(3, 6);
-  const mid2 = digits.slice(6, 8);
-  const mid3 = digits.slice(8, 10);
-  let out = `0 (${area}`;
-  if (area.length === 3) out += ')';
-  if (mid1) out += ` ${mid1}`;
-  if (mid2) out += ` ${mid2}`;
-  if (mid3) out += ` ${mid3}`;
-  return out;
-};
+/*
+ * Telefon yardımcıları src/lib/phone.ts'e taşındı: portal giriş ekranı da
+ * numara aldığı için ikinci kullanıcıları oldu ve doğrulamanın iki kopyası
+ * olmasın istedik. Buradaki kullanım ve davranış aynen korundu.
+ */
 
 // Marka diliyle uyumlu, ikonlu ve özel oklu select — tarayıcının varsayılan
 // dropdown görünümünü (appearance-none) kaldırıp metin girişleriyle aynı
