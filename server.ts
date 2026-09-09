@@ -344,9 +344,26 @@ app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
     let error;
     if (leadId && !String(leadId).startsWith("lead_") && !String(leadId).startsWith("srv_")) {
       // Step 1's insert gave us a real row id - update it directly.
+      /*
+       * exam_type BU DALDA DA yazılmalı. Mobildeki kısa ilk adım yalnızca ad ve
+       * telefon soruyor, hedef sınav ikinci adımda geliyor — burada atlanırsa
+       * step 1'in varsayılanı olan "YKS" kalıcı oluyor ve LGS'ye hazırlanan
+       * öğrenciler yanlış etiketle kaydediliyor.
+       *
+       * Bu dal eskiden hiç çalışmıyordu: saveLeadStep1 gerçek satır id'sini
+       * değil localStorage yedek id'sini ("lead_...") döndürdüğü için adım 2
+       * her zaman aşağıdaki RPC dalına düşüyordu ve exam_type'ı orası yazıyordu.
+       * Sunucu artık gerçek id döndürdüğü için bu dal devreye girdi ve eksiklik
+       * ortaya çıktı (canlı test sırasında yakalandı).
+       */
+      const updatePayload: Record<string, unknown> = { ...payload };
+      if (examType && ALLOWED_EXAM_TYPES.has(String(examType))) {
+        updatePayload.exam_type = String(examType);
+      }
+
       const resUpdate = await supabase
         .from("leads")
-        .update(payload)
+        .update(updatePayload)
         .eq("id", leadId);
       error = resUpdate.error;
     } else {

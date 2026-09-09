@@ -38,8 +38,25 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  */
 function env() {
   return {
-    url: process.env.SUPABASE_URL || "",
-    anonKey: process.env.SUPABASE_ANON_KEY || "",
+    /*
+     * VITE_ önekli adlar GERİYE DÖNÜK UYUMLULUK için okunuyor.
+     * Dağıtımda uzun süredir yalnızca VITE_SUPABASE_URL ve
+     * VITE_SUPABASE_ANON_KEY tanımlıydı; değerleri zaten bunlarla aynı, tek
+     * fark ad. Sunucunun onları da kabul etmesi, dağıtımda değişken
+     * yeniden adlandırma zorunluluğunu kaldırıyor.
+     *
+     * Bunları sunucuda okumak GÜVENLİK SORUNU DEĞİL: "VITE_" öneki yalnızca
+     * "Vite bunu istemci bundle'ına gömebilir" demek ve artık `src/` içinde
+     * hiçbir kod import.meta.env.VITE_SUPABASE_* okumuyor, dolayısıyla Vite
+     * onları bundle'a hiç koymuyor (dist/ içinde arandı, yok).
+     *
+     * Yine de TERCİH EDİLEN adlar önekli olmayanlar: yeni bir istemci kodu
+     * kazara VITE_ değişkenine dokunursa anahtar tekrar tarayıcıya sızardı.
+     * SUPABASE_SERVICE_ROLE_KEY'in VITE_ karşılığı BİLEREK YOK — o anahtarın
+     * bundle'a gömülebilir bir adla anılması bile istenmez.
+     */
+    url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "",
+    anonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "",
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
   };
 }

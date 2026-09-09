@@ -116,6 +116,21 @@ router.post("/signup", async (req, res) => {
 
     if (error || !data.user) {
       console.error("[Auth] signUp başarısız:", error?.message, error?.status);
+
+      /*
+       * Supabase'in KENDİ hız limiti (doğrulama postası gönderimi) 429 döner.
+       * Bunu genel "işlem tamamlanamadı" mesajına çevirmek kullanıcıyı boşuna
+       * tekrar denemeye itiyor — ne olduğunu söylemek gerekiyor. Testte
+       * karşılaşıldı: "email rate limit exceeded".
+       */
+      if (error?.status === 429) {
+        res.setHeader("Retry-After", "3600");
+        return res.status(429).json({
+          success: false,
+          error: "Çok fazla kayıt denemesi yapıldı. Lütfen bir süre sonra tekrar deneyin.",
+        });
+      }
+
       /* 422 = e-posta zaten kayıtlı. Bunu söylemek e-posta sayımına kapı
          açar; genel mesaj veriliyor, gerçek sebep log'da. */
       return res.status(400).json({ success: false, error: GENERIC_ERROR });
