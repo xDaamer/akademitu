@@ -10,8 +10,9 @@
 -- katmanımızdan (/api/*) geçiyor ve anahtarlar sunucuda .env'de duruyor.
 -- Bu dosya o mimarinin veritabanı tarafını kuruyor:
 --
---   1. profiles       — telefon <-> kullanıcı eşlemesi (giriş telefonla,
---                       kayıt e-postayla yapılıyor).
+--   1. profiles       — telefon <-> kullanıcı eşlemesi. Giriş telefonla
+--                       yapılıyor; KAYIT EKRANI YOK, hesaplar elle açılıyor
+--                       (bkz. 1b bölümü).
 --   2. auth_attempts  — IP başına hız limiti sayacı.
 --   3. anon rolünün leads/testimonials üzerindeki yetkilerinin GERİ ALINMASI.
 --
@@ -89,6 +90,45 @@ DROP TRIGGER IF EXISTS profiles_touch_updated_at ON public.profiles;
 CREATE TRIGGER profiles_touch_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.touch_profiles_updated_at();
+
+-- =========================================================================
+-- 1b) ELLE KULLANICI EKLEME — TEK YOL BUDUR
+-- =========================================================================
+-- Portalda kayıt ekranı YOK ve /api/auth/signup ucu KALDIRILDI: hesapları
+-- yönetici elle açıyor. Bu iki adımlı bir iş, çünkü şifre auth.users içinde
+-- hash'lenmiş olarak durur ve düz SQL ile güvenle yazılamaz.
+--
+-- ADIM 1 — Kullanıcıyı oluştur (Supabase Dashboard):
+--   Authentication > Users > "Add user" > "Create new user"
+--     Email:            ogrenci@ornek.com
+--     Password:         (güçlü bir şifre belirleyin ve kişiyle paylaşın)
+--     Auto Confirm User: İŞARETLEYİN
+--
+--   "Auto Confirm User" işaretlenmezse kişi giriş YAPAMAZ: Supabase hesabı
+--   doğrulanmamış sayar ve şifre doğru olsa bile reddeder. Elle açılan
+--   hesaplarda doğrulama postası beklemenin bir anlamı da yok.
+--
+-- ADIM 2 — Profili bağla (bu SQL Editor'de):
+--   Telefon giriş kimliğidir; profil satırı olmayan bir kullanıcı doğru
+--   şifreyle bile giriş yapamaz, çünkü /api/auth/login telefonu buradan
+--   e-postaya çeviriyor.
+
+-- insert into public.profiles (id, full_name, phone)
+-- values (
+--   (select id from auth.users where email = 'ogrenci@ornek.com'),
+--   'Ad Soyad',
+--   '05321234567'   -- 11 hane, 05 ile başlar; CHECK kısıtı bunu doğrular
+-- );
+
+-- Kontrol: portala girebilecek kişilerin tam listesi.
+-- select u.email, p.full_name, p.phone,
+--        (u.email_confirmed_at is not null) as giris_yapabilir
+-- from public.profiles p
+-- join auth.users u on u.id = p.id
+-- order by p.created_at desc;
+
+-- Erişimi kaldırma: auth.users'tan silmek yeterli, profiles CASCADE ile gider.
+-- delete from auth.users where email = 'ogrenci@ornek.com';
 
 -- =========================================================================
 -- 2) auth_attempts — IP başına hız limiti

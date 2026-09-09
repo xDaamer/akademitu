@@ -25,25 +25,11 @@ export interface PortalUser {
   phone: string | null;
 }
 
-interface SignUpInput {
-  fullName: string;
-  email: string;
-  phone: string;
-  password: string;
-  website: string;
-}
-
-interface SignUpResult {
-  /** E-posta doğrulaması açıksa true: hesap açıldı ama giriş için onay gerek. */
-  requiresEmailConfirmation: boolean;
-}
-
 interface AuthContextValue {
   user: PortalUser | null;
   /** İlk /api/auth/me cevabı gelene kadar true. */
   isLoading: boolean;
   login: (phone: string, password: string, website: string) => Promise<void>;
-  signUp: (input: SignUpInput) => Promise<SignUpResult>;
   logout: () => Promise<void>;
 }
 
@@ -100,21 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
   }, []);
 
-  const signUp = useCallback(async (input: SignUpInput): Promise<SignUpResult> => {
-    const data = await apiFetch<{
-      requiresEmailConfirmation?: boolean;
-      user?: PortalUser;
-    }>('/api/auth/signup', {
-      method: 'POST',
-      body: input,
-      skipRefresh: true,
-    });
-
-    if (data.user) setUser(data.user);
-
-    return { requiresEmailConfirmation: Boolean(data.requiresEmailConfirmation) };
-  }, []);
-
   const logout = useCallback(async () => {
     try {
       await apiFetch('/api/auth/logout', { method: 'POST', skipRefresh: true });
@@ -128,8 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, signUp, logout }),
-    [user, isLoading, login, signUp, logout]
+    () => ({ user, isLoading, login, logout }),
+    [user, isLoading, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

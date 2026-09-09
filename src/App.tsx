@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Phone } from 'lucide-react';
@@ -221,8 +221,10 @@ export default function App() {
         <Route path="/" element={<HomePage onOpenTrialForm={handleOpenTrialForm} />} />
         <Route path="/gizlilik-politikasi" element={<PrivacyPolicyPage />} />
         <Route path="/kullanim-kosullari" element={<TermsPage />} />
-        <Route path="/portal" element={<PortalLoginPage mode="login" />} />
-        <Route path="/portal/kayit" element={<PortalLoginPage mode="signup" />} />
+        <Route path="/portal" element={<PortalLoginPage />} />
+        {/* Kayıt ekranı kaldırıldı (hesaplar elle açılıyor). Adres kısa süre
+            canlıda yayındaydı; 404 yerine girişe yönlendiriliyor. */}
+        <Route path="/portal/kayit" element={<Navigate to="/portal" replace />} />
         <Route
           path="/portal/panel"
           element={

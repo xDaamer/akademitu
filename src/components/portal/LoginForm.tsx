@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import need from '../../../need.json';
 import { ShieldCheck } from 'lucide-react';
 import { Button, buttonClasses } from '../ui/Button';
 import { PhoneField } from '../ui/PhoneField';
@@ -113,14 +114,20 @@ export const LoginForm: React.FC = () => {
           etiketin kendisiyle yarışıyor ve alanın en dikkat çeken parçası
           "şifremi unuttum" oluyordu. Buradaki iş sessiz bir kaçış yolu
           sunmak, çağrı yapmak değil.
+
+          Hedef /portal/sifremi-unuttum İDİ ve o sayfa hiç yazılmadı — bağlantı
+          404'e gidiyordu. Hesaplar elle yönetildiğine göre şifre sıfırlama da
+          elle yapılacak, o yüzden doğru hedef iletişim kanalı.
         */
         labelAction={
-          <Link
-            to="/portal/sifremi-unuttum"
+          <a
+            href={need.contact.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded text-xs font-semibold text-slate-500 transition-colors hover:text-[#191F61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
           >
             Şifremi unuttum
-          </Link>
+          </a>
         }
       />
 
@@ -140,6 +147,11 @@ export const LoginForm: React.FC = () => {
         {isSubmitting ? 'Giriş yapılıyor...' : 'Giriş yap'}
       </Button>
 
+      {/*
+        Kayıt bağlantısı YOK: hesaplar elle açılıyor. Yerine ne yapılacağını
+        söyleyen bir satır konuldu — kapalı bir kapının önünde kullanıcıyı
+        açıklamasız bırakmak, olmayan bir düğmeyi aramasına yol açar.
+      */}
       <div className="space-y-3 border-t border-slate-100 pt-5">
         <p className="flex items-center justify-center gap-2 text-xs text-slate-500">
           <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
@@ -148,9 +160,14 @@ export const LoginForm: React.FC = () => {
 
         <p className="text-center text-sm text-slate-600">
           Hesabın yok mu?{' '}
-          <Link to="/portal/kayit" className={buttonClasses({ variant: 'link' })}>
-            E-posta ile kayıt ol
-          </Link>
+          <a
+            href={need.contact.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClasses({ variant: 'link' })}
+          >
+            Bize ulaş
+          </a>
         </p>
       </div>
     </form>

@@ -1,16 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { motion } from 'motion/react';
 import { PageMeta } from '../components/PageMeta';
 import { PortalBrandPanel } from '../components/portal/PortalBrandPanel';
 import { LoginForm } from '../components/portal/LoginForm';
-import { SignUpForm } from '../components/portal/SignUpForm';
 import { buttonClasses } from '../components/ui/Button';
 import logoBlue from '../assets/logo-blue.png';
 
 /*
- * PORTAL GİRİŞ KAPISI (/portal ve /portal/kayit)
+ * PORTAL GİRİŞ KAPISI (/portal)
  * ===========================================================================
  * Sayfa sitenin Header/Footer'ını almaz (bkz. App.tsx): burası pazarlama
  * sayfası değil, ürünün ilk ekranı. Menü, WhatsApp düğmesi ve yapışkan CTA
@@ -19,40 +17,18 @@ import logoBlue from '../assets/logo-blue.png';
  * noIndex: panel girişi arama sonuçlarında görünmemeli. need.json'daki
  * seo.pages listesine de eklenmiyor — oraya eklenirse sitemap'e girer.
  *
- * Sayfadaki tek animasyon kartın giriş<->kayıt geçişindeki yükseklik
- * değişimi; kullanıcının kendi eylemine verilen cevap. layout prop'u
- * prefers-reduced-motion'a motion kütüphanesi tarafından zaten saygı
- * gösterilerek uygulanır.
+ * KAYIT EKRANI YOK: hesaplar elle açılıyor (bkz. supabase-portal-auth.sql).
+ * Kart tek biçimli olduğu için giriş<->kayıt geçişindeki yükseklik animasyonu
+ * da kaldırıldı — animasyona konu olan bir durum değişimi kalmadı.
  */
 
-interface PortalLoginPageProps {
-  mode: 'login' | 'signup';
-}
-
-const META = {
-  login: {
-    title: 'Giriş Yap | akademITU Panel',
-    description:
-      'akademITU öğrenci ve veli paneline telefon numaran ve şifrenle giriş yap.',
-    path: '/portal',
-  },
-  signup: {
-    title: 'Kayıt Ol | akademITU Panel',
-    description:
-      'akademITU panelinde e-posta adresinle hesap aç, ders programını ve gelişimini takip et.',
-    path: '/portal/kayit',
-  },
-} as const;
-
-export const PortalLoginPage: React.FC<PortalLoginPageProps> = ({ mode }) => {
-  const meta = META[mode];
-
+export const PortalLoginPage: React.FC = () => {
   return (
     <>
       <PageMeta
-        title={meta.title}
-        description={meta.description}
-        path={meta.path}
+        title="Giriş Yap | akademITU Panel"
+        description="akademITU öğrenci ve veli paneline telefon numaran ve şifrenle giriş yap."
+        path="/portal"
         noIndex
       />
 
@@ -74,11 +50,7 @@ export const PortalLoginPage: React.FC<PortalLoginPageProps> = ({ mode }) => {
             Siteye dön
           </Link>
 
-          <motion.div
-            layout
-            transition={{ type: 'tween', duration: 0.25, ease: 'easeOut' }}
-            className="mx-auto my-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8"
-          >
+          <div className="mx-auto my-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-7 flex flex-col items-center text-center">
               <img
                 src={logoBlue}
@@ -92,8 +64,8 @@ export const PortalLoginPage: React.FC<PortalLoginPageProps> = ({ mode }) => {
               </span>
             </div>
 
-            {mode === 'login' ? <LoginForm /> : <SignUpForm />}
-          </motion.div>
+            <LoginForm />
+          </div>
 
           {/* Alt boşluğu dengeler: kart my-auto ile ortalanırken üstteki
               "Siteye dön" bağlantısının yüksekliği kadar karşılık gerekiyor,
