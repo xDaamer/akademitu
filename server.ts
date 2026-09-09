@@ -169,7 +169,38 @@ app.use("/api/auth", requireTrustedOrigin, authRouter);
 
 // API Routes
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", supabaseConfigured: !!supabase });
+  /*
+   * `env` alanı YALNIZCA "bu ad tanımlı mı" bilgisini verir, değer vermez.
+   * Amacı, dağıtımda "değişkenleri girdim ama çalışmıyor" durumunu tahminle
+   * değil ölçerek çözmek: en sık sebep adın farklı olması (ör. eski
+   * VITE_ önekli adlar duruyor, yenileri girilmemiş) ya da değişkenin
+   * Production yerine yalnızca Preview ortamına eklenmiş olması.
+   *
+   * Sızdırdığı tek bilgi, zaten yanındaki supabaseConfigured'ın sızdırdığı
+   * bilgi. Yine de bu, kalıcı olarak durması gereken bir uç değil — dağıtım
+   * oturduktan sonra kaldırılabilir.
+   */
+  const names = [
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ALLOWED_ORIGINS",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY",
+    "VERCEL",
+    "VERCEL_ENV",
+    "NODE_ENV",
+  ];
+
+  const env: Record<string, boolean | string> = {};
+  for (const name of names) {
+    const value = process.env[name];
+    // VERCEL_ENV/NODE_ENV sır değil ve hangi ortamda olduğumuzu söylüyor.
+    env[name] =
+      name === "VERCEL_ENV" || name === "NODE_ENV" ? value || "(yok)" : Boolean(value);
+  }
+
+  res.json({ status: "ok", supabaseConfigured: !!supabase, env });
 });
 
 /*
