@@ -78,7 +78,10 @@ BEGIN
   NEW.updated_at := now();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+-- SET search_path = public: sabitlenmemiş bir search_path, fonksiyonun
+-- çağıranın şema sırasıyla çalışması demek. Supabase'in güvenlik denetimi de
+-- bunu uyarı olarak işaretliyor.
+$$ LANGUAGE plpgsql SET search_path = public;
 
 REVOKE EXECUTE ON FUNCTION public.touch_profiles_updated_at() FROM PUBLIC, anon, authenticated;
 
@@ -145,9 +148,15 @@ REVOKE ALL ON public.leads FROM anon, authenticated;
 DROP POLICY IF EXISTS "anon_select_published_testimonials" ON public.testimonials;
 REVOKE ALL ON public.testimonials FROM anon, authenticated;
 
--- update_lead_step2 artık YALNIZCA sunucudan çağrılıyor (servis rolü, EXECUTE
--- yetkisinden bağımsız çalışır). anon'un çalıştırma yetkisi kalkıyor: aksi
--- halde bilinen bir telefon numarasının kaydı dışarıdan üzerine yazılabilirdi.
+-- update_lead_step2: canlı veritabanı repodaki supabase-anon-lead-insert.sql'in
+-- GERİSİNDE kalmıştı — orada 8 argümanlı (p_exam_type'lı) sürüm tanımlı olmasına
+-- rağmen veritabanında 7 argümanlı eski sürüm duruyordu, yani mobildeki kısa ilk
+-- adımdan gelen başvurularda hedef sınav hiç güncellenmiyordu (hep 'YKS' kalıyordu).
+-- Doğru sürüm 2026-09-09'da uygulandı; tanımı supabase-anon-lead-insert.sql'de.
+--
+-- anon'un EXECUTE yetkisi kalkıyor: fonksiyon artık yalnızca sunucudan, servis
+-- rolüyle çağrılıyor (servis rolü EXECUTE yetkisinden bağımsız çalışır). Yetki
+-- kalsaydı bilinen bir telefon numarasının kaydı dışarıdan üzerine yazılabilirdi.
 REVOKE EXECUTE ON FUNCTION public.update_lead_step2(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
 
@@ -163,3 +172,11 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
 --   order by table_name, grantee, privilege_type;
 -- -> anon: HİÇBİR SATIR OLMAMALI.
 -- -> authenticated: yalnızca profiles üzerinde SELECT ve UPDATE.
+--
+-- 2026-09-09'da uygulandı ve doğrulandı: anon sıfır satır, authenticated
+-- yalnızca profiles/SELECT + profiles/UPDATE.
+--
+-- Supabase güvenlik denetiminin leads/testimonials/auth_attempts için verdiği
+-- "RLS enabled, no policy" BİLGİ notu bu tasarımda BEKLENEN durumdur: politika
+-- yok + yetki yok = kimse erişemez. Bu tablolara yalnızca servis rolü dokunuyor
+-- ve o zaten RLS'i baypas ediyor.
