@@ -1,9 +1,26 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    font-family: 'Geologica', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
+/*
+ * MARKA YAZI AİLESİ — @theme İÇİNDE OLMAK ZORUNDA
+ * ===========================================================================
+ * Burası eskiden `@layer base { body { font-family: 'Geologica', ... } }`
+ * idi ve ÇALIŞMIYORDU: hem index.html'deki <body> hem App.tsx'teki kök div
+ * `font-sans` utility'sini taşıyor. Tailwind v4'te `utilities` katmanı
+ * `base`i özgüllükten bağımsız olarak yener, `--font-sans` de Tailwind'in
+ * varsayılan sistem yığınında kaldığı için site Geologica ile değil
+ * -apple-system/Segoe UI ile render ediliyordu. (Derlenmiş CSS'te
+ * doğrulandı: base katmanındaki kural duruyor ama .font-sans onu eziyor.)
+ *
+ * Doğru yer @theme: burada tanımlanan --font-sans, `font-sans` utility'sinin
+ * kendisinin okuduğu değişken. Böylece utility'yi ezmeye çalışmak yerine
+ * utility'nin içeriği düzeltilmiş oluyor ve <body>/kök div'deki font-sans
+ * olduğu gibi kalabiliyor.
+ *
+ * index.html yalnızca 400/600/800 ağırlıklarını indiriyor — yeni bir ağırlık
+ * kullanmadan önce oradaki Google Fonts bağlantısı güncellenmeli.
+ */
+@theme {
+  --font-sans: 'Geologica', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Custom palette helpers */
