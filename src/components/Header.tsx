@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, UserRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoWhite from '../assets/logo-white.png';
 import { Button } from './ui/Button';
@@ -132,8 +132,54 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             })}
           </nav>
 
-          {/* SAĞ: CTA VE MOBİL MENÜ TETİKLEYİCİSİ */}
+          {/* SAĞ: GİRİŞ, CTA VE MOBİL MENÜ TETİKLEYİCİSİ */}
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            {/*
+              GİRİŞ YAP — zeminsiz, sadece metin.
+              `ghost` varyantı tam olarak bu: durağan hâlde arka planı yok,
+              yalnızca hover'da hafif bir gri alıyor. Yanındaki dolu lacivert
+              CTA ile yarışmaması için bilinçli olarak sessiz bırakıldı;
+              ücretsiz deneme dersi hâlâ sayfanın birincil eylemi.
+
+              Telefonda metin yerine ikon: 375px'te logo + "akademITU" yazısı
+              + menü düğmesi zaten ~271px yer kaplıyor, "Giriş yap" metni
+              yanlarına sığmayıp yatay kaydırma yaratıyordu. İkon 44x44
+              dokunma hedefiyle sığıyor; mobil menü panelinin altında ayrıca
+              tam genişlikte metin hâli de var.
+
+              href + onClick birlikte: menü ögelerindeki kalıbın aynısı —
+              onClick SPA içinde kalmayı, href orta tuşla yeni sekmede açmayı
+              ve bağlantıyı kopyalamayı sağlar.
+            */}
+            <div className="hidden md:block">
+              <Button
+                href="/portal"
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/portal');
+                }}
+                className="text-sm"
+              >
+                Giriş yap
+              </Button>
+            </div>
+
+            <Button
+              href="/portal"
+              variant="iconGhost"
+              size="icon"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/portal');
+              }}
+              className="md:hidden w-11 h-11"
+              aria-label="Giriş yap"
+            >
+              <UserRound className="w-6 h-6" />
+            </Button>
+
             {/*
               CTA'nın görünürlüğü butonun kendisinde değil bu sarmalayıcıda:
               Button'ın temel sınıflarındaki `inline-flex`, className'e yazılan
@@ -257,7 +303,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                 })}
               </nav>
 
-              <div className="border-t border-slate-100 p-4 shrink-0">
+              <div className="border-t border-slate-100 p-4 shrink-0 space-y-2">
                 <Button
                   fullWidth
                   size="lg"
@@ -268,6 +314,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059]" />
                   Ücretsiz Deneme Dersi
+                </Button>
+
+                {/* Başlıktaki ikonun metinli karşılığı: menüyü açan kişi
+                    ikonun ne anlama geldiğini tahmin etmek zorunda kalmaz. */}
+                <Button
+                  href="/portal"
+                  fullWidth
+                  variant="soft"
+                  size="lg"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMobileMenuOpen(false);
+                    navigate('/portal');
+                  }}
+                >
+                  <UserRound className="w-5 h-5" />
+                  Giriş yap
                 </Button>
               </div>
           </motion.div>

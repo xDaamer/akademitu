@@ -12,6 +12,7 @@ import { HomePage } from './pages/HomePage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PortalLoginPage } from './pages/PortalLoginPage';
 import { Button } from './components/ui/Button';
 
 /*
@@ -33,6 +34,17 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('ana-sayfa');
   const location = useLocation();
   const isHome = location.pathname === '/';
+
+  /*
+   * Portal (giriş/kayıt) sitenin genel chrome'unu ALMAZ: header, footer,
+   * "Sizi Arayalım" sekmesi, WhatsApp düğmesi ve mobil yapışkan CTA çubuğu
+   * pazarlama ögeleri. Giriş yapmaya çalışan birinin ekranında işleri yok ve
+   * yapışkan çubuk formun gönder butonunun üstüne oturuyordu.
+   * Kök div'in mobil alt dolgusu da o çubuk için ayrılmıştı — çubuk yoksa
+   * dolgu da olmamalı, aksi halde portal sayfasının altında boş bir şerit
+   * kalıyor.
+   */
+  const isPortal = location.pathname.startsWith('/portal');
 
   // SEO: Add Organization & WebSite Schema to document head
   useEffect(() => {
@@ -187,30 +199,38 @@ export default function App() {
    * da (çentikli cihazlardaki ana ekran çubuğu) hesaba katıyor.
    */
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#B6D6CC] selection:text-[#191F61] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-0">
+    <div
+      className={`min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-[#B6D6CC] selection:text-[#191F61] ${
+        isPortal ? '' : 'pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-0'
+      }`}
+    >
       <Analytics />
       <SpeedInsights />
       {/* 1. SABİT HEADER (LOGO, YAZI, MENÜ VE BEYAZ METİNLİ MAVİ DÜĞME) */}
-      <Header
-        onOpenTrialForm={handleOpenTrialForm}
-        activeSection={activeSection}
-      />
+      {!isPortal && (
+        <Header
+          onOpenTrialForm={handleOpenTrialForm}
+          activeSection={activeSection}
+        />
+      )}
 
       {/* 2. SAYFA İÇERİKLERİ */}
       <Routes>
         <Route path="/" element={<HomePage onOpenTrialForm={handleOpenTrialForm} />} />
         <Route path="/gizlilik-politikasi" element={<PrivacyPolicyPage />} />
         <Route path="/kullanim-kosullari" element={<TermsPage />} />
+        <Route path="/portal" element={<PortalLoginPage mode="login" />} />
+        <Route path="/portal/kayit" element={<PortalLoginPage mode="signup" />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       {/* 3. FOOTER BÖLÜMÜ */}
-      <Footer onOpenTrialForm={handleOpenTrialForm} />
+      {!isPortal && <Footer onOpenTrialForm={handleOpenTrialForm} />}
 
       {/* 4. ÇİFT MODLU DERECE KOÇLUĞU FORMU */}
       {/* formMode null iken hiç mount edilmiyor: parçanın indirilmesi de
           kullanıcı formu ilk kez açana kadar ertelenir. */}
-      {formMode !== null && (
+      {formMode !== null && !isPortal && (
         <Suspense fallback={null}>
           <PopUpForm
             isOpen
@@ -231,48 +251,54 @@ export default function App() {
         Kırılma noktası bilerek `sm`: kodun en başından beri yazdığı değer buydu,
         yalnızca hiç uygulanamıyordu.
       */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden sm:block">
-        {/* Kendi biçimi olduğu için size="none": renk/hover/odak varyanttan gelir. */}
-        <Button
-          size="none"
-          onClick={handleOpenTrialForm}
-          className="flex flex-col px-4 py-10 rounded-l-2xl"
-        >
-          <Phone className="w-6 h-6" />
-          <span
-            className="text-[11px] font-bold whitespace-nowrap"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+      {!isPortal && (
+        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden sm:block">
+          {/* Kendi biçimi olduğu için size="none": renk/hover/odak varyanttan gelir. */}
+          <Button
+            size="none"
+            onClick={handleOpenTrialForm}
+            className="flex flex-col px-4 py-10 rounded-l-2xl"
           >
-            Sizi Arayalım
-          </span>
-        </Button>
-      </div>
+            <Phone className="w-6 h-6" />
+            <span
+              className="text-[11px] font-bold whitespace-nowrap"
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+            >
+              Sizi Arayalım
+            </span>
+          </Button>
+        </div>
+      )}
 
       {/* 6. SAĞ ALT: WHATSAPP BUTONU (SABIT) */}
-      <div className="fixed bottom-24 sm:bottom-6 right-6 z-40 group">
-        <a
-          href={need.contact.whatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="WhatsApp'tan yazın"
-          className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
-        >
-          <WhatsAppIcon className="w-8 h-8" />
-        </a>
+      {!isPortal && (
+        <div className="fixed bottom-24 sm:bottom-6 right-6 z-40 group">
+          <a
+            href={need.contact.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp'tan yazın"
+            className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
+          >
+            <WhatsAppIcon className="w-8 h-8" />
+          </a>
 
-        {/* WHATSAPP TOOLTIP */}
-        <div className="absolute bottom-20 right-0 bg-slate-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          Detaylı bilgi al
-          <div className="absolute -bottom-2 right-4 w-4 h-4 bg-slate-800 transform rotate-45" />
+          {/* WHATSAPP TOOLTIP */}
+          <div className="absolute bottom-20 right-0 bg-slate-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Detaylı bilgi al
+            <div className="absolute -bottom-2 right-4 w-4 h-4 bg-slate-800 transform rotate-45" />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 7. MOBİL YAPIŞKAN CTA BAR */}
-      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        <Button fullWidth size="lg" onClick={handleOpenTrialForm}>
-          Ücretsiz Deneme Dersi Al
-        </Button>
-      </div>
+      {!isPortal && (
+        <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <Button fullWidth size="lg" onClick={handleOpenTrialForm}>
+            Ücretsiz Deneme Dersi Al
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
