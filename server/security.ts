@@ -68,6 +68,10 @@ type Limit = { windowSeconds: number; max: number };
 const LIMITS: Record<string, Limit> = {
   login: { windowSeconds: 15 * 60, max: 10 },
   signup: { windowSeconds: 60 * 60, max: 5 },
+  /* Lead formu: normal bir kişi bir oturumda bir kez, en fazla birkaç kez
+     gönderir. 10 dakikada 5, gerçek kullanıcıyı hiç zorlamayacak kadar geniş
+     ama bot için dar. */
+  lead: { windowSeconds: 10 * 60, max: 5 },
 };
 
 function clientIp(req: Request): string {
@@ -130,5 +134,27 @@ export async function recordAttempt(req: Request, kind: keyof typeof LIMITS) {
     await supabase.from("auth_attempts").insert({ ip: clientIp(req), kind });
   } catch (err: any) {
     console.error("[Auth] deneme kaydedilemedi:", err?.message || err);
+  }
+
+  /*
+   * FIRSATÇI TEMİZLİK
+   * -------------------------------------------------------------------------
+   * Tablo sınırsız büyümesin diye eski satırlar siliniyor. Normalde bu iş
+   * pg_cron'a verilirdi, ama bu projede pg_cron KURULU DEĞİL (kontrol edildi),
+   * yani supabase-portal-auth.sql'deki cron bloğu sessizce atlanmış durumda ve
+   * tablo hiçbir zaman temizlenmiyordu.
+   *
+   * Her istekte silmek gereksiz bir yazma daha demek; ~%2 olasılıkla
+   * çalıştırmak yeterli, çünkü sayacın 24 saatten eski satıra ihtiyacı yok ve
+   * trafik arttıkça temizlik de sıklaşıyor. Hata yutuluyor: temizlik
+   * başarısız olsa da isteğin kendisi etkilenmemeli.
+   */
+  if (Math.random() < 0.02) {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    try {
+      await supabase.from("auth_attempts").delete().lt("created_at", cutoff);
+    } catch (err: any) {
+      console.error("[Auth] eski denemeler temizlenemedi:", err?.message || err);
+    }
   }
 }

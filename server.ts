@@ -14,7 +14,7 @@ import cookieParser from "cookie-parser";
  */
 import authRouter from "./server/routes/auth.js";
 import { serviceClient, describeConfiguration } from "./server/supabase.js";
-import { requireTrustedOrigin } from "./server/security.js";
+import { requireTrustedOrigin, isRateLimited, recordAttempt } from "./server/security.js";
 
 // Plain readFileSync+JSON.parse instead of `import ... with { type: "json" }` or
 // createRequire(import.meta.url): both rely on syntax/semantics that can break
@@ -71,9 +71,9 @@ app.use((req, res, next) => {
 
   /*
    * Bu kontrol yalnızca `Origin` VARSA bakar, yoksa geçirir — dolayısıyla
-   * CSRF koruması DEĞİLDİR ve öyle sayılmamalı. Çerez tabanlı oturuma geçtiğimiz
-   * için gerçek koruma requireTrustedOrigin() ile /api/auth altında ayrıca
-   * uygulanıyor (durum değiştiren isteklerde Origin ZORUNLU).
+   * tek başına CSRF koruması DEĞİLDİR. Gerçek koruma requireTrustedOrigin()
+   * (server/security.ts): durum değiştiren isteklerde Origin ZORUNLU ve o,
+   * hem /api/auth hem /api/leads uçlarına ayrıca uygulanıyor.
    * Buradaki hâli, tanımlı bir liste varken yanlış kaynaktan gelen istekleri
    * erkenden elemek için korunuyor.
    */
@@ -85,27 +85,20 @@ app.use((req, res, next) => {
   next();
 });
 
-type RateLimitEntry = { count: number; resetAt: number };
-const leadRequestLimits = new Map<string, RateLimitEntry>();
-const LEAD_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const LEAD_RATE_LIMIT_MAX_REQUESTS = 5;
-
-function limitLeadRequests(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const now = Date.now();
-  const clientIp = req.ip || "unknown";
-  const entry = leadRequestLimits.get(clientIp);
-
-  if (!entry || entry.resetAt <= now) {
-    leadRequestLimits.set(clientIp, { count: 1, resetAt: now + LEAD_RATE_LIMIT_WINDOW_MS });
-    return next();
-  }
-
-  if (entry.count >= LEAD_RATE_LIMIT_MAX_REQUESTS) {
-    res.setHeader("Retry-After", Math.ceil((entry.resetAt - now) / 1000));
-    return res.status(429).json({ success: false, error: "Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin." });
-  }
-
-  entry.count += 1;
+/*
+ * Lead hız limiti artık Postgres tabanlı (server/security.ts).
+ * Buradaki bellek içi Map kaldırıldı: Vercel'de her serverless örneği kendi
+ * belleğine sahip olduğu için sayaç saldırgan yeni bir örneğe düştüğü an
+ * sıfırlanıyordu — yani pratikte hiçbir şeyi sınırlamıyordu. Üstelik Map hiç
+ * budanmadığı için uzun ömürlü `npm start` sürecinde sızıntı yapıyordu.
+ */
+async function limitLeadRequests(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) {
+  if (await isRateLimited(req, res, "lead")) return;
+  await recordAttempt(req, "lead");
   next();
 }
 
@@ -161,46 +154,21 @@ if (!describeConfiguration().anonKey) {
 }
 
 /*
- * Kimlik doğrulama uçları. requireTrustedOrigin yalnızca burada: durum
- * değiştiren auth istekleri CSRF'e karşı en hassas olanlar ve tarayıcı bu
- * isteklerde Origin başlığını her zaman gönderir.
+ * Kimlik doğrulama uçları. requireTrustedOrigin durum değiştiren isteklerde
+ * Origin başlığını ZORUNLU kılıyor; tarayıcılar POST'ta bunu her zaman
+ * gönderdiği için başlıksız bir istek tarayıcıdan gelmiyor demektir.
  */
 app.use("/api/auth", requireTrustedOrigin, authRouter);
 
 // API Routes
 app.get("/api/health", (_req, res) => {
   /*
-   * `env` alanı YALNIZCA "bu ad tanımlı mı" bilgisini verir, değer vermez.
-   * Amacı, dağıtımda "değişkenleri girdim ama çalışmıyor" durumunu tahminle
-   * değil ölçerek çözmek: en sık sebep adın farklı olması (ör. eski
-   * VITE_ önekli adlar duruyor, yenileri girilmemiş) ya da değişkenin
-   * Production yerine yalnızca Preview ortamına eklenmiş olması.
-   *
-   * Sızdırdığı tek bilgi, zaten yanındaki supabaseConfigured'ın sızdırdığı
-   * bilgi. Yine de bu, kalıcı olarak durması gereken bir uç değil — dağıtım
-   * oturduktan sonra kaldırılabilir.
+   * Buradaki `env` teşhisi (hangi değişken adı tanımlı) dağıtım sırasında
+   * "değişkenleri girdim ama çalışmıyor" sorununu ölçerek çözmek için geçiciydi
+   * ve iş bitince kaldırıldı: altyapı yapılandırmasını dışarıya anlatmanın
+   * kalıcı bir sebebi yok.
    */
-  const names = [
-    "SUPABASE_URL",
-    "SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "ALLOWED_ORIGINS",
-    "VITE_SUPABASE_URL",
-    "VITE_SUPABASE_ANON_KEY",
-    "VERCEL",
-    "VERCEL_ENV",
-    "NODE_ENV",
-  ];
-
-  const env: Record<string, boolean | string> = {};
-  for (const name of names) {
-    const value = process.env[name];
-    // VERCEL_ENV/NODE_ENV sır değil ve hangi ortamda olduğumuzu söylüyor.
-    env[name] =
-      name === "VERCEL_ENV" || name === "NODE_ENV" ? value || "(yok)" : Boolean(value);
-  }
-
-  res.json({ status: "ok", supabaseConfigured: !!supabase, env });
+  res.json({ status: "ok", supabaseConfigured: !!supabase });
 });
 
 /*
@@ -250,7 +218,7 @@ app.get("/api/testimonials", async (_req, res) => {
 });
 
 // Step 1: Lead Submission (Name & Phone)
-app.post("/api/leads", limitLeadRequests, async (req, res) => {
+app.post("/api/leads", requireTrustedOrigin, limitLeadRequests, async (req, res) => {
   const { fullName, phone, examType, website } = req.body;
 
   if (website || typeof fullName !== "string" || typeof phone !== "string" || !fullName.trim() || !isValidTurkishMobile(phone)) {
@@ -306,7 +274,7 @@ app.post("/api/leads", limitLeadRequests, async (req, res) => {
 const ALLOWED_EXAM_TYPES = new Set(["YKS", "LGS", "Diğer"]);
 
 // Step 2: Lead Details Update
-app.post("/api/leads/step2", limitLeadRequests, async (req, res) => {
+app.post("/api/leads/step2", requireTrustedOrigin, limitLeadRequests, async (req, res) => {
   const {
     leadId,
     phone,
