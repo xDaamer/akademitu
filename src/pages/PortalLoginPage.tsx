@@ -5,7 +5,6 @@ import { PageMeta } from '../components/PageMeta';
 import { PortalBrandPanel } from '../components/portal/PortalBrandPanel';
 import { LoginForm } from '../components/portal/LoginForm';
 import { buttonClasses } from '../components/ui/Button';
-import logoBlue from '../assets/logo-blue.png';
 
 /*
  * PORTAL GİRİŞ KAPISI (/portal)
@@ -51,15 +50,14 @@ export const PortalLoginPage: React.FC = () => {
           </Link>
 
           <div className="mx-auto my-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
-            <div className="mb-7 flex flex-col items-center text-center">
-              <img
-                src={logoBlue}
-                alt=""
-                width={512}
-                height={512}
-                className="h-14 w-14 rounded-2xl object-contain"
-              />
-              <span className="mt-2 text-sm font-bold tracking-tight text-slate-500">
+            {/*
+              Logo görseli kaldırıldı; marka adı metin olarak kaldı.
+              Mobilde sol panel gizlendiği için kartın üstündeki bu satır,
+              kişinin hangi siteye giriş yaptığını gösteren tek yer — bu yüzden
+              tamamen çıkarılmadı.
+            */}
+            <div className="mb-7 text-center">
+              <span className="text-sm font-bold tracking-tight text-slate-500">
                 akademITU
               </span>
             </div>

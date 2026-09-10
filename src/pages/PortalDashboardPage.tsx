@@ -4,7 +4,6 @@ import { PageMeta } from '../components/PageMeta';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { formatNationalMobile, extractSignificantPhoneDigits } from '../lib/phone';
-import logoBlue from '../assets/logo-blue.png';
 
 /*
  * PANEL — TASLAK
@@ -90,13 +89,7 @@ export const PortalDashboardPage: React.FC = () => {
       <div className="min-h-dvh bg-slate-50">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-md">
           <div className="mx-auto flex h-20 max-w-5xl items-center gap-3 px-4 sm:px-6">
-            <img
-              src={logoBlue}
-              alt=""
-              width={512}
-              height={512}
-              className="h-10 w-10 object-contain"
-            />
+            {/* Logo görseli kaldırıldı; başlıkta marka adı metin olarak duruyor. */}
             <span className="text-lg font-extrabold tracking-tight text-[#191F61]">
               akademITU
             </span>
