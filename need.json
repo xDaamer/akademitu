@@ -11,6 +11,12 @@
     "themeColor": "#191F61",
     "logoUrl": "/logo.png"
   },
+  "portal": {
+    "_note": "PANEL ALT ALAN ADI. Panel akademitu.com'da değil, portal.akademitu.com kökünde yaşar; giriş ekranı ana sitede /login yolunda kalır. Bu iki değer kodda ELLE YAZILMAZ — src/lib/host.ts ve vercel.json buradan okur/eşleşir. Değiştirirseniz vercel.json'daki host koşullarını da güncelleyin.",
+    "domain": "https://portal.akademitu.com",
+    "host": "portal.akademitu.com",
+    "loginPath": "/login"
+  },
   "contact": {
     "phone": "+90-530-369-9539",
     "phoneFormatted": "05303699539",

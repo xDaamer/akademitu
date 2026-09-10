@@ -20,7 +20,21 @@ import { serviceClient } from "./supabase.js";
  * Çift gönderimli (double-submit) token EKLENMEDİ: sameSite=lax + zorunlu
  * Origin kontrolü aynı korumayı veriyor ve token'ı istemciye taşımak,
  * saklamak ve her istekte başlığa koymak fazladan kırılgan bir parça olurdu.
- * Tek eksiği alt alan adı devralma senaryosu; sitenin başka alt alan adı yok.
+ *
+ * ALT ALAN ADI NOTU (2026-09-10, panel taşındıktan sonra): "sitenin başka alt
+ * alan adı yok" ARTIK DOĞRU DEĞİL — portal.akademitu.com var ve oturum çerezi
+ * Domain=.akademitu.com ile yazılıyor (bkz. server/cookies.ts). Bu, çift
+ * gönderimli token'ın kapatacağı boşluğu gerçek hâle getirir: ele geçirilmiş
+ * bir alt alan adı hem çerezi okur hem de kendi origin'inden istek atar.
+ *
+ * Yine de token eklenmedi, çünkü o senaryoda saldırgan çerezi zaten
+ * OKUYABİLDİĞİ için CSRF token'ını da okur — token o saldırıyı durdurmaz.
+ * Doğru savunma alt alan adı hijyeni: sahipsiz DNS kaydı bırakmamak ve
+ * .akademitu.com altına güvenmediğiniz bir servisi bağlamamak.
+ *
+ * ALLOWED_ORIGINS artık ÜÇ değer içermeli (apex, www ve portal); aşağıdaki
+ * "isteğin kendi host'u" yedeği her host kendi API'sini çağırdığı için
+ * çalışır, ama listeyi açıkça vermek yanlış bir origin'i erkenden eler.
  */
 export function requireTrustedOrigin(req: Request, res: Response, next: NextFunction) {
   const isMutation = !["GET", "HEAD", "OPTIONS"].includes(req.method);

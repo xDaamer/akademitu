@@ -41,6 +41,14 @@ console.log("✅ Generated: public/sitemap.xml");
  *
  * /assets/ ve /teachers/ bilinçli olarak AÇIK: Google sayfayı render
  * edebilmek için JS, CSS ve görsellere erişmek zorunda.
+ *
+ * PANEL ALT ALAN ADI (portal.akademitu.com) BURADAN ENGELLENMEZ ve
+ * engellenmemeli. Aynı statik dosya iki host'tan da servis edildiği için
+ * buraya yazılacak bir `Disallow: /` ana siteyi de kapatırdı. Panelin dizine
+ * girmemesini sağlayan şey vercel.json'daki host koşullu
+ * `X-Robots-Tag: noindex, nofollow` başlığı — ve doğrusu da budur: robots.txt
+ * ile taramayı engellemek, tarayıcının o noindex başlığını GÖRMESİNİ de
+ * engeller, yani adres yine de dizinde kalabilir. Tara ama dizine alma.
  */
 const robotsTxt = `# robots.txt for ${need.site.name}
 

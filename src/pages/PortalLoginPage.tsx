@@ -5,16 +5,26 @@ import { PageMeta } from '../components/PageMeta';
 import { PortalBrandPanel } from '../components/portal/PortalBrandPanel';
 import { LoginForm } from '../components/portal/LoginForm';
 import { buttonClasses } from '../components/ui/Button';
+import { CrossHostRedirect } from '../components/CrossHostRedirect';
+import { useAuth } from '../context/AuthContext';
+import { panelHref } from '../lib/host';
 
 /*
- * PORTAL GİRİŞ KAPISI (/portal)
+ * PORTAL GİRİŞ KAPISI (akademitu.com/login)
  * ===========================================================================
  * Sayfa sitenin Header/Footer'ını almaz (bkz. App.tsx): burası pazarlama
  * sayfası değil, ürünün ilk ekranı. Menü, WhatsApp düğmesi ve yapışkan CTA
  * çubuğu giriş yapmaya çalışan birinin işine yaramaz, dikkat dağıtır.
  *
+ * GİRİŞ ANA SİTEDE KALIR, PANEL ALT ALAN ADINA TAŞINDI. Sebep: giriş sayfası
+ * kullanıcının bildiği adresten (akademitu.com) ulaşılabilir olmalı; panelin
+ * kendisi ise pazarlama sitesinden ayrı bir ürün yüzeyi. Başarılı girişten
+ * sonra portal.akademitu.com'a tam sayfa geçiş yapılıyor (bkz. LoginForm).
+ *
  * noIndex: panel girişi arama sonuçlarında görünmemeli. need.json'daki
  * seo.pages listesine de eklenmiyor — oraya eklenirse sitemap'e girer.
+ * (Meta etiketin yanında vercel.json'da /login için X-Robots-Tag da var:
+ * o, JS hiç çalışmasa bile geçerlidir.)
  *
  * KAYIT EKRANI YOK: hesaplar elle açılıyor (bkz. supabase-portal-auth.sql).
  * Kart tek biçimli olduğu için giriş<->kayıt geçişindeki yükseklik animasyonu
@@ -22,12 +32,23 @@ import { buttonClasses } from '../components/ui/Button';
  */
 
 export const PortalLoginPage: React.FC = () => {
+  const { user, isLoading } = useAuth();
+
+  /*
+   * Oturumu açık olan biri /login'e gelirse giriş formu göstermek anlamsız —
+   * doğrudan panele. isLoading beklenir, aksi halde oturumu olan kullanıcı
+   * her yenilemede bir an formu görürdü.
+   */
+  if (!isLoading && user) {
+    return <CrossHostRedirect to={panelHref()} />;
+  }
+
   return (
     <>
       <PageMeta
         title="Giriş Yap | akademITU Panel"
         description="akademITU öğrenci ve veli paneline telefon numaran ve şifrenle giriş yap."
-        path="/portal"
+        path="/login"
         noIndex
       />
 

@@ -13,6 +13,7 @@ import cookieParser from "cookie-parser";
  * onu fonksiyon paketine çeker ve fonksiyonu çökertirdi.
  */
 import authRouter from "./server/routes/auth.js";
+import portalRouter from "./server/routes/portal.js";
 import { serviceClient, describeConfiguration } from "./server/supabase.js";
 import { requireTrustedOrigin, isRateLimited, recordAttempt } from "./server/security.js";
 
@@ -159,6 +160,12 @@ if (!describeConfiguration().anonKey) {
  * gönderdiği için başlıksız bir istek tarayıcıdan gelmiyor demektir.
  */
 app.use("/api/auth", requireTrustedOrigin, authRouter);
+
+/*
+ * Panel verisi. requireTrustedOrigin burada da var ama asıl koruma modülün
+ * kendisinde: her sorgu kullanıcının kendi jetonuyla, RLS altında çalışıyor.
+ */
+app.use("/api/portal", requireTrustedOrigin, portalRouter);
 
 // API Routes
 app.get("/api/health", (_req, res) => {
