@@ -7,6 +7,7 @@ import {
   readRefreshToken,
 } from "../cookies.js";
 import { isRateLimited, recordAttempt, markAttemptResult } from "../security.js";
+import { auditLog } from "../audit.js";
 
 /*
  * PORTAL KİMLİK DOĞRULAMA
@@ -141,7 +142,15 @@ router.post("/login", async (req, res) => {
     }
 
     await markAttemptResult(attemptId, true);
-    setSessionCookies(res, data.session);
+    setSessionCookies(req, res, data.session);
+
+    /*
+     * Denetim kaydı (bkz. server/audit.ts). auth_attempts zaten IP başına
+     * sayıyor ama orası bir HIZ LİMİTİ sayacı: 30 günde bir temizleniyor ve
+     * user_id taşımıyor. "Bu hesaba ne zaman, nereden girildi" sorusunun
+     * cevabı burada. Beklenmiyor — girişin hızını denetim kaydı belirlemesin.
+     */
+    auditLog(req, "LOGIN_SUCCESS", { userId: data.user.id });
 
     /* Profil bilgisi artık KULLANICININ KENDİ token'ıyla okunuyor: RLS
        "yalnızca kendi satırın" kuralını uyguluyor. */
@@ -164,12 +173,20 @@ router.post("/logout", async (req, res) => {
 
   /* Çerezler her hâlükârda silinir — sunucu tarafı iptal başarısız olsa bile
      kullanıcı çıkış yapmış sayılmalı. */
-  clearSessionCookies(res);
+  clearSessionCookies(req, res);
 
   if (accessToken) {
     try {
       const scoped = userClient(accessToken);
+
+      /* Denetim kaydı için kullanıcı kimliği, oturum iptal EDİLMEDEN önce
+         okunuyor — signOut'tan sonra jeton geçersiz olur ve "kim çıktı"
+         sorusunun cevabı kalmaz. */
+      const { data: current } = (await scoped?.auth.getUser()) ?? { data: null };
+
       await scoped?.auth.signOut();
+
+      if (current?.user) auditLog(req, "LOGOUT", { userId: current.user.id });
     } catch (err: any) {
       console.error("[Auth] signOut istisnası:", err?.message || err);
     }
@@ -194,15 +211,15 @@ router.post("/refresh", async (req, res) => {
     if (error || !data.session) {
       /* Yenileme jetonu geçersizse çerezleri temizle: aksi halde istemci
          sonsuza kadar aynı ölü jetonla yeniden denemeye çalışır. */
-      clearSessionCookies(res);
+      clearSessionCookies(req, res);
       return res.status(401).json({ success: false, error: "Oturum süresi doldu." });
     }
 
-    setSessionCookies(res, data.session);
+    setSessionCookies(req, res, data.session);
     return res.json({ success: true });
   } catch (err: any) {
     console.error("[Auth] refresh istisnası:", err?.message || err);
-    clearSessionCookies(res);
+    clearSessionCookies(req, res);
     return res.status(401).json({ success: false, error: "Oturum süresi doldu." });
   }
 });

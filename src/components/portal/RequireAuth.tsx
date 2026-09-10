@@ -1,6 +1,7 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { CrossHostRedirect } from '../CrossHostRedirect';
+import { loginHref } from '../../lib/host';
 
 /*
  * KORUMALI ROUTE
@@ -16,7 +17,6 @@ import { useAuth } from '../../context/AuthContext';
  */
 export const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
-  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -27,9 +27,16 @@ export const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   if (!user) {
-    /* state.from: giriş sonrası kullanıcının gitmek istediği yere dönebilmek
-       için saklanıyor. replace: geri tuşu korumalı sayfaya geri atmasın. */
-    return <Navigate to="/portal" replace state={{ from: location.pathname }} />;
+    /*
+     * Giriş ekranı ARTIK BAŞKA BİR HOST'TA (akademitu.com/login); panel
+     * portal.akademitu.com'da. Bu yüzden react-router <Navigate> yetmiyor,
+     * tam sayfa yüklemesi gerekiyor — bkz. CrossHostRedirect.
+     *
+     * `state.from` da bu yüzden kaldırıldı: router state'i host geçişinde
+     * taşınmaz. Panel host'unda gidilebilecek tek yer zaten kök adres, yani
+     * saklanacak bir hedef yok.
+     */
+    return <CrossHostRedirect to={loginHref()} />;
   }
 
   return <>{children}</>;

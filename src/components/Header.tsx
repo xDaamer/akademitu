@@ -153,12 +153,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             */}
             <div className="hidden md:block">
               <Button
-                href="/portal"
+                href="/login"
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate('/portal');
+                  navigate('/login');
                 }}
                 className="text-sm"
               >
@@ -167,12 +167,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             </div>
 
             <Button
-              href="/portal"
+              href="/login"
               variant="iconGhost"
               size="icon"
               onClick={(e) => {
                 e.preventDefault();
-                navigate('/portal');
+                navigate('/login');
               }}
               className="md:hidden w-11 h-11"
               aria-label="Giriş yap"
@@ -319,14 +319,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                 {/* Başlıktaki ikonun metinli karşılığı: menüyü açan kişi
                     ikonun ne anlama geldiğini tahmin etmek zorunda kalmaz. */}
                 <Button
-                  href="/portal"
+                  href="/login"
                   fullWidth
                   variant="soft"
                   size="lg"
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileMenuOpen(false);
-                    navigate('/portal');
+                    navigate('/login');
                   }}
                 >
                   <UserRound className="w-5 h-5" />

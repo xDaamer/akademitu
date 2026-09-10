@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import need from '../../../need.json';
+import { panelHref, isCrossHost } from '../../lib/host';
 import { ShieldCheck } from 'lucide-react';
 import { Button, buttonClasses } from '../ui/Button';
 import { PhoneField } from '../ui/PhoneField';
@@ -56,8 +57,24 @@ export const LoginForm: React.FC = () => {
 
     try {
       await login(phone, password, website);
-      /* replace: geri tuşuyla giriş ekranına dönmek, oturum açıkken anlamsız. */
-      navigate('/portal/panel', { replace: true });
+
+      /*
+       * Panel BAŞKA BİR HOST'TA: portal.akademitu.com. react-router oraya
+       * gidemez, tam sayfa yüklemesi gerekiyor.
+       *
+       * Oturumun yeni host'ta da tanınmasını sağlayan şey çerezin
+       * Domain=.akademitu.com ile yazılmış olması (bkz. server/cookies.ts) —
+       * jeton URL'de TAŞINMAZ. Kılavuzun "handoff token" yöntemine gerek yok,
+       * çünkü iki host aynı kayıtlı alan adı ve aynı sunucu altında.
+       *
+       * replace: geri tuşuyla giriş ekranına dönmek, oturum açıkken anlamsız.
+       */
+      const target = panelHref();
+      if (isCrossHost(target)) {
+        window.location.replace(target);
+      } else {
+        navigate(target, { replace: true });
+      }
     } catch (err) {
       setErrors({
         form:

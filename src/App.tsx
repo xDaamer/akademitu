@@ -15,6 +15,8 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { PortalLoginPage } from './pages/PortalLoginPage';
 import { PortalDashboardPage } from './pages/PortalDashboardPage';
 import { RequireAuth } from './components/portal/RequireAuth';
+import { CrossHostRedirect } from './components/CrossHostRedirect';
+import { routingMode, panelHref, loginHref } from './lib/host';
 import { Button } from './components/ui/Button';
 
 /*
@@ -35,7 +37,19 @@ export default function App() {
   const [hasScrolledTriggered, setHasScrolledTriggered] = useState(false);
   const [activeSection, setActiveSection] = useState('ana-sayfa');
   const location = useLocation();
-  const isHome = location.pathname === '/';
+
+  /*
+   * HANGİ HOST, HANGİ SAYFALAR (bkz. src/lib/host.ts)
+   * -------------------------------------------------------------------------
+   * 'portal' -> portal.akademitu.com: yalnızca panel, kökte.
+   * 'main'   -> akademitu.com: pazarlama sayfaları + /login.
+   * 'both'   -> localhost / önizleme: ikisi birden, panel /panel yolunda.
+   *
+   * Host sekmenin ömrü boyunca değişmediği için bir kez okunuyor.
+   */
+  const mode = routingMode();
+  const isPortalHost = mode === 'portal';
+  const isHome = !isPortalHost && location.pathname === '/';
 
   /*
    * Portal (giriş/kayıt) sitenin genel chrome'unu ALMAZ: header, footer,
@@ -45,11 +59,26 @@ export default function App() {
    * Kök div'in mobil alt dolgusu da o çubuk için ayrılmıştı — çubuk yoksa
    * dolgu da olmamalı, aksi halde portal sayfasının altında boş bir şerit
    * kalıyor.
+   *
+   * Adresler taşındıktan sonra bu bayrak artık yalnızca yola bakamıyor: panel
+   * kendi host'unun KÖKÜNDE (/) duruyor, giriş ekranı ise ana sitede /login
+   * yolunda. Eski /portal* adresleri de (yönlendirilirken) chrome almamalı.
    */
-  const isPortal = location.pathname.startsWith('/portal');
+  const isPortal =
+    isPortalHost ||
+    location.pathname === '/login' ||
+    location.pathname === '/panel' ||
+    location.pathname.startsWith('/portal');
 
   // SEO: Add Organization & WebSite Schema to document head
   useEffect(() => {
+    /*
+     * Panel host'unda YAYINLANMAZ: portal.akademitu.com tamamen noindex
+     * (vercel.json'daki X-Robots-Tag) ve orada kuruluş/site şeması basmak,
+     * dizine girmemesi istenen bir adresi kanonik site gibi gösterirdi.
+     */
+    if (isPortalHost) return;
+
     /*
      * Tip `EducationalOrganization`: schema.org'da Organization'ın alt tipi ve
      * eğitim hizmeti veren bir kuruluşu Organization'dan daha isabetli anlatır.
@@ -120,7 +149,7 @@ export default function App() {
       document.head.removeChild(orgScript);
       document.head.removeChild(webScript);
     };
-  }, []);
+  }, [isPortalHost]);
 
   // AUTOMATIC POP-UP ON SCROLL DOWN (Triggers scroll mode form) — home page only
   useEffect(() => {
@@ -217,24 +246,72 @@ export default function App() {
       )}
 
       {/* 2. SAYFA İÇERİKLERİ */}
-      <Routes>
-        <Route path="/" element={<HomePage onOpenTrialForm={handleOpenTrialForm} />} />
-        <Route path="/gizlilik-politikasi" element={<PrivacyPolicyPage />} />
-        <Route path="/kullanim-kosullari" element={<TermsPage />} />
-        <Route path="/portal" element={<PortalLoginPage />} />
-        {/* Kayıt ekranı kaldırıldı (hesaplar elle açılıyor). Adres kısa süre
-            canlıda yayındaydı; 404 yerine girişe yönlendiriliyor. */}
-        <Route path="/portal/kayit" element={<Navigate to="/portal" replace />} />
-        <Route
-          path="/portal/panel"
-          element={
-            <RequireAuth>
-              <PortalDashboardPage />
-            </RequireAuth>
-          }
-        />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      {/*
+        ROUTE AĞACI HOST'A GÖRE KURULUYOR.
+        -----------------------------------------------------------------------
+        Panel portal.akademitu.com KÖKÜNDE, giriş ekranı akademitu.com/login'de.
+        Eski /portal ve /portal/panel adresleri bir süre canlıda yayındaydı ve
+        yer imlerinde/paylaşımlarda duruyor olabilir; hepsi yeni karşılığına
+        yönlendiriliyor. Aynı yönlendirmeler Vercel kenarında da (vercel.json)
+        tanımlı — oradaki 308'ler JS hiç çalışmadan devreye girer, buradakiler
+        ise yerel/önizleme ortamları ve uygulama içi gezinme için.
+      */}
+      {isPortalHost ? (
+        <Routes>
+          {/* Panelin kendisi: bu host'un tek gerçek sayfası. */}
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <PortalDashboardPage />
+              </RequireAuth>
+            }
+          />
+          {/* Eski yollar bu host'a da düşebilir (yer imi, elle yazım). */}
+          <Route path="/panel" element={<Navigate to="/" replace />} />
+          <Route path="/portal" element={<Navigate to="/" replace />} />
+          <Route path="/portal/*" element={<Navigate to="/" replace />} />
+          {/* Giriş ekranı bu host'ta YOK; ana sitede kalıyor. */}
+          <Route path="/login" element={<CrossHostRedirect to={loginHref()} />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      ) : (
+        <Routes>
+          <Route path="/" element={<HomePage onOpenTrialForm={handleOpenTrialForm} />} />
+          <Route path="/gizlilik-politikasi" element={<PrivacyPolicyPage />} />
+          <Route path="/kullanim-kosullari" element={<TermsPage />} />
+
+          {/* GİRİŞ — ana sitede kalan tek portal sayfası. */}
+          <Route path="/login" element={<PortalLoginPage />} />
+
+          {/* Eski adresler. */}
+          <Route path="/portal" element={<Navigate to="/login" replace />} />
+          {/* Kayıt ekranı kaldırıldı (hesaplar elle açılıyor). Adres kısa süre
+              canlıda yayındaydı; 404 yerine girişe yönlendiriliyor. */}
+          <Route path="/portal/kayit" element={<Navigate to="/login" replace />} />
+          <Route path="/portal/panel" element={<CrossHostRedirect to={panelHref()} />} />
+
+          {/*
+            /panel: 'both' modunda (localhost, önizleme) panelin gerçek yolu —
+            orada ayrı bir host olmadığı için panel bir yerde durmak zorunda.
+            Canlı ana sitede ise panel yok, bu route panel host'una atıyor.
+          */}
+          <Route
+            path="/panel"
+            element={
+              mode === 'both' ? (
+                <RequireAuth>
+                  <PortalDashboardPage />
+                </RequireAuth>
+              ) : (
+                <CrossHostRedirect to={panelHref()} />
+              )
+            }
+          />
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      )}
 
       {/* 3. FOOTER BÖLÜMÜ */}
       {!isPortal && <Footer onOpenTrialForm={handleOpenTrialForm} />}

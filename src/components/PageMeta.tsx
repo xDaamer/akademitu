@@ -39,6 +39,12 @@ interface PageMetaProps {
   path: string;
   /** 404 gibi indekslenmemesi gereken sayfalar için. */
   noIndex?: boolean;
+  /**
+   * Adresin ait olduğu host. Varsayılan ana site (SITE_URL); panel
+   * portal.akademitu.com'da yaşadığı için oradaki sayfalar kendi origin'ini
+   * verir. Verilmezse panelin og:url'i ana sayfayı gösterirdi.
+   */
+  origin?: string;
 }
 
 const INDEXABLE_ROBOTS =
@@ -77,9 +83,10 @@ export const PageMeta: React.FC<PageMetaProps> = ({
   description,
   path,
   noIndex = false,
+  origin = SITE_URL,
 }) => {
   useEffect(() => {
-    const canonical = `${SITE_URL}${path === '/' ? '/' : path}`;
+    const canonical = `${origin}${path === '/' ? '/' : path}`;
 
     document.title = title;
 
@@ -113,7 +120,7 @@ export const PageMeta: React.FC<PageMetaProps> = ({
      * değerleriyle ezecek. Unmount'ta silmek, iki sayfa arasındaki geçişte
      * <head>'in bir an boş kalmasına yol açardı.
      */
-  }, [title, description, path, noIndex]);
+  }, [title, description, path, noIndex, origin]);
 
   return null;
 };
