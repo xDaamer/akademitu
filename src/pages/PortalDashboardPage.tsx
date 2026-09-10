@@ -178,18 +178,39 @@ export const PortalDashboardPage: React.FC = () => {
               taşınacak bir maliyet değil.
             */}
             <Bolum baslik="Deneme gelişimi" ikon={<TrendingUp className="h-5 w-5" />}>
-              <div className="flex h-36 items-end gap-2" role="img" aria-label="Örnek deneme netleri: 62, 68, 71, 79, 84">
+              {/*
+                Çubuk ve etiketler AYRI SATIRDA duruyor, bilinçli olarak.
+                İlk hâlde etiketler çubukla aynı sütundaydı ve çubuğun yüzde
+                yüksekliği hiç uygulanmıyordu: yüzde yükseklik, ana kutunun
+                yüksekliği BELİRLİ olduğunda çözülür; sütunun yüksekliği auto
+                olduğu için hepsi sıfıra iniyor ve grafik boş görünüyordu.
+                Sarmalayıcıya h-full verilerek yükseklik belirli hâle geldi.
+              */}
+              <div
+                className="flex h-32 items-end gap-2"
+                role="img"
+                aria-label="Örnek deneme netleri: 62, 68, 71, 79, 84"
+              >
                 {ORNEK_DENEMELER.map((d, i) => (
-                  <div key={d.ad} className="flex flex-1 flex-col items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-600">{d.net}</span>
+                  <div key={d.ad} className="flex h-full flex-1 items-end">
                     <div
-                      className={`w-full rounded-t-lg ${
+                      className={`w-full rounded-t-lg transition-[height] duration-500 ${
                         i === ORNEK_DENEMELER.length - 1 ? 'bg-[#191F61]' : 'bg-[#191F61]/25'
                       }`}
                       style={{ height: `${(d.net / EN_YUKSEK_NET) * 100}%` }}
                     />
-                    <span className="text-[11px] text-slate-400">{i + 1}</span>
                   </div>
+                ))}
+              </div>
+
+              <div className="mt-2 flex gap-2" aria-hidden="true">
+                {ORNEK_DENEMELER.map((d) => (
+                  <span
+                    key={d.ad}
+                    className="flex-1 text-center text-xs font-bold text-slate-600"
+                  >
+                    {d.net}
+                  </span>
                 ))}
               </div>
               <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">
