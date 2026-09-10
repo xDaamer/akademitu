@@ -1,8 +1,10 @@
 -- =============================================================================
 -- DENETİM KAYDI (audit_log)
 -- =============================================================================
--- Supabase SQL Editor'de bir kez çalıştırın. Var olan kurulumu bozmaz;
--- tamamı IF NOT EXISTS / OR REPLACE ile yazılmıştır.
+-- UYGULANDI: 2026-09-10, "akademITU Database" projesine (ccgqhzuleodwnjbfbjrg)
+-- `create_audit_log` adlı migration olarak. Tekrar çalıştırmak zararsız —
+-- tamamı IF NOT EXISTS / OR REPLACE. Yeni bir ortam kurarken (ör. ikinci bir
+-- Supabase projesi) bu dosyayı SQL Editor'de bir kez çalıştırın.
 --
 -- NEDEN AYRI BİR TABLO (auth_attempts VARKEN):
 -- ---------------------------------------------------------------------------
