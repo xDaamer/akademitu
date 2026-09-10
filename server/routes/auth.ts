@@ -6,7 +6,7 @@ import {
   readAccessToken,
   readRefreshToken,
 } from "../cookies.js";
-import { isRateLimited, recordAttempt } from "../security.js";
+import { isRateLimited, recordAttempt, markAttemptResult } from "../security.js";
 
 /*
  * PORTAL KİMLİK DOĞRULAMA
@@ -90,7 +90,12 @@ router.post("/login", async (req, res) => {
     return res.status(503).json({ success: false, error: NOT_CONFIGURED });
   }
 
-  await recordAttempt(req, "login");
+  /*
+   * Deneme kaydı: hangi numara denendi. Sonuç aşağıda, çıkışların hepsinde
+   * işleniyor — hangi yoldan dönülürse dönülsün rapor eksik kalmasın.
+   * ŞİFRE KAYDEDİLMİYOR (gerekçe supabase-portal-auth.sql'de).
+   */
+  const attemptId = await recordAttempt(req, "login", cleanPhone);
 
   try {
     /*
@@ -108,16 +113,19 @@ router.post("/login", async (req, res) => {
 
     if (lookupError) {
       console.error("[Auth] login profil araması başarısız:", lookupError.message);
+      await markAttemptResult(attemptId, false);
       return res.status(500).json({ success: false, error: GENERIC_ERROR });
     }
 
     if (!profile) {
+      await markAttemptResult(attemptId, false);
       return res.status(401).json({ success: false, error: INVALID_CREDENTIALS });
     }
 
     const { data: userRecord, error: userError } = await admin.auth.admin.getUserById(profile.id);
     if (userError || !userRecord?.user?.email) {
       console.error("[Auth] kullanıcı e-postası bulunamadı:", userError?.message);
+      await markAttemptResult(attemptId, false);
       return res.status(401).json({ success: false, error: INVALID_CREDENTIALS });
     }
 
@@ -128,9 +136,11 @@ router.post("/login", async (req, res) => {
 
     if (error || !data.session || !data.user) {
       console.error("[Auth] signInWithPassword başarısız:", error?.message, error?.status);
+      await markAttemptResult(attemptId, false);
       return res.status(401).json({ success: false, error: INVALID_CREDENTIALS });
     }
 
+    await markAttemptResult(attemptId, true);
     setSessionCookies(res, data.session);
 
     /* Profil bilgisi artık KULLANICININ KENDİ token'ıyla okunuyor: RLS
@@ -143,6 +153,7 @@ router.post("/login", async (req, res) => {
     return res.json({ success: true, user: publicUser(data.user, fullProfile) });
   } catch (err: any) {
     console.error("[Auth] login istisnası:", err?.message || err);
+    await markAttemptResult(attemptId, false);
     return res.status(500).json({ success: false, error: GENERIC_ERROR });
   }
 });

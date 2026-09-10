@@ -125,36 +125,88 @@ export async function isRateLimited(
   return false;
 }
 
-/** Denemeyi kaydeder. Başarısız olsa da isteği bozmaz. */
-export async function recordAttempt(req: Request, kind: keyof typeof LIMITS) {
+/**
+ * Denemeyi kaydeder ve satırın id'sini döndürür (sonuç sonradan
+ * markAttemptResult ile işlenebilsin diye). Başarısız olsa da isteği bozmaz.
+ *
+ * Kayıt SONUÇTAN ÖNCE atılıyor, bilerek: hız limiti mevcut satırları sayarak
+ * karar veriyor, dolayısıyla deneme ancak yazıldıktan sonra sayılır. Sonuç
+ * beklenip tek yazma yapılsaydı, aynı anda gönderilen bir istek yığını kontrol
+ * ile kayıt arasındaki boşluktan toplu hâlde sızabilirdi.
+ *
+ * `phone` kayıtlı olmak zorunda değil — başarısız denemeler de raporlanmalı.
+ * ŞİFRE KAYDEDİLMEZ: bkz. supabase-portal-auth.sql'deki gerekçe.
+ */
+export async function recordAttempt(
+  req: Request,
+  kind: keyof typeof LIMITS,
+  phone?: string,
+): Promise<number | null> {
   const supabase = serviceClient();
-  if (!supabase) return;
+  if (!supabase) return null;
 
   try {
-    await supabase.from("auth_attempts").insert({ ip: clientIp(req), kind });
+    const { data, error } = await supabase
+      .from("auth_attempts")
+      .insert({ ip: clientIp(req), kind, phone: phone ?? null })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("[Auth] deneme kaydedilemedi:", error.message);
+    } else {
+      void pruneOldAttempts(supabase);
+      return (data?.id as number) ?? null;
+    }
   } catch (err: any) {
     console.error("[Auth] deneme kaydedilemedi:", err?.message || err);
   }
 
-  /*
-   * FIRSATÇI TEMİZLİK
-   * -------------------------------------------------------------------------
-   * Tablo sınırsız büyümesin diye eski satırlar siliniyor. Normalde bu iş
-   * pg_cron'a verilirdi, ama bu projede pg_cron KURULU DEĞİL (kontrol edildi),
-   * yani supabase-portal-auth.sql'deki cron bloğu sessizce atlanmış durumda ve
-   * tablo hiçbir zaman temizlenmiyordu.
-   *
-   * Her istekte silmek gereksiz bir yazma daha demek; ~%2 olasılıkla
-   * çalıştırmak yeterli, çünkü sayacın 24 saatten eski satıra ihtiyacı yok ve
-   * trafik arttıkça temizlik de sıklaşıyor. Hata yutuluyor: temizlik
-   * başarısız olsa da isteğin kendisi etkilenmemeli.
-   */
-  if (Math.random() < 0.02) {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    try {
-      await supabase.from("auth_attempts").delete().lt("created_at", cutoff);
-    } catch (err: any) {
-      console.error("[Auth] eski denemeler temizlenemedi:", err?.message || err);
-    }
+  return null;
+}
+
+/**
+ * Denemenin sonucunu işler. recordAttempt'in döndürdüğü id ile çağrılır.
+ * Sessizce başarısız olur — raporlama, girişin kendisini bozmamalı.
+ */
+export async function markAttemptResult(id: number | null, success: boolean) {
+  if (id === null) return;
+
+  const supabase = serviceClient();
+  if (!supabase) return;
+
+  try {
+    await supabase.from("auth_attempts").update({ success }).eq("id", id);
+  } catch (err: any) {
+    console.error("[Auth] deneme sonucu işlenemedi:", err?.message || err);
+  }
+}
+
+/*
+ * FIRSATÇI TEMİZLİK
+ * ---------------------------------------------------------------------------
+ * Tablo sınırsız büyümesin diye eski satırlar siliniyor. Normalde bu iş
+ * pg_cron'a verilirdi, ama bu projede pg_cron KURULU DEĞİL (kontrol edildi),
+ * yani supabase-portal-auth.sql'deki cron bloğu sessizce atlanmış durumda ve
+ * tablo hiçbir zaman temizlenmiyordu.
+ *
+ * Her istekte silmek gereksiz bir yazma daha demek; ~%2 olasılıkla çalıştırmak
+ * yeterli — trafik arttıkça temizlik de sıklaşıyor. Beklenmiyor (void):
+ * temizlik gecikmesi kullanıcıyı bekletmemeli.
+ *
+ * SAKLAMA SÜRESİ 30 GÜN: sayacın 24 saatten eskisine ihtiyacı yok ama rapor
+ * için biraz geçmiş gerekiyor. Süresiz saklamak, IP ve telefon içeren bir
+ * tabloda gereksiz bir sorumluluk olurdu.
+ */
+const SAKLAMA_GUNU = 30;
+
+async function pruneOldAttempts(supabase: NonNullable<ReturnType<typeof serviceClient>>) {
+  if (Math.random() >= 0.02) return;
+
+  const cutoff = new Date(Date.now() - SAKLAMA_GUNU * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    await supabase.from("auth_attempts").delete().lt("created_at", cutoff);
+  } catch (err: any) {
+    console.error("[Auth] eski denemeler temizlenemedi:", err?.message || err);
   }
 }
