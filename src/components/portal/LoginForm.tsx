@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import need from '../../../need.json';
-import { panelHref, isCrossHost } from '../../lib/host';
+import { panelHrefForRole, isCrossHost } from '../../lib/host';
 import { ShieldCheck } from 'lucide-react';
 import { Button, buttonClasses } from '../ui/Button';
 import { PhoneField } from '../ui/PhoneField';
@@ -56,7 +56,7 @@ export const LoginForm: React.FC = () => {
     setErrors({});
 
     try {
-      await login(phone, password, website);
+      const girenKullanici = await login(phone, password, website);
 
       /*
        * Panel BAŞKA BİR HOST'TA: portal.akademitu.com. react-router oraya
@@ -68,8 +68,28 @@ export const LoginForm: React.FC = () => {
        * çünkü iki host aynı kayıtlı alan adı ve aynı sunucu altında.
        *
        * replace: geri tuşuyla giriş ekranına dönmek, oturum açıkken anlamsız.
+       *
+       * HEDEF ROLE GÖRE değişiyor: öğrenci paneli panel host'unun kökünde,
+       * öğretmen paneli onun altındaki /ogretmen yolunda (bkz. lib/host.ts).
+       * Rol sunucudan, giriş yanıtının içinde geliyor — burada bir tahmin
+       * yapılmıyor.
        */
-      const target = panelHref();
+      const target = panelHrefForRole(girenKullanici.userType);
+
+      /*
+       * Rolü olmayan (profil satırı silinmiş) ya da henüz paneli olmayan
+       * ('admin') bir hesap hiçbir yere yönlendirilmiyor. Sessizce öğrenci
+       * paneline atmak, oraya ait olmayan birini oraya sokmak olurdu; kişi
+       * boş bir ekranla baş başa kalırdı ve sebebini göremezdi.
+       */
+      if (!target) {
+        setErrors({
+          form: 'Hesabınız için henüz bir panel tanımlı değil. Lütfen bizimle iletişime geçin.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       if (isCrossHost(target)) {
         window.location.replace(target);
       } else {

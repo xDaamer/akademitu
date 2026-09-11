@@ -13,10 +13,13 @@ import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PortalLoginPage } from './pages/PortalLoginPage';
-import { PortalDashboardPage } from './pages/PortalDashboardPage';
+import { TeacherDashboardPage } from './pages/TeacherDashboardPage';
+import { StudentCommentsPage } from './pages/StudentCommentsPage';
 import { RequireAuth } from './components/portal/RequireAuth';
+import { RequireRole } from './components/portal/RequireRole';
+import { PanelDispatch } from './components/portal/PanelDispatch';
 import { CrossHostRedirect } from './components/CrossHostRedirect';
-import { routingMode, panelHref, loginHref } from './lib/host';
+import { routingMode, panelHref, teacherPanelHref, loginHref } from './lib/host';
 import { Button } from './components/ui/Button';
 
 /*
@@ -63,11 +66,15 @@ export default function App() {
    * Adresler taşındıktan sonra bu bayrak artık yalnızca yola bakamıyor: panel
    * kendi host'unun KÖKÜNDE (/) duruyor, giriş ekranı ise ana sitede /login
    * yolunda. Eski /portal* adresleri de (yönlendirilirken) chrome almamalı.
+   *
+   * /panel EŞİTLİK DEĞİL ÖNEK kontrolü: öğretmen paneli 'both' modunda
+   * /panel/ogretmen yolunda duruyor ve o da bir panel ekranı — eşitlikte
+   * kalsaydı yapışkan mobil CTA çubuğu öğretmen panelinin üstüne otururdu.
    */
   const isPortal =
     isPortalHost ||
     location.pathname === '/login' ||
-    location.pathname === '/panel' ||
+    location.pathname.startsWith('/panel') ||
     location.pathname.startsWith('/portal');
 
   // SEO: Add Organization & WebSite Schema to document head
@@ -258,12 +265,45 @@ export default function App() {
       */}
       {isPortalHost ? (
         <Routes>
-          {/* Panelin kendisi: bu host'un tek gerçek sayfası. */}
+          {/*
+            KÖK: rolü ne olursa olsun herkes buraya düşebiliyor (yer imi, eski
+            /portal* yönlendirmeleri, elle yazım). PanelDispatch öğrenciye
+            kendi panelini gösteriyor, öğretmeni /ogretmen'e yolluyor.
+          */}
           <Route
             path="/"
             element={
               <RequireAuth>
-                <PortalDashboardPage />
+                <PanelDispatch />
+              </RequireAuth>
+            }
+          />
+          {/*
+            ÖĞRETMEN PANELİ. RequireRole bir güvenlik sınırı DEĞİL (paketi iki
+            rol de indiriyor) — asıl sınır /api/teacher'ın rol kapısı ve RLS.
+            Buradaki iş yanlış kapıya gelene ne olduğunu söylemek.
+          */}
+          <Route
+            path="/ogretmen"
+            element={
+              <RequireAuth>
+                <RequireRole allow="teacher">
+                  <TeacherDashboardPage />
+                </RequireRole>
+              </RequireAuth>
+            }
+          />
+          {/*
+            ÖĞRENCİNİN DERS YORUMLARI. Panelin alt sayfası — kök ekranda
+            duran "Koçundan not" bölümünden buraya bağlanıyor.
+          */}
+          <Route
+            path="/yorumlar"
+            element={
+              <RequireAuth>
+                <RequireRole allow="student">
+                  <StudentCommentsPage />
+                </RequireRole>
               </RequireAuth>
             }
           />
@@ -301,7 +341,57 @@ export default function App() {
             element={
               mode === 'both' ? (
                 <RequireAuth>
-                  <PortalDashboardPage />
+                  <PanelDispatch />
+                </RequireAuth>
+              ) : (
+                <CrossHostRedirect to={panelHref()} />
+              )
+            }
+          />
+
+          {/*
+            Öğretmen panelinin 'both' modundaki karşılığı. Canlı ana sitede
+            panel yok, bu route öğretmen paneline (panel host'una) atıyor.
+          */}
+          <Route
+            path="/panel/ogretmen"
+            element={
+              mode === 'both' ? (
+                <RequireAuth>
+                  <RequireRole allow="teacher">
+                    <TeacherDashboardPage />
+                  </RequireRole>
+                </RequireAuth>
+              ) : (
+                <CrossHostRedirect to={teacherPanelHref()} />
+              )
+            }
+          />
+
+          {/*
+            Panel alt sayfalarının ANA SİTEDE yazılmış hâlleri. Canlı panel
+            adresleri portal.akademitu.com/ogretmen ve /yorumlar; birileri bu
+            yolları ana siteye yazarsa 404 yerine doğru host'a gitmeli —
+            /portal/panel için zaten yapılanın aynısı.
+            'both' modunda bu yollar ayrı ayrı mount edilmiyor: orada panelin
+            tamamı /panel altında ve aşağıdaki route'lar o işi görüyor.
+          */}
+          {mode !== 'both' && (
+            <Route path="/ogretmen" element={<CrossHostRedirect to={teacherPanelHref()} />} />
+          )}
+          {mode !== 'both' && (
+            <Route path="/yorumlar" element={<CrossHostRedirect to={panelHref()} />} />
+          )}
+
+          {/* Ders yorumlarının 'both' modundaki karşılığı. */}
+          <Route
+            path="/panel/yorumlar"
+            element={
+              mode === 'both' ? (
+                <RequireAuth>
+                  <RequireRole allow="student">
+                    <StudentCommentsPage />
+                  </RequireRole>
                 </RequireAuth>
               ) : (
                 <CrossHostRedirect to={panelHref()} />

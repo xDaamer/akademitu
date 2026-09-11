@@ -49,13 +49,30 @@ const INVALID_CREDENTIALS = "Telefon numarası veya şifre hatalı.";
 const GENERIC_ERROR = "İşlem tamamlanamadı. Lütfen tekrar deneyin.";
 const NOT_CONFIGURED = "Giriş servisi şu anda kullanılamıyor.";
 
-/** İstemciye dönen kullanıcı biçimi — hiçbir zaman ham Supabase nesnesi değil. */
-function publicUser(user: { id: string; email?: string | null }, profile?: { full_name?: string | null; phone?: string | null } | null) {
+/**
+ * İstemciye dönen kullanıcı biçimi — hiçbir zaman ham Supabase nesnesi değil.
+ *
+ * `userType` istemciye AÇIKÇA veriliyor çünkü arayüzün hangi paneli
+ * göstereceğine karar vermesi gerekiyor. Bu bir sır değil (kişi zaten kendi
+ * rolünü biliyor) ve bir yetki de DEĞİL: sunucu, istemcinin bu değerle ne
+ * yaptığına bakmaksızın her /api/portal ve /api/teacher isteğinde rolü
+ * veritabanından yeniden okuyor (bkz. server/roles.ts). İstemcide değeri
+ * değiştirmek yalnızca boş bir ekran açar, veri açmaz.
+ *
+ * Profil yoksa 'student'a düşmüyoruz — rol bilinmiyorsa null döner ve arayüz
+ * kullanıcıyı hiçbir panele sokmaz. Sessizce öğrenci saymak, profili silinmiş
+ * bir hesabı öğrenci paneline almak demekti.
+ */
+function publicUser(
+  user: { id: string; email?: string | null },
+  profile?: { full_name?: string | null; phone?: string | null; user_type?: string | null } | null,
+) {
   return {
     id: user.id,
     email: user.email ?? null,
     fullName: profile?.full_name ?? null,
     phone: profile?.phone ?? null,
+    userType: (profile?.user_type as "student" | "teacher" | "admin" | undefined) ?? null,
   };
 }
 
@@ -156,7 +173,7 @@ router.post("/login", async (req, res) => {
        "yalnızca kendi satırın" kuralını uyguluyor. */
     const scoped = userClient(data.session.access_token);
     const { data: fullProfile } = scoped
-      ? await scoped.from("profiles").select("full_name, phone").eq("id", data.user.id).maybeSingle()
+      ? await scoped.from("profiles").select("full_name, phone, user_type").eq("id", data.user.id).maybeSingle()
       : { data: null };
 
     return res.json({ success: true, user: publicUser(data.user, fullProfile) });
@@ -242,7 +259,7 @@ router.get("/me", async (req, res) => {
 
     const { data: profile } = await scoped
       .from("profiles")
-      .select("full_name, phone")
+      .select("full_name, phone, user_type")
       .eq("id", data.user.id)
       .maybeSingle();
 

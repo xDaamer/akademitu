@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { LogOut, CalendarDays, TrendingUp, CreditCard, MessageSquareQuote } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { LogOut, CalendarDays, TrendingUp, CreditCard, MessageSquareQuote, ChevronRight } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +8,7 @@ import { apiFetch, ApiRequestError } from '../lib/api';
 import { formatNationalMobile, extractSignificantPhoneDigits } from '../lib/phone';
 import { SITE_URL } from '../config';
 import need from '../../need.json';
-import { routingMode } from '../lib/host';
+import { routingMode, studentCommentsPath } from '../lib/host';
 
 /*
  * PANEL — portal.akademitu.com KÖKÜ
@@ -364,6 +365,21 @@ export const PortalDashboardPage: React.FC = () => {
                 ) : (
                   <Bos>Koçundan henüz bir not yok.</Bos>
                 )}
+
+                {/*
+                  DERS BAZLI yorumlar ayrı bir sayfada: yukarıdaki not
+                  öğrenci hakkında GENEL (coach_notes), o sayfadakiler ise
+                  BELİRLİ derslere ait (lesson_comments). İkisi farklı veri,
+                  farklı soru — ama öğrenci için ikisi de "koçum ne demiş",
+                  o yüzden giriş buradan veriliyor.
+                */}
+                <Link
+                  to={studentCommentsPath()}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded text-sm font-bold text-[#191F61] transition-colors hover:text-[#101442] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
+                >
+                  Ders yorumlarını gör
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </Bolum>
             </div>
           )}

@@ -18,18 +18,37 @@ import { apiFetch, ApiRequestError, hasSessionHint } from '../lib/api';
  * localStorage değil, çerezin kendisi.
  */
 
+/**
+ * Portalda iki tür kullanıcı var ve ikisi farklı panel görüyor.
+ * null: rolü bilinmiyor (profil satırı yok) — kullanıcı hiçbir panele
+ * alınmaz. Sessizce 'student' saymak, profili silinmiş bir hesabı öğrenci
+ * paneline sokmak olurdu.
+ */
+export type UserType = 'student' | 'teacher' | 'admin';
+
 export interface PortalUser {
   id: string;
   email: string | null;
   fullName: string | null;
   phone: string | null;
+  /*
+   * HANGİ PANELİN GÖSTERİLECEĞİNİ belirler — NE GÖRÜLECEĞİNİ değil.
+   * Burası tarayıcı; bu alanı konsoldan değiştiren biri yalnızca kendine
+   * boş bir ekran açar. Sunucu her /api/portal ve /api/teacher isteğinde
+   * rolü veritabanından yeniden okuyor (bkz. server/roles.ts) ve veriyi
+   * RLS filtreliyor.
+   */
+  userType: UserType | null;
 }
 
 interface AuthContextValue {
   user: PortalUser | null;
   /** İlk /api/auth/me cevabı gelene kadar true. */
   isLoading: boolean;
-  login: (phone: string, password: string, website: string) => Promise<void>;
+  /* Giriş yapan kullanıcıyı DÖNDÜRÜR: çağıran tarafın hangi panele
+     yönlendireceğine karar vermesi için rol gerekiyor ve context state'inin
+     güncellenmesini beklemek bir render turu gecikme demekti. */
+  login: (phone: string, password: string, website: string) => Promise<PortalUser>;
   logout: () => Promise<void>;
 }
 
@@ -84,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       skipRefresh: true,
     });
     setUser(data.user);
+    return data.user;
   }, []);
 
   const logout = useCallback(async () => {

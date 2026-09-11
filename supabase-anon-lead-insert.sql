@@ -124,10 +124,15 @@ BEGIN
     RAISE EXCEPTION 'Geçersiz istek.';
   END IF;
 
+  -- `id DESC` bir EŞİTLİK BOZUCU, süs değil: yalnızca created_at'e bakan bir
+  -- sıralama, iki kayıt aynı zaman damgasını taşıdığında hangi satırın
+  -- güncelleneceğini belirsiz bırakır (Postgres beraberlikte istediğini seçer).
+  -- Adım 1 damgayı sunucudan alıyor (server.ts), yani aynı milisaniyeye düşen
+  -- iki başvuru olasıdır. Maliyeti sıfır, sonucu her zaman aynı.
   SELECT id INTO target_id
   FROM public.leads
   WHERE phone = p_phone AND step = 1
-  ORDER BY created_at DESC
+  ORDER BY created_at DESC, id DESC
   LIMIT 1;
 
   IF target_id IS NULL THEN

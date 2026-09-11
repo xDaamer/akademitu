@@ -14,6 +14,7 @@ import cookieParser from "cookie-parser";
  */
 import authRouter from "./server/routes/auth.js";
 import portalRouter from "./server/routes/portal.js";
+import teacherRouter from "./server/routes/teacher.js";
 import { serviceClient, describeConfiguration } from "./server/supabase.js";
 import { requireTrustedOrigin, isRateLimited, recordAttempt } from "./server/security.js";
 
@@ -166,6 +167,13 @@ app.use("/api/auth", requireTrustedOrigin, authRouter);
  * kendisinde: her sorgu kullanıcının kendi jetonuyla, RLS altında çalışıyor.
  */
 app.use("/api/portal", requireTrustedOrigin, portalRouter);
+
+/*
+ * Öğretmen paneli verisi. Aynı desen: requireTrustedOrigin burada da var ama
+ * asıl koruma modülün kendisinde — önce rol kapısı (öğrenci gelirse 403),
+ * sonra RLS (öğretmen yalnızca teacher_id'si kendisi olan dersleri görür).
+ */
+app.use("/api/teacher", requireTrustedOrigin, teacherRouter);
 
 // API Routes
 app.get("/api/health", (_req, res) => {

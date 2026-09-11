@@ -7,7 +7,7 @@ import { LoginForm } from '../components/portal/LoginForm';
 import { buttonClasses } from '../components/ui/Button';
 import { CrossHostRedirect } from '../components/CrossHostRedirect';
 import { useAuth } from '../context/AuthContext';
-import { panelHref } from '../lib/host';
+import { panelHrefForRole } from '../lib/host';
 
 /*
  * PORTAL GİRİŞ KAPISI (akademitu.com/login)
@@ -38,9 +38,15 @@ export const PortalLoginPage: React.FC = () => {
    * Oturumu açık olan biri /login'e gelirse giriş formu göstermek anlamsız —
    * doğrudan panele. isLoading beklenir, aksi halde oturumu olan kullanıcı
    * her yenilemede bir an formu görürdü.
+   *
+   * Hangi panel olduğu ROLE bağlı (bkz. lib/host.ts). Rolü olmayan ya da
+   * paneli henüz olmayan ('admin') bir hesap için hedef yok; o durumda form
+   * gösterilmeye devam ediyor — yönlendirilecek bir yer olmadığında kişiyi
+   * boş bir sayfaya atmaktansa bulunduğu ekranda bırakmak doğru.
    */
-  if (!isLoading && user) {
-    return <CrossHostRedirect to={panelHref()} />;
+  const hedef = !isLoading && user ? panelHrefForRole(user.userType) : null;
+  if (hedef) {
+    return <CrossHostRedirect to={hedef} />;
   }
 
   return (

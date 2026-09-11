@@ -90,9 +90,75 @@ export function isPortalHost(): boolean {
  * Panelin bu ortamdaki adresi. 'both' modunda (yerel/önizleme) host
  * değişmediği için tam URL yerine yol döner — aksi halde "npm run dev"
  * sırasında giriş yapan kişi canlı portala fırlatılırdı.
+ *
+ * Bu ÖĞRENCİ panelinin adresi. Öğretmenler için teacherPanelHref().
  */
 export function panelHref(): string {
   return routingMode() === 'both' ? '/panel' : PANEL_URL;
+}
+
+/**
+ * ÖĞRETMEN PANELİNİN YOLU — panel kökünün altında bir alt yol.
+ *
+ * Öğrenci paneli panel host'unun KÖKÜNDE duruyor (/) ve orada kalıyor:
+ * kullanıcıların çoğu öğrenci, adres yer imlerinde ve vercel.json'daki
+ * yönlendirmelerde bu hâliyle geçiyor. Öğretmen paneli bu yüzden kökün
+ * yerini almıyor, yanına geliyor.
+ *
+ * 'both' modunda panelin kendisi /panel'de olduğu için öğretmen paneli de
+ * /panel/ogretmen oluyor — aynı gerekçe: tek host'lu ortamda panelin bir
+ * yerde durması gerek.
+ *
+ * Türkçe yol adı bilinçli: sitenin kullanıcıya görünen tüm yolları Türkçe
+ * (/gizlilik-politikasi, /kullanim-kosullari).
+ */
+export const TEACHER_PATH = '/ogretmen';
+
+/**
+ * Öğretmen panelinin AYNI HOST İÇİNDEKİ yolu — react-router gezinmesi için.
+ * Panel host'unda /ogretmen, 'both' modunda /panel/ogretmen.
+ *
+ * teacherPanelHref()'ten ayrı duruyor çünkü ikisi farklı işler: bu, zaten
+ * panel host'undayken kullanılan göreli yol (tam sayfa yenilemesi olmadan);
+ * öteki, başka bir host'tan gelinirken kullanılan tam adres.
+ */
+export function teacherPanelPath(): string {
+  return routingMode() === 'both' ? `/panel${TEACHER_PATH}` : TEACHER_PATH;
+}
+
+export function teacherPanelHref(): string {
+  return routingMode() === 'both' ? `/panel${TEACHER_PATH}` : `${PORTAL_ORIGIN}${TEACHER_PATH}`;
+}
+
+/**
+ * ÖĞRENCİNİN DERS YORUMLARI SAYFASI — panelin altında bir alt sayfa.
+ * Öğretmen paneliyle aynı mantık: kök öğrenci panelinin kendisi, bu onun
+ * yanındaki bir sayfa. 'both' modunda /panel'in altına iniyor.
+ */
+export const COMMENTS_PATH = '/yorumlar';
+
+export function studentCommentsPath(): string {
+  return routingMode() === 'both' ? `/panel${COMMENTS_PATH}` : COMMENTS_PATH;
+}
+
+/** Panel kökünün bu ortamdaki YOLU — alt sayfalardan geri dönmek için. */
+export function panelRootPath(): string {
+  return routingMode() === 'both' ? '/panel' : '/';
+}
+
+/**
+ * Giriş sonrası kullanıcının gideceği adres. Rol istemciye /api/auth/login
+ * yanıtında geliyor (bkz. server/routes/auth.ts).
+ *
+ * Rol null ise (profil satırı yok) hiçbir panele gönderilmiyor — çağıran
+ * taraf bunu bir hata olarak göstermeli. 'admin' için henüz panel yok.
+ */
+export function panelHrefForRole(
+  userType: 'student' | 'teacher' | 'admin' | null,
+): string | null {
+  if (userType === 'teacher') return teacherPanelHref();
+  if (userType === 'student') return panelHref();
+  return null;
 }
 
 /** Giriş ekranının bu ortamdaki adresi. Aynı gerekçe. */

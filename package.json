@@ -12,6 +12,7 @@
     "start": "node server-dist/server.cjs",
     "clean": "rm -rf dist server-dist server.js",
     "lint": "tsc --noEmit",
+    "test:teacher-panel": "tsx scripts/test-teacher-panel.ts",
     "prepare": "husky"
   },
   "dependencies": {

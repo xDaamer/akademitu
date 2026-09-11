@@ -65,7 +65,7 @@ async function refreshSession(): Promise<boolean> {
 }
 
 interface ApiFetchOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Yenileme denemesini kapatır — /api/auth/* uçlarının kendisi için. */
   skipRefresh?: boolean;

@@ -34,7 +34,21 @@ import { serviceClient } from "./supabase.js";
  * Buradaki olaylar auth_attempts'in CEVAPLAYAMADIKLARI: hangi KULLANICI
  * (user_id) oturum açtı/kapattı ve kendi verisini ne zaman görüntüledi.
  */
-export type AuditAction = "LOGIN_SUCCESS" | "LOGOUT" | "VIEW_PORTAL_SUMMARY";
+export type AuditAction =
+  | "LOGIN_SUCCESS"
+  | "LOGOUT"
+  | "VIEW_PORTAL_SUMMARY"
+  /* Öğretmen paneli. VIEW_TEACHER_SCHEDULE, VIEW_PORTAL_SUMMARY'nin
+     karşılığı: öğretmenin verisine baktığı tek uç orası.
+     FORBIDDEN_ROLE ise farklı bir soruyu cevaplıyor — "kim, kendi rolüne
+     ait olmayan bir ucu yokladı" (bkz. server/roles.ts). */
+  | "VIEW_TEACHER_SCHEDULE"
+  /* Dersi "işlendi" yapmak/geri almak bir VERİ DEĞİŞİKLİĞİ ve öğrencinin
+     gördüğü şeyi etkiliyor (yorumlar yalnızca tamamlanmış derslerde görünür).
+     Görüntüleme olaylarından farklı olarak bunun geriye dönük cevabı
+     başka hiçbir yerde yok — lessons.status yalnızca son hâli tutuyor. */
+  | "LESSON_STATUS_CHANGED"
+  | "FORBIDDEN_ROLE";
 
 function clientIp(req: Request): string {
   /* server.ts'te app.set("trust proxy", 1) var; req.ip X-Forwarded-For'u yansıtır. */
