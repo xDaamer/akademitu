@@ -154,6 +154,9 @@ const DAMGA = Date.now().toString().slice(-7);
 const URETILEN = {
   teacherPhone: `0555${DAMGA}`,
   studentPhone: `0556${DAMGA}`,
+  /* Kullanıcı adı kalıbı: küçük harf + rakam + nokta. '@' yasak olduğu için
+     e-postaya benzeyen bir değer denenmiyor; onu ayrı bir test eliyor. */
+  teacherUsername: `ogretmen.${DAMGA}`,
   password: `Test${DAMGA}aA!`,
 };
 
@@ -198,11 +201,14 @@ async function calistir() {
       body: {
         fullName: "TEST Ogretmen",
         phone: URETILEN.teacherPhone,
+        username: URETILEN.teacherUsername,
         password: URETILEN.password,
         userType: "teacher",
       },
     });
     kontrol("Öğretmen hesabı açıldı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+    kontrol("Kullanıcı adı kaydedildi", r.body?.account?.username === URETILEN.teacherUsername,
+      `${r.body?.account?.username}`);
     ogretmenId = r.body?.account?.id;
     OGRETMEN = { phone: URETILEN.teacherPhone, password: URETILEN.password };
   }
@@ -240,6 +246,34 @@ async function calistir() {
     body: { fullName: "X", phone: `0557${DAMGA}`, password: "kisa", userType: "teacher" },
   });
   kontrol("8 karakterden kısa şifre ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+  /* Kullanıcı adı biçim kuralları — '@' özellikle sınanıyor: e-postayla
+     karışmaması bu özelliğin tanımının parçası. */
+  for (const kotu of ["ab", "COKBUYUK", "kullanici@ornek.com", "boşluk var", "a".repeat(31)]) {
+    const x = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+      method: "POST",
+      body: {
+        fullName: "X",
+        phone: `0559${DAMGA}`,
+        username: kotu,
+        password: URETILEN.password,
+        userType: "student",
+      },
+    });
+    kontrol(`Geçersiz kullanıcı adı "${kotu.slice(0, 18)}" ENGELLENİYOR (400)`, x.status === 400, `${x.status}`);
+  }
+
+  r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+    method: "POST",
+    body: {
+      fullName: "X",
+      phone: `0559${DAMGA}`,
+      username: URETILEN.teacherUsername,
+      password: URETILEN.password,
+      userType: "student",
+    },
+  });
+  kontrol("Aynı kullanıcı adıyla ikinci hesap ENGELLENİYOR (409)", r.status === 409, `${r.status}`);
 
   r = await istek(yonetici.kavanoz, "/api/admin/ozet");
   const beklenen = oncekiSayi + (ogretmenId ? 1 : 0) + (ogrenciId ? 1 : 0);
@@ -332,6 +366,43 @@ async function calistir() {
   }
   kontrol("Panelden açılan hesapla giriş yapılabiliyor", true, "Admin API akışı doğru");
   kontrol("userType = teacher", ogretmen.user?.userType === "teacher", `${ogretmen.user?.userType}`);
+
+  /* KULLANICI ADIYLA GİRİŞ — telefonla aynı hesabı açmalı. */
+  if (ogretmenId) {
+    const kav = new Kavanoz();
+    const ka = await istek(kav, "/api/auth/login", {
+      method: "POST",
+      body: { username: URETILEN.teacherUsername, password: URETILEN.password, website: "" },
+    });
+    kontrol("Kullanıcı adıyla giriş -> 200", ka.status === 200, `${ka.status} ${ka.body?.error ?? ""}`);
+    kontrol("Aynı hesabı açıyor", ka.body?.user?.id === ogretmenId, `${ka.body?.user?.id === ogretmenId}`);
+
+    /* Büyük harfle yazılsa da çalışmalı: kullanıcı adı küçültülerek saklanıyor. */
+    const kav2 = new Kavanoz();
+    const buyuk = await istek(kav2, "/api/auth/login", {
+      method: "POST",
+      body: {
+        username: URETILEN.teacherUsername.toUpperCase(),
+        password: URETILEN.password,
+        website: "",
+      },
+    });
+    kontrol("Kullanıcı adı BÜYÜK harfle de çalışıyor", buyuk.status === 200, `${buyuk.status}`);
+
+    const kav3 = new Kavanoz();
+    const yanlis = await istek(kav3, "/api/auth/login", {
+      method: "POST",
+      body: { username: URETILEN.teacherUsername, password: "yanlis-sifre", website: "" },
+    });
+    kontrol("Kullanıcı adı + yanlış şifre -> 401", yanlis.status === 401, `${yanlis.status}`);
+
+    const kav4 = new Kavanoz();
+    const yok = await istek(kav4, "/api/auth/login", {
+      method: "POST",
+      body: { username: `olmayan.${DAMGA}`, password: URETILEN.password, website: "" },
+    });
+    kontrol("Olmayan kullanıcı adı -> 401 (aynı mesaj)", yok.status === 401, `${yok.status}`);
+  }
 
   r = await istek(ogretmen.kavanoz, "/api/teacher/schedule");
   kontrol("Program -> 200", r.status === 200, `${r.status}`);
@@ -456,7 +527,9 @@ async function calistir() {
 
   if (ogretmenId || ogrenciId) {
     console.log("\nBETİĞİN AÇTIĞI HESAPLAR (silinmedi — panelde hesap silme yok):");
-    if (ogretmenId) console.log(`  TEST Ogretmen  ${OGRETMEN!.phone}`);
+    if (ogretmenId) {
+      console.log(`  TEST Ogretmen  ${OGRETMEN!.phone}  (kullanıcı adı: ${URETILEN.teacherUsername})`);
+    }
     if (ogrenciId) console.log(`  TEST Ogrenci   ${OGRENCI!.phone}`);
     console.log(`  şifre: ${URETILEN.password}`);
   }

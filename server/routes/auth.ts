@@ -33,6 +33,18 @@ function normalizePhone(value: unknown): string | null {
   return /^05\d{9}$/.test(canonical) ? canonical : null;
 }
 
+/*
+ * Kullanıcı adı: küçük harf, 3-30, [a-z0-9._-]. '@' YASAK — kullanıcı adının
+ * e-postaya benzemesi "hangisini yazacağım" sorusunu doğurur ve bu ekranda
+ * e-posta diye bir kavram yok. Veritabanındaki CHECK kısıtı da aynı kalıbı
+ * uyguluyor (bkz. profiles_username_format); burası ilk savunma, o ikincisi.
+ */
+function normalizeUsername(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const temiz = value.trim().toLowerCase();
+  return /^[a-z0-9._-]{3,30}$/.test(temiz) ? temiz : null;
+}
+
 function normalizeEmail(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const email = value.trim().toLowerCase();
@@ -92,12 +104,22 @@ function publicUser(
 router.post("/login", async (req, res) => {
   if (await isRateLimited(req, res, "login")) return;
 
-  const { phone, password, website } = req.body ?? {};
+  const { phone, username, password, website } = req.body ?? {};
 
   if (website) return res.status(400).json({ success: false, error: INVALID_CREDENTIALS });
 
+  /*
+   * GİRİŞİN İKİ YOLU: telefon (varsayılan) ya da kullanıcı adı.
+   * Hangisi gönderildiyse o kullanılıyor; ikisi birden gönderilirse telefon
+   * kazanıyor — arayüzde aynı anda ikisi birden gösterilmiyor, yani bu
+   * yalnızca API'ye elle istek atan birinin üretebileceği bir durum ve
+   * sessizce ikisini de denemek, hangi alanın hangi hesabı açtığını
+   * belirsizleştirirdi.
+   */
   const cleanPhone = normalizePhone(phone);
-  if (!cleanPhone || typeof password !== "string" || !password) {
+  const cleanUsername = cleanPhone ? null : normalizeUsername(username);
+
+  if ((!cleanPhone && !cleanUsername) || typeof password !== "string" || !password) {
     return res.status(400).json({ success: false, error: INVALID_CREDENTIALS });
   }
 
@@ -113,21 +135,27 @@ router.post("/login", async (req, res) => {
    * işleniyor — hangi yoldan dönülürse dönülsün rapor eksik kalmasın.
    * ŞİFRE KAYDEDİLMİYOR (gerekçe supabase-portal-auth.sql'de).
    */
-  const attemptId = await recordAttempt(req, "login", cleanPhone);
+  const attemptId = await recordAttempt(req, "login", {
+    phone: cleanPhone,
+    username: cleanUsername,
+  });
 
   try {
     /*
-     * Telefon -> e-posta çevirisi. Servis rolünün kullanıcı verisine dokunduğu
+     * Kimlik -> e-posta çevirisi. Servis rolünün kullanıcı verisine dokunduğu
      * TEK yer ve gerekçesi şu: bu noktada ortada henüz oturum yok, dolayısıyla
-     * RLS'e dayanan bir okuma mümkün değil. Okunan alan yalnızca e-posta ve
+     * RLS'e dayanan bir okuma mümkün değil. Okunan alan yalnızca kimlik ve
      * sonuç istemciye HİÇBİR ŞEKİLDE dönmüyor — bulunamazsa da şifre yanlışmış
      * gibi aynı mesaj veriliyor.
+     *
+     * Kullanıcı adı veritabanında küçük harfle duruyor ve normalizeUsername de
+     * küçülterek geliyor, yani eşleşme doğrudan indeksten çözülüyor; sorguda
+     * lower() yok.
      */
-    const { data: profile, error: lookupError } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("phone", cleanPhone)
-      .maybeSingle();
+    const { data: profile, error: lookupError } = await (cleanPhone
+      ? admin.from("profiles").select("id").eq("phone", cleanPhone)
+      : admin.from("profiles").select("id").eq("username", cleanUsername!)
+    ).maybeSingle();
 
     if (lookupError) {
       console.error("[Auth] login profil araması başarısız:", lookupError.message);

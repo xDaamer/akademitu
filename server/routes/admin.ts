@@ -106,6 +106,21 @@ function turetilmisEposta(telefon: string): string {
   return `${telefon}@hesap.akademitu.com`;
 }
 
+/*
+ * Kullanıcı adı: küçük harf, 3-30, [a-z0-9._-]. '@' YASAK — girişte e-posta
+ * diye bir kavram yok ve kullanıcı adının e-postaya benzemesi kullanıcıya
+ * "hangisini yazacağım" sorusunu sordururdu. Aynı kalıp veritabanında da
+ * CHECK olarak duruyor (profiles_username_format).
+ *
+ * null döner: biçim geçersiz. Boş string ise 'kaldır' anlamına geliyor ve
+ * çağıran taraf onu ayrıca ele alıyor.
+ */
+function kullaniciAdiNormalize(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const temiz = value.trim().toLowerCase();
+  return /^[a-z0-9._-]{3,30}$/.test(temiz) ? temiz : null;
+}
+
 function epostaNormalize(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const e = value.trim().toLowerCase();
@@ -126,7 +141,7 @@ router.get("/ozet", async (_req, res) => {
   try {
     const { data: profiller, error } = await admin
       .from("profiles")
-      .select("id, full_name, phone, user_type, created_at")
+      .select("id, full_name, phone, username, user_type, created_at")
       .order("user_type", { ascending: true })
       .order("full_name", { ascending: true });
 
@@ -141,6 +156,7 @@ router.get("/ozet", async (_req, res) => {
         id: p.id,
         fullName: p.full_name,
         phone: p.phone,
+        username: p.username,
         userType: p.user_type,
         createdAt: p.created_at,
       })),
@@ -177,6 +193,7 @@ router.post("/hesaplar", async (req, res) => {
   const password = sifre(req.body?.password);
   const userType = typeof req.body?.userType === "string" ? req.body.userType : "";
   const email = req.body?.email ? epostaNormalize(req.body.email) : null;
+  const username = req.body?.username ? kullaniciAdiNormalize(req.body.username) : null;
 
   if (!fullName) return res.status(400).json({ success: false, error: "Ad soyad gerekli." });
   if (!phone) {
@@ -191,6 +208,12 @@ router.post("/hesaplar", async (req, res) => {
   if (req.body?.email && !email) {
     return res.status(400).json({ success: false, error: "E-posta biçimi geçersiz." });
   }
+  if (req.body?.username && !username) {
+    return res.status(400).json({
+      success: false,
+      error: "Kullanıcı adı 3-30 karakter olmalı; sadece küçük harf, rakam, nokta, alt çizgi ve tire.",
+    });
+  }
 
   try {
     /* Telefon çakışması ÖNCEDEN kontrol ediliyor: auth kullanıcısını açıp
@@ -204,6 +227,19 @@ router.post("/hesaplar", async (req, res) => {
 
     if (mevcut) {
       return res.status(409).json({ success: false, error: "Bu telefon numarası zaten kayıtlı." });
+    }
+
+    /* Kullanıcı adı çakışması da ÖNCEDEN eleniyor; aynı gerekçe — auth
+       kullanıcısını açıp sonra UNIQUE indekse takılmak geri alma gerektirir. */
+    if (username) {
+      const { data: adVar } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+      if (adVar) {
+        return res.status(409).json({ success: false, error: "Bu kullanıcı adı zaten alınmış." });
+      }
     }
 
     const { data: yeni, error: authHatasi } = await admin.auth.admin.createUser({
@@ -224,7 +260,7 @@ router.post("/hesaplar", async (req, res) => {
 
     const { error: profilHatasi } = await admin
       .from("profiles")
-      .insert({ id: yeni.user.id, full_name: fullName, phone, user_type: userType });
+      .insert({ id: yeni.user.id, full_name: fullName, phone, username, user_type: userType });
 
     if (profilHatasi) {
       /* GERİ ALMA: profil yazılamadıysa auth kullanıcısı da kalmamalı.
@@ -245,7 +281,7 @@ router.post("/hesaplar", async (req, res) => {
 
     return res.json({
       success: true,
-      account: { id: yeni.user.id, fullName, phone, userType },
+      account: { id: yeni.user.id, fullName, phone, username, userType },
     });
   } catch (err: any) {
     console.error("[Admin] hesap açma istisnası:", err?.message || err);
@@ -279,6 +315,23 @@ router.patch("/hesaplar/:id", async (req, res) => {
     degisiklik.phone = tel;
   }
 
+  if (req.body?.username !== undefined) {
+    /* Boş string = kullanıcı adını KALDIR. Alanı boşaltmanın başka bir yolu
+       olmazdı ve yanlış atanmış bir adı geri almak gerekebilir. */
+    if (req.body.username === "" || req.body.username === null) {
+      degisiklik.username = null;
+    } else {
+      const ad = kullaniciAdiNormalize(req.body.username);
+      if (!ad) {
+        return res.status(400).json({
+          success: false,
+          error: "Kullanıcı adı 3-30 karakter olmalı; sadece küçük harf, rakam, nokta, alt çizgi ve tire.",
+        });
+      }
+      degisiklik.username = ad;
+    }
+  }
+
   if (req.body?.userType !== undefined) {
     if (!ROLLER.has(req.body.userType)) {
       return res.status(400).json({ success: false, error: "Geçersiz hesap türü." });
@@ -306,15 +359,22 @@ router.patch("/hesaplar/:id", async (req, res) => {
       .from("profiles")
       .update(degisiklik)
       .eq("id", id)
-      .select("id, full_name, phone, user_type")
+      .select("id, full_name, phone, username, user_type")
       .maybeSingle();
 
     if (error) {
       console.error("[Admin] hesap güncellenemedi:", error.message);
+      /* 23505 = UNIQUE ihlali. Telefon mu kullanıcı adı mı çakıştı, mesajdan
+         ayırt ediliyor ki yönetici hangi alanı düzelteceğini bilsin. */
       const cakisma = error.code === "23505";
+      const adCakismasi = cakisma && (error.message ?? "").includes("username");
       return res.status(cakisma ? 409 : 502).json({
         success: false,
-        error: cakisma ? "Bu telefon numarası zaten kayıtlı." : GENERIC_ERROR,
+        error: !cakisma
+          ? GENERIC_ERROR
+          : adCakismasi
+            ? "Bu kullanıcı adı zaten alınmış."
+            : "Bu telefon numarası zaten kayıtlı.",
       });
     }
     if (!data) return res.status(404).json({ success: false, error: "Hesap bulunamadı." });
@@ -328,7 +388,13 @@ router.patch("/hesaplar/:id", async (req, res) => {
 
     return res.json({
       success: true,
-      account: { id: data.id, fullName: data.full_name, phone: data.phone, userType: data.user_type },
+      account: {
+        id: data.id,
+        fullName: data.full_name,
+        phone: data.phone,
+        username: data.username,
+        userType: data.user_type,
+      },
     });
   } catch (err: any) {
     console.error("[Admin] hesap güncelleme istisnası:", err?.message || err);

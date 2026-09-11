@@ -172,13 +172,23 @@ export async function isRateLimited(
  * beklenip tek yazma yapılsaydı, aynı anda gönderilen bir istek yığını kontrol
  * ile kayıt arasındaki boşluktan toplu hâlde sızabilirdi.
  *
- * `phone` kayıtlı olmak zorunda değil — başarısız denemeler de raporlanmalı.
+ * Kimlik kayıtlı olmak zorunda değil — başarısız denemeler de raporlanmalı.
+ * Giriş iki yoldan yapılabildiği için (telefon ya da kullanıcı adı) hangisinin
+ * denendiği AYRI kolonlarda tutuluyor: kullanıcı adını `phone` kolonuna
+ * yazmak daha kısa olurdu ama kolonun adını yalana çevirirdi ve raporu
+ * okuyan kişiyi yanıltırdı.
+ *
  * ŞİFRE KAYDEDİLMEZ: bkz. supabase-portal-auth.sql'deki gerekçe.
  */
+export interface DenemeKimligi {
+  phone?: string | null;
+  username?: string | null;
+}
+
 export async function recordAttempt(
   req: Request,
   kind: keyof typeof LIMITS,
-  phone?: string,
+  kimlik?: DenemeKimligi,
 ): Promise<number | null> {
   const supabase = serviceClient();
   if (!supabase) return null;
@@ -186,7 +196,12 @@ export async function recordAttempt(
   try {
     const { data, error } = await supabase
       .from("auth_attempts")
-      .insert({ ip: clientIp(req), kind, phone: phone ?? null })
+      .insert({
+        ip: clientIp(req),
+        kind,
+        phone: kimlik?.phone ?? null,
+        username: kimlik?.username ?? null,
+      })
       .select("id")
       .single();
 

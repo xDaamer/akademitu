@@ -41,6 +41,18 @@ export interface PortalUser {
   userType: UserType | null;
 }
 
+/**
+ * Girişin iki yolu var: telefon (varsayılan) ya da kullanıcı adı. İkisi de
+ * aynı uca gidiyor; hangisi doluysa sunucu onu kullanıyor.
+ *
+ * E-POSTA YOK: auth.users'ta bir e-posta alanı var ama o tamamen iç tesisat
+ * (telefondan türetiliyor) ve hiçbir ekranda sorulmuyor.
+ */
+export interface GirisKimligi {
+  phone?: string;
+  username?: string;
+}
+
 interface AuthContextValue {
   user: PortalUser | null;
   /** İlk /api/auth/me cevabı gelene kadar true. */
@@ -48,7 +60,7 @@ interface AuthContextValue {
   /* Giriş yapan kullanıcıyı DÖNDÜRÜR: çağıran tarafın hangi panele
      yönlendireceğine karar vermesi için rol gerekiyor ve context state'inin
      güncellenmesini beklemek bir render turu gecikme demekti. */
-  login: (phone: string, password: string, website: string) => Promise<PortalUser>;
+  login: (kimlik: GirisKimligi, password: string, website: string) => Promise<PortalUser>;
   logout: () => Promise<void>;
 }
 
@@ -94,10 +106,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = useCallback(async (phone: string, password: string, website: string) => {
+  const login = useCallback(async (kimlik: GirisKimligi, password: string, website: string) => {
     const data = await apiFetch<{ user: PortalUser }>('/api/auth/login', {
       method: 'POST',
-      body: { phone, password, website },
+      body: { ...kimlik, password, website },
       /* Giriş isteğinin 401'i "şifre yanlış" demek; yenileme denemek anlamsız
          ve kullanıcıya gösterilecek mesajı geciktirirdi. */
       skipRefresh: true,

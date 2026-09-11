@@ -14,6 +14,9 @@ export interface Hesap {
   id: string;
   fullName: string;
   phone: string;
+  /* Girişin ikinci yolu, isteğe bağlı. null: bu hesap yalnızca telefonla
+     girer (bkz. profiles.username). */
+  username: string | null;
   userType: 'student' | 'teacher' | 'admin';
   createdAt?: string;
 }

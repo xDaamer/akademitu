@@ -19,7 +19,13 @@ import { Alan, Girdi, Secim, Kutu, Uyari, Bos, ROL_ETIKET, type Hesap } from './
  * Supabase Dashboard'dan yapılır.
  */
 
-const BOS_FORM = { fullName: '', phone: '', password: '', userType: 'student' as Hesap['userType'] };
+const BOS_FORM = {
+  fullName: '',
+  phone: '',
+  username: '',
+  password: '',
+  userType: 'student' as Hesap['userType'],
+};
 
 export const AdminAccounts: React.FC<{
   hesaplar: Hesap[];
@@ -44,7 +50,12 @@ export const AdminAccounts: React.FC<{
     setHata(null);
     setBasari(null);
     try {
-      await apiFetch('/api/admin/hesaplar', { method: 'POST', body: form });
+      /* Boş kullanıcı adı hiç GÖNDERİLMİYOR: sunucu boş string'i "biçim
+         geçersiz" sayardı. Alan isteğe bağlı, yokluğu bir hata değil. */
+      await apiFetch('/api/admin/hesaplar', {
+        method: 'POST',
+        body: { ...form, username: form.username.trim() || undefined },
+      });
       /* Şifre ekranda TEKRAR GÖSTERİLMİYOR: yönetici onu zaten kendi yazdı.
          Kaydedilmiş bir şifreyi ekranda tutmak, panel açık unutulduğunda
          gereksiz bir sızıntı yüzeyi. */
@@ -119,6 +130,25 @@ export const AdminAccounts: React.FC<{
             />
           </Alan>
 
+          {/*
+            Kullanıcı adı İSTEĞE BAĞLI: telefon her hesapta var ve giriş için
+            yeterli. Zorunlu tutmak, ihtiyacı olmayan herkese bir alan daha
+            doldurtmak olurdu.
+          */}
+          <Alan
+            etiket="Kullanıcı adı (isteğe bağlı)"
+            ipucu="Küçük harf, rakam, . _ - · 3-30 karakter"
+          >
+            <Girdi
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              placeholder="ornek.kullanici"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </Alan>
+
           <Alan etiket="Şifre" ipucu="En az 8 karakter. Kişiye siz ileteceksiniz.">
             <Girdi
               type="text"
@@ -164,6 +194,11 @@ export const AdminAccounts: React.FC<{
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="text-sm font-bold text-[#191F61]">{h.fullName}</span>
                   <span className="text-sm text-slate-500">{h.phone}</span>
+                  {h.username && (
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600">
+                      {h.username}
+                    </span>
+                  )}
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                       h.userType === 'admin'
@@ -188,7 +223,12 @@ export const AdminAccounts: React.FC<{
                       onClick={() => {
                         setSifreAcik(null);
                         setDuzenlenen(duzenlenen === h.id ? null : h.id);
-                        setDuzenForm({ fullName: h.fullName, phone: h.phone, userType: h.userType });
+                        setDuzenForm({
+                          fullName: h.fullName,
+                          phone: h.phone,
+                          username: h.username,
+                          userType: h.userType,
+                        });
                       }}
                     >
                       Düzenle
@@ -209,7 +249,7 @@ export const AdminAccounts: React.FC<{
                 </div>
 
                 {duzenlenen === h.id && (
-                  <div className="mt-3 grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 sm:grid-cols-3">
+                  <div className="mt-3 grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Alan etiket="Ad soyad">
                       <Girdi
                         value={duzenForm.fullName ?? ''}
@@ -220,6 +260,16 @@ export const AdminAccounts: React.FC<{
                       <Girdi
                         value={duzenForm.phone ?? ''}
                         onChange={(e) => setDuzenForm({ ...duzenForm, phone: e.target.value })}
+                      />
+                    </Alan>
+                    <Alan etiket="Kullanıcı adı" ipucu="Boş bırakılırsa kaldırılır.">
+                      <Girdi
+                        value={duzenForm.username ?? ''}
+                        onChange={(e) => setDuzenForm({ ...duzenForm, username: e.target.value })}
+                        placeholder="—"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                       />
                     </Alan>
                     <Alan etiket="Hesap türü">
@@ -234,7 +284,7 @@ export const AdminAccounts: React.FC<{
                         <option value="admin">Yönetici</option>
                       </Secim>
                     </Alan>
-                    <div className="flex gap-2 sm:col-span-3">
+                    <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
                       <Button size="sm" onClick={() => duzenKaydet(h.id)} disabled={mesgul}>
                         {mesgul ? 'Kaydediliyor...' : 'Kaydet'}
                       </Button>

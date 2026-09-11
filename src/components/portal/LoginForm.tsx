@@ -2,31 +2,46 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import need from '../../../need.json';
 import { panelHrefForRole, isCrossHost } from '../../lib/host';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, User } from 'lucide-react';
 import { Button, buttonClasses } from '../ui/Button';
 import { PhoneField } from '../ui/PhoneField';
+import { Field, FIELD_ICON_CLASSES } from '../ui/Field';
 import { PasswordField } from '../ui/PasswordField';
 import { isValidTurkishMobilePhone } from '../../lib/phone';
 import { useAuth } from '../../context/AuthContext';
 import { ApiRequestError } from '../../lib/api';
 
 /*
- * TELEFON İLE GİRİŞ
+ * GİRİŞ — TELEFON (VARSAYILAN) YA DA KULLANICI ADI
  * ---------------------------------------------------------------------------
  * Sunucuya /api/auth/login ile gidiyor; oturum jetonu httpOnly çerezde
  * dönüyor, bu bileşen jetonu hiç görmüyor.
  *
- * Sunucu "numara kayıtlı değil" ile "şifre yanlış" ayrımını BİLEREK yapmıyor
- * (ikisi de aynı mesaj): ayrıştırmak, saldırgana hangi numaraların kayıtlı
- * olduğunu tek tek sorgulatırdı. Burada da mesaj olduğu gibi gösteriliyor.
+ * TELEFON VARSAYILAN: hesapların tamamının telefonu var, kullanıcı adı ise
+ * isteğe bağlı (profiles.username NULL olabilir). Varsayılanı kullanıcı adı
+ * yapmak, çoğu kişiye sahip olmadığı bir alanı gösterirdi.
+ *
+ * E-POSTA HİÇ SORULMUYOR. auth.users'ta bir e-posta alanı var — Supabase Auth
+ * ona dayanıyor — ama o telefondan türetilen bir iç kimlik; kullanıcı onu ne
+ * görür ne yazar. Kullanıcı adında '@' de bu yüzden yasak: e-postaya benzeyen
+ * bir alan "hangisini yazacağım" sorusunu doğururdu.
+ *
+ * Sunucu "kimlik kayıtlı değil" ile "şifre yanlış" ayrımını BİLEREK yapmıyor
+ * (ikisi de aynı mesaj): ayrıştırmak, saldırgana hangi numaraların/adların
+ * kayıtlı olduğunu tek tek sorgulatırdı. Burada da mesaj olduğu gibi
+ * gösteriliyor.
  */
 
-type Errors = Partial<Record<'phone' | 'password' | 'form', string>>;
+type GirisModu = 'telefon' | 'kullaniciAdi';
+
+type Errors = Partial<Record<'phone' | 'username' | 'password' | 'form', string>>;
 
 export const LoginForm: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [mod, setMod] = useState<GirisModu>('telefon');
   const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   /* Honeypot: gerçek kullanıcı görmez, bot doldurur. PopUpForm'daki
      `website` alanının aynısı. */
@@ -34,15 +49,39 @@ export const LoginForm: React.FC = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /* Yalnızca AÇIK OLAN alan doğrulanıyor: kapalı moddaki alan formda hiç
+     yok, dolayısıyla boş olması bir hata değil. */
   const validate = (): Errors => {
     const next: Errors = {};
-    if (!phone) {
-      next.phone = 'Telefon numaranı gir.';
-    } else if (!isValidTurkishMobilePhone(phone)) {
-      next.phone = 'Numara 5 ile başlamalı ve 10 haneli olmalı.';
+
+    if (mod === 'telefon') {
+      if (!phone) {
+        next.phone = 'Telefon numaranı gir.';
+      } else if (!isValidTurkishMobilePhone(phone)) {
+        next.phone = 'Numara 5 ile başlamalı ve 10 haneli olmalı.';
+      }
+    } else {
+      const temiz = username.trim().toLowerCase();
+      if (!temiz) {
+        next.username = 'Kullanıcı adını gir.';
+      } else if (!/^[a-z0-9._-]{3,30}$/.test(temiz)) {
+        /* Sunucu ve veritabanı da aynı kalıbı uyguluyor; buradaki kontrol
+           kullanıcıyı boşuna sunucuya göndermemek için. */
+        next.username = '3-30 karakter; harf, rakam, nokta, alt çizgi ve tire.';
+      }
     }
+
     if (!password) next.password = 'Şifreni gir.';
     return next;
+  };
+
+  /* Mod değişince o anki hatalar anlamsızlaşıyor (başka bir alana aitler) ve
+     yazılmış değer de taşınmıyor — iki kimlik birbirinin yerine geçmez. */
+  const modDegistir = () => {
+    setMod((onceki) => (onceki === 'telefon' ? 'kullaniciAdi' : 'telefon'));
+    setPhone('');
+    setUsername('');
+    setErrors({});
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -56,7 +95,11 @@ export const LoginForm: React.FC = () => {
     setErrors({});
 
     try {
-      const girenKullanici = await login(phone, password, website);
+      const girenKullanici = await login(
+        mod === 'telefon' ? { phone } : { username: username.trim().toLowerCase() },
+        password,
+        website,
+      );
 
       /*
        * Panel BAŞKA BİR HOST'TA: portal.akademitu.com. react-router oraya
@@ -110,10 +153,12 @@ export const LoginForm: React.FC = () => {
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       <div>
         <h2 className="text-2xl font-extrabold tracking-tight text-[#191F61]">
-          Telefon ile giriş yap
+          {mod === 'telefon' ? 'Telefon ile giriş yap' : 'Kullanıcı adı ile giriş yap'}
         </h2>
         <p className="mt-1.5 text-sm text-slate-500">
-          Kayıtlı telefon numaran ve şifrenle panele gir.
+          {mod === 'telefon'
+            ? 'Kayıtlı telefon numaran ve şifrenle panele gir.'
+            : 'Kullanıcı adın ve şifrenle panele gir.'}
         </p>
       </div>
 
@@ -126,15 +171,37 @@ export const LoginForm: React.FC = () => {
         </p>
       )}
 
-      <PhoneField
-        value={phone}
-        onChange={(next) => {
-          setPhone(next);
-          if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
-        }}
-        error={errors.phone}
-        autoComplete="tel-national"
-      />
+      {mod === 'telefon' ? (
+        <PhoneField
+          value={phone}
+          onChange={(next) => {
+            setPhone(next);
+            if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+          }}
+          error={errors.phone}
+          autoComplete="tel-national"
+        />
+      ) : (
+        <Field
+          label="Kullanıcı adı"
+          value={username}
+          onChange={(event) => {
+            setUsername(event.target.value);
+            if (errors.username) setErrors((prev) => ({ ...prev, username: undefined }));
+          }}
+          error={errors.username}
+          hint="Harf, rakam, nokta, alt çizgi ve tire · 3-30 karakter"
+          placeholder="kullanici.adi"
+          /* autoCapitalize/spellCheck kapalı: mobil klavye ilk harfi büyütüp
+             kullanıcı adını bozardı. Sunucu zaten küçültüyor ama kişi yazdığı
+             şeyin değiştiğini görmemeli. */
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          icon={<User className={FIELD_ICON_CLASSES} aria-hidden="true" />}
+        />
+      )}
 
       <PasswordField
         value={password}
@@ -205,6 +272,28 @@ export const LoginForm: React.FC = () => {
           >
             Bize ulaş
           </a>
+        </p>
+
+        {/*
+          GİRİŞ YOLUNU DEĞİŞTİRME. <button type="button"> — form içinde
+          type verilmezse tarayıcı onu "submit" sayar ve bağlantıya basmak
+          formu gönderirdi.
+
+          Yazı, gidilecek yeri söylüyor (bulunulan yeri değil): telefon
+          modundayken "Kullanıcı adı ile giriş yap" yazıyor. Tersi olsaydı
+          kişi hangi moddayken hangisine basacağını her seferinde çözmek
+          zorunda kalırdı.
+        */}
+        <p className="text-center text-sm text-slate-600">
+          <button
+            type="button"
+            onClick={modDegistir}
+            className={buttonClasses({ variant: 'link' })}
+          >
+            {mod === 'telefon'
+              ? 'Kullanıcı adı ile giriş yap'
+              : 'Telefon ile giriş yap'}
+          </button>
         </p>
       </div>
     </form>
