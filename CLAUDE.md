@@ -14,7 +14,7 @@ The consequence is larger than it looks: the service role backs lead capture, te
 
 **Therefore: push to `main` and verify against the live deployment.** That is the normal, expected workflow here, not a last resort — `main` auto-deploys to Vercel (~35 s) across `akademitu.com`, `www` and `portal.akademitu.com`, and production has the full environment. Pushing for the purpose of testing needs no separate permission; it is how this repo is tested.
 
-Before pushing: `npm run lint` and `npm run build` must pass, and if anything in `server.ts`'s import graph changed, re-run the ESM cold-start probe (see the Vercel note in Architecture). After pushing: wait for `READY`, then exercise the real endpoints over HTTPS. `npm run test:panels` takes `--base https://www.akademitu.com`.
+Before pushing: `npm run lint` and `npm run build` must pass, and if anything in `server.ts`'s import graph changed, re-run the ESM cold-start probe (see the Vercel note in Architecture). After pushing: wait for `READY`, then exercise the real endpoints over HTTPS. `npm run test:panels` is written for exactly this and takes `--base https://www.akademitu.com --admin 05xx:pw`.
 
 When a live check writes data (a lead, a test account), say so, and clean it up afterwards unless it was asked for. A previous deployment stays available as a Vercel rollback candidate if a push turns out to be wrong.
 
@@ -24,7 +24,7 @@ When a live check writes data (a lead, a test account), say so, and clean it up 
 - `npm run build` — runs `scripts/generate-seo.ts` (writes `public/sitemap.xml` / `public/robots.txt` from `need.json`), then `vite build`, then bundles `server.ts` to `server-dist/server.cjs` with esbuild.
 - `npm start` — runs the built `server-dist/server.cjs` (production mode, serves static `dist/` and falls back to `index.html` for SPA routes).
 - `npm run lint` — `tsc --noEmit`. There is no separate lint tool (no ESLint) and no general test suite/framework in this repo — don't assume `npm test` exists.
-- `npm run test:panels -- --base http://localhost:3000 --teacher 05xx:pw --student 05xx:pw` — the **only** executable test in the repo. It exercises every panel's role gate and route status codes over real HTTP against a running server; it needs one teacher and one student account to exist (created by hand, see below). It deliberately does **not** cover RLS — that lives in `supabase-teacher-panel-tests.sql`, which runs in the Supabase SQL editor inside `BEGIN ... ROLLBACK` and leaves nothing behind. Both must pass; they test different layers and either one alone is misleading.
+- `npm run test:panels -- --base https://www.akademitu.com --admin 05xx:pw` — the **only** executable test in the repo, and it runs against the **live deployment** (see the verification section above; it cannot work on localhost). Only the admin credential is needed: the script opens its own teacher and student accounts through the panel, assigns a lesson, records a fee, marks the lesson taught, comments on it, checks that the student sees all three, then asserts every cross-role 403 and deletes the lesson and payment it made. It does not delete the accounts — the panel has no account deletion — and prints them at the end. It deliberately does **not** cover RLS: that lives in `supabase-teacher-panel-tests.sql`, run in the Supabase SQL editor inside `BEGIN ... ROLLBACK`. Both must pass; they test different layers and either alone is misleading.
 - `npm run clean` — removes `dist/`.
 - `npm run push` — plain `git push`, nothing more (a bare alias; `git push` works the same).
 

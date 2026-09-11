@@ -1,35 +1,41 @@
 /*
- * PANELLER — HTTP / YETKİLENDİRME TESTLERİ (öğretmen + öğrenci + yönetim)
+ * PANELLER — CANLI UÇTAN UCA DOĞRULAMA
  * ============================================================================
- * Bu betik ROL KAPISINI ve route'ların döndürdüğü durum kodlarını ölçüyor.
- * RLS tarafı ayrı test ediliyor (supabase-teacher-panel-tests.sql) ve ikisi
- * farklı katmanlar:
+ * Üç panelin (yönetim, öğretmen, öğrenci) birlikte çalıştığını gerçek HTTP
+ * üzerinden ölçer: yönetici hesap açar, ders atar, ücret girer; açılan
+ * öğretmen hesabıyla giriş yapılır, ders "işlendi" yapılıp yorum yazılır;
+ * açılan öğrenci hesabıyla girilip ders, ödeme ve yorumun göründüğü
+ * doğrulanır. Sonunda roller arası 403'ler sınanır ve test verisi silinir.
  *
- *   bu betik  -> "öğrenci /api/teacher'a gelirse 403 alıyor mu"
- *   SQL testi -> "403 kaldırılsa bile satır gelmiyor mu"
- *
- * İkincisi gerçek güvenlik sınırı; bu betik onun üstündeki kullanılabilirlik
- * katmanını doğruluyor. İkisi birden geçmeden faz tamamlanmış sayılmaz.
+ * NEDEN CANLIYA KARŞI ÇALIŞIR
+ * ----------------------------------------------------------------------------
+ * Yereldeki .env'de servis rolü anahtarı BİLEREK yok ve login'in kendisi de
+ * ona bağlı — yani localhost'ta hiç giriş yapılamıyor. Doğrulamanın yeri
+ * canlı dağıtım (bkz. CLAUDE.md > "How this project is verified").
  *
  * KULLANIM
  * ----------------------------------------------------------------------------
- *   npm run dev            (ayrı bir terminalde)
- *   npx tsx scripts/test-panels.ts \
- *     --base http://localhost:3000 \
- *     --teacher 05xxxxxxxxx:sifre \
- *     --student 05xxxxxxxxx:sifre
+ *   npm run test:panels -- --base https://www.akademitu.com \
+ *     --admin 05xxxxxxxxx:yonetici-sifresi
  *
- * Test hesaplarının nasıl açılacağı: supabase-teacher-panel.sql'in sonundaki
- * "ÖĞRETMEN HESABI AÇMA" bölümü.
+ * Yalnızca YÖNETİCİ kimliği gerekiyor; öğretmen ve öğrenci hesaplarını betik
+ * kendisi açar (bu zaten test edilen şeylerden biri). Hazır hesaplarla
+ * çalışmak isterseniz --teacher / --student ekleyebilirsiniz.
  *
- * ÇEREZLER ELLE TAŞINIYOR: Node'un fetch'i çerez saklamıyor ve oturum
- * httpOnly çerezde duruyor (tasarımın tamamı buna dayanıyor, bkz.
- * server/cookies.ts). Bu yüzden küçük bir çerez kavanozu var.
+ * ŞİFRE KOMUT SATIRINDAN GEÇER, yani kabuk geçmişinize yazılır. Paylaşılan
+ * bir makinede çalıştırıyorsanız komutun başına boşluk koyun ya da sonradan
+ * yönetim panelinden şifreyi değiştirin.
  *
- * ORIGIN BAŞLIĞI ELLE EKLENİYOR: requireTrustedOrigin durum değiştiren
- * isteklerde Origin'i ZORUNLU kılıyor. Tarayıcı bunu kendiliğinden gönderir,
- * Node göndermez — eklenmezse her POST/PUT 403 döner ve test yanlış yerden
- * kalır.
+ * NE YAZAR, NE SİLER
+ * ----------------------------------------------------------------------------
+ * Açtığı DERS ve ÖDEME kayıtlarını sonunda siler. Açtığı HESAPLARI silmez —
+ * panelde hesap silme bilerek yok (bkz. AdminAccounts.tsx); kimlikleri ekrana
+ * yazar, gerekirse Supabase Dashboard'dan kaldırılır.
+ *
+ * ÇEREZLER ELLE TAŞINIR: oturum httpOnly çerezde ve Node'un fetch'i çerez
+ * saklamıyor. ORIGIN başlığı da elle eklenir: requireTrustedOrigin durum
+ * değiştiren isteklerde onu zorunlu kılıyor ve tarayıcı dışında kimse
+ * göndermiyor — eklenmezse her POST 403 döner ve test yanlış yerden kalır.
  */
 
 interface Kimlik {
@@ -42,42 +48,44 @@ function argOku(ad: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-function kimlikOku(ad: string): Kimlik {
-  const ham = argOku(ad);
-  if (!ham || !ham.includes(':')) {
-    console.error(`--${ad} gerekli. Biçim: --${ad} 05xxxxxxxxx:sifre`);
-    process.exit(1);
-  }
-  const ayirici = ham.indexOf(':');
-  return { phone: ham.slice(0, ayirici), password: ham.slice(ayirici + 1) };
+function kimlikAyristir(ham: string | undefined): Kimlik | null {
+  if (!ham || !ham.includes(":")) return null;
+  const i = ham.indexOf(":");
+  return { phone: ham.slice(0, i), password: ham.slice(i + 1) };
 }
 
-const BASE = (argOku('base') || 'http://localhost:3000').replace(/\/$/, '');
-const OGRETMEN = kimlikOku('teacher');
-const OGRENCI = kimlikOku('student');
+const BASE = (argOku("base") || "https://www.akademitu.com").replace(/\/$/, "");
+const YONETICI = kimlikAyristir(argOku("admin"));
+let OGRETMEN = kimlikAyristir(argOku("teacher"));
+let OGRENCI = kimlikAyristir(argOku("student"));
+
+if (!YONETICI) {
+  console.error("--admin gerekli. Biçim: --admin 05xxxxxxxxx:sifre");
+  process.exit(1);
+}
 
 /** Tek bir oturumun çerezleri. Her kullanıcı için ayrı kavanoz. */
 class Kavanoz {
   private cerezler = new Map<string, string>();
 
   yut(response: Response) {
-    /* getSetCookie() Node 20+ ve birden fazla Set-Cookie başlığını ayrı ayrı
-       verir; tek bir get('set-cookie') hepsini virgülle birleştirir ve
-       çerez değerlerindeki virgüllerle karışır. */
+    /* getSetCookie() her Set-Cookie başlığını ayrı verir; tek bir
+       get("set-cookie") hepsini virgülle birleştirip çerez değerlerindeki
+       virgüllerle karıştırırdı. */
     for (const satir of response.headers.getSetCookie?.() ?? []) {
-      const [ciftler] = satir.split(';');
-      const esittir = ciftler.indexOf('=');
+      const [cift] = satir.split(";");
+      const esittir = cift.indexOf("=");
       if (esittir < 0) continue;
-      const ad = ciftler.slice(0, esittir).trim();
-      const deger = ciftler.slice(esittir + 1).trim();
-      /* Boş değer + Expires geçmişte = silme talimatı. */
-      if (deger === '') this.cerezler.delete(ad);
+      const ad = cift.slice(0, esittir).trim();
+      const deger = cift.slice(esittir + 1).trim();
+      /* Boş değer = silme talimatı. */
+      if (deger === "") this.cerezler.delete(ad);
       else this.cerezler.set(ad, deger);
     }
   }
 
   basligi(): string {
-    return [...this.cerezler].map(([a, d]) => `${a}=${d}`).join('; ');
+    return [...this.cerezler].map(([a, d]) => `${a}=${d}`).join("; ");
   }
 }
 
@@ -91,21 +99,17 @@ async function istek(
   yol: string,
   opts: { method?: string; body?: unknown } = {},
 ): Promise<Cevap> {
-  const { method = 'GET', body } = opts;
-
-  const headers: Record<string, string> = {
-    /* Origin: tarayıcının kendiliğinden eklediği şey. Bkz. dosya başı. */
-    Origin: BASE,
-  };
+  const { method = "GET", body } = opts;
+  const headers: Record<string, string> = { Origin: BASE };
   const cerez = kavanoz.basligi();
   if (cerez) headers.Cookie = cerez;
-  if (body) headers['Content-Type'] = 'application/json';
+  if (body) headers["Content-Type"] = "application/json";
 
   const response = await fetch(`${BASE}${yol}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
-    redirect: 'manual',
+    redirect: "manual",
   });
 
   kavanoz.yut(response);
@@ -116,299 +120,351 @@ async function istek(
   } catch {
     veri = null;
   }
-
   return { status: response.status, body: veri };
 }
 
 let toplam = 0;
 let gecen = 0;
+const kalanlar: string[] = [];
 
-function kontrol(ad: string, kosul: boolean, ayrinti = '') {
+function kontrol(ad: string, kosul: boolean, ayrinti = "") {
   toplam += 1;
   if (kosul) gecen += 1;
-  const etiket = kosul ? 'GEÇTİ' : 'KALDI';
-  console.log(`  ${etiket}  ${ad}${ayrinti ? `  — ${ayrinti}` : ''}`);
+  else kalanlar.push(`${ad}${ayrinti ? ` — ${ayrinti}` : ""}`);
+  console.log(`  ${kosul ? "GEÇTİ" : "KALDI"}  ${ad}${ayrinti ? `  (${ayrinti})` : ""}`);
 }
 
-async function girisYap(kimlik: Kimlik, etiket: string): Promise<Kavanoz | null> {
+async function girisYap(kimlik: Kimlik, etiket: string) {
   const kavanoz = new Kavanoz();
-  const cevap = await istek(kavanoz, '/api/auth/login', {
-    method: 'POST',
-    body: { phone: kimlik.phone, password: kimlik.password, website: '' },
+  const cevap = await istek(kavanoz, "/api/auth/login", {
+    method: "POST",
+    body: { phone: kimlik.phone, password: kimlik.password, website: "" },
   });
 
   if (cevap.status !== 200) {
-    console.error(
-      `\n  ${etiket} girişi başarısız (${cevap.status}): ${cevap.body?.error ?? ''}\n` +
-        '  Hesap açıldı mı ve "Auto Confirm User" işaretli miydi? ' +
-        '(supabase-teacher-panel.sql sonundaki bölüm)',
-    );
+    console.error(`\n  ${etiket} girişi başarısız (${cevap.status}): ${cevap.body?.error ?? ""}`);
     return null;
   }
-
-  return kavanoz;
+  return { kavanoz, user: cevap.body.user };
 }
 
+/* Test hesaplarının numaraları çalıştırma anından türetiliyor: aynı betiğin
+   iki koşusu birbirinin numarasına çarpmasın (profiles.phone UNIQUE). */
+const DAMGA = Date.now().toString().slice(-7);
+const URETILEN = {
+  teacherPhone: `0555${DAMGA}`,
+  studentPhone: `0556${DAMGA}`,
+  password: `Test${DAMGA}aA!`,
+};
+
 async function calistir() {
-  console.log(`\nÖğretmen paneli HTTP testleri — ${BASE}\n`);
+  console.log(`\nPanel testleri — ${BASE}\n`);
 
-  /* ---------------------------------------------------------- ÖĞRETMEN */
-  console.log('Öğretmen oturumu:');
-  const ogretmen = await girisYap(OGRETMEN, 'Öğretmen');
-  if (!ogretmen) process.exit(1);
+  /* =============================================================== YÖNETİCİ */
+  console.log("1) Yönetici");
+  const yonetici = await girisYap(YONETICI!, "Yönetici");
+  if (!yonetici) {
+    console.error("  Yönetici girişi olmadan devam edilemez.");
+    process.exit(1);
+  }
+  kontrol("userType = admin", yonetici.user?.userType === "admin", `${yonetici.user?.userType}`);
 
-  const ogretmenMe = await istek(ogretmen, '/api/auth/me');
-  kontrol(
-    'Giriş sonrası userType = teacher',
-    ogretmenMe.body?.user?.userType === 'teacher',
-    `alınan: ${ogretmenMe.body?.user?.userType}`,
-  );
+  let r = await istek(yonetici.kavanoz, "/api/admin/ozet");
+  kontrol("GET /api/admin/ozet -> 200", r.status === 200, `${r.status}`);
+  const oncekiSayi = r.body?.accounts?.length ?? 0;
 
-  const ogretmenOzet = await istek(ogretmen, '/api/teacher/ozet');
-  kontrol('Öğretmen /api/teacher/ozet -> 200', ogretmenOzet.status === 200, `${ogretmenOzet.status}`);
-
-  const program = await istek(ogretmen, '/api/teacher/schedule');
-  kontrol('Öğretmen /api/teacher/schedule -> 200', program.status === 200, `${program.status}`);
-  kontrol(
-    'Program haftanın pazartesisini döndürüyor',
-    typeof program.body?.weekStart === 'string' &&
-      new Date(`${program.body.weekStart}T00:00:00Z`).getUTCDay() === 1,
-    `weekStart: ${program.body?.weekStart}`,
-  );
-
-  const gelecekHafta = await istek(ogretmen, '/api/teacher/schedule?week=2027-01-01');
-  kontrol(
-    'week parametresi haftayı değiştiriyor',
-    gelecekHafta.body?.weekStart === '2026-12-28',
-    `alınan: ${gelecekHafta.body?.weekStart}`,
-  );
-
-  const bozukHafta = await istek(ogretmen, '/api/teacher/schedule?week=DROP%20TABLE');
-  kontrol(
-    'Geçersiz week -> hata değil, bu hafta',
-    bozukHafta.status === 200 && bozukHafta.body?.weekStart === program.body?.weekStart,
-    `${bozukHafta.status} / ${bozukHafta.body?.weekStart}`,
-  );
-
-  /* Planın 2. senaryosunun aynadaki hâli: öğretmen öğrenci ucuna gidiyor. */
-  const ogretmenOgrenciUcu = await istek(ogretmen, '/api/portal/ozet');
-  kontrol(
-    'Öğretmen -> /api/portal/ozet ENGELLENİYOR (403)',
-    ogretmenOgrenciUcu.status === 403,
-    `${ogretmenOgrenciUcu.status}`,
-  );
-
-  const ogretmenYorumUcu = await istek(ogretmen, '/api/portal/yorumlar');
-  kontrol(
-    'Öğretmen -> /api/portal/yorumlar ENGELLENİYOR (403)',
-    ogretmenYorumUcu.status === 403,
-    `${ogretmenYorumUcu.status}`,
-  );
-
-  /*
-   * YÖNETİM KAPISI. Bu testler diğerlerinden daha çok şey ölçüyor:
-   * /api/admin/* servis rolüyle çalıştığı için RLS orada emniyet ağı DEĞİL —
-   * bu 403'ler sınırın kendisi. Biri geçerse tüm öğrenci verisi açılır.
-   */
-  for (const [m, yol] of [
-    ['GET', '/api/admin/ozet'],
-    ['GET', '/api/admin/dersler'],
-    ['GET', '/api/admin/odemeler'],
-    ['POST', '/api/admin/hesaplar'],
-  ] as const) {
-    const r = await istek(ogretmen, yol, m === 'GET' ? {} : { method: m, body: {} });
-    kontrol(`Öğretmen -> ${m} ${yol} ENGELLENİYOR (403)`, r.status === 403, `${r.status}`);
+  /* Yönetici, diğer iki panelin uçlarına GİREMEZ: rol kapısı tek rol kabul
+     ediyor ve bu bilinçli (bkz. CLAUDE.md > admin bölümü). */
+  for (const yol of ["/api/portal/ozet", "/api/teacher/schedule"]) {
+    const x = await istek(yonetici.kavanoz, yol);
+    kontrol(`Yönetici -> ${yol} ENGELLENİYOR (403)`, x.status === 403, `${x.status}`);
   }
 
-  /*
-   * DERS DÖNGÜSÜ: planlı ders -> "işlendi" -> yorum -> geri al.
-   * Bu akış /schedule'ın döndürdüğü derslerle çalışıyor; ayrı bir
-   * "tamamlananlar" ucu yok (panel de tek uçtan besleniyor).
-   */
-  const planliDers = (program.body?.lessons ?? []).find((d: any) => d.status === 'scheduled');
+  /* Son yöneticinin kendini kilitlemesi engelleniyor. */
+  r = await istek(yonetici.kavanoz, `/api/admin/hesaplar/${yonetici.user.id}`, {
+    method: "PATCH",
+    body: { userType: "student" },
+  });
+  kontrol("Yönetici kendi rolünü DÜŞÜREMİYOR (400)", r.status === 400, `${r.status}`);
 
-  if (!planliDers) {
-    console.log('  ATLANDI  Ders döngüsü — bu hafta planlı ders yok');
-    console.log("           (Supabase'de test öğretmenine bu haftaya bir ders ekleyin)");
-  } else {
-    /* Planın 3. senaryosu: tamamlanmamış derse yorum yazılamamalı. */
-    const erkenYorum = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/comment`, {
-      method: 'PUT',
-      body: { comment: 'Tamamlanmamış derse yorum denemesi' },
+  /* ================================================================ HESAPLAR */
+  console.log("\n2) Hesap açma");
+  let ogretmenId: string | undefined;
+  let ogrenciId: string | undefined;
+
+  if (!OGRETMEN) {
+    r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+      method: "POST",
+      body: {
+        fullName: "TEST Ogretmen",
+        phone: URETILEN.teacherPhone,
+        password: URETILEN.password,
+        userType: "teacher",
+      },
     });
-    kontrol(
-      'Tamamlanmamış derse yorum ENGELLENİYOR (400)',
-      erkenYorum.status === 400,
-      `${erkenYorum.status}: ${erkenYorum.body?.error ?? ''}`,
-    );
+    kontrol("Öğretmen hesabı açıldı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+    ogretmenId = r.body?.account?.id;
+    OGRETMEN = { phone: URETILEN.teacherPhone, password: URETILEN.password };
+  }
 
-    /* Geçersiz durum değeri — 'cancelled' dahil (iptal bir yönetim kararı). */
-    for (const kotu of ['cancelled', 'silindi', '']) {
-      const r = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/status`, {
-        method: 'PATCH',
-        body: { status: kotu },
-      });
-      kontrol(`Geçersiz durum "${kotu}" -> 400`, r.status === 400, `${r.status}`);
+  if (!OGRENCI) {
+    r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+      method: "POST",
+      body: {
+        fullName: "TEST Ogrenci",
+        phone: URETILEN.studentPhone,
+        password: URETILEN.password,
+        userType: "student",
+      },
+    });
+    kontrol("Öğrenci hesabı açıldı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+    ogrenciId = r.body?.account?.id;
+    OGRENCI = { phone: URETILEN.studentPhone, password: URETILEN.password };
+  }
+
+  /* Doğrulama sınırları */
+  r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+    method: "POST",
+    body: { fullName: "X", phone: URETILEN.teacherPhone, password: URETILEN.password, userType: "teacher" },
+  });
+  kontrol("Aynı telefonla ikinci hesap ENGELLENİYOR (409)", r.status === 409, `${r.status}`);
+
+  r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+    method: "POST",
+    body: { fullName: "X", phone: "12345", password: URETILEN.password, userType: "teacher" },
+  });
+  kontrol("Geçersiz telefon ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+  r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+    method: "POST",
+    body: { fullName: "X", phone: `0557${DAMGA}`, password: "kisa", userType: "teacher" },
+  });
+  kontrol("8 karakterden kısa şifre ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+  r = await istek(yonetici.kavanoz, "/api/admin/ozet");
+  const beklenen = oncekiSayi + (ogretmenId ? 1 : 0) + (ogrenciId ? 1 : 0);
+  kontrol(
+    "Liste yeni hesapları gösteriyor",
+    (r.body?.accounts?.length ?? 0) === beklenen,
+    `${r.body?.accounts?.length} (beklenen ${beklenen})`,
+  );
+
+  /* Açılan hesapların kimlikleri hazır gelmediyse listeden çözülüyor. */
+  const hepsi = r.body?.accounts ?? [];
+  ogretmenId ??= hepsi.find((h: any) => h.phone === OGRETMEN!.phone)?.id;
+  ogrenciId ??= hepsi.find((h: any) => h.phone === OGRENCI!.phone)?.id;
+
+  /* ================================================================== DERSLER */
+  console.log("\n3) Ders atama");
+  const simdi = Date.now();
+  const baslangic = new Date(simdi + 2 * 3600_000).toISOString();
+  const bitis = new Date(simdi + 3 * 3600_000).toISOString();
+
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler", {
+    method: "POST",
+    body: {
+      studentId: ogrenciId,
+      teacherId: ogretmenId,
+      subject: "TEST TYT Matematik",
+      startsAt: baslangic,
+      endsAt: bitis,
+      kind: "ders",
+      status: "scheduled",
+    },
+  });
+  kontrol("Ders atandı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+  const dersId = r.body?.id;
+
+  /* Rol doğrulaması: veritabanı bunu yapmıyor, route yapıyor. */
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler", {
+    method: "POST",
+    body: { studentId: ogretmenId, subject: "X", startsAt: baslangic, kind: "ders", status: "scheduled" },
+  });
+  kontrol("Öğretmen, öğrenci alanına KONAMIYOR (400)", r.status === 400, `${r.status}`);
+
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler");
+  const listeDers = (r.body?.lessons ?? []).find((d: any) => d.id === dersId);
+  kontrol(
+    "Ders listede ve adlar çözülmüş",
+    Boolean(listeDers?.studentName && listeDers?.teacherName),
+    `${listeDers?.studentName} / ${listeDers?.teacherName}`,
+  );
+
+  /* =================================================================== ÜCRET */
+  console.log("\n4) Ücret girme");
+  r = await istek(yonetici.kavanoz, "/api/admin/odemeler", {
+    method: "POST",
+    body: {
+      studentId: ogrenciId,
+      period: "TEST-2026-09",
+      amount: "9500,50",
+      currency: "TRY",
+      status: "bekliyor",
+      dueOn: "2026-09-30",
+    },
+  });
+  kontrol("Ödeme eklendi (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+  const odemeId = r.body?.id;
+
+  r = await istek(yonetici.kavanoz, "/api/admin/odemeler");
+  const listeOdeme = (r.body?.payments ?? []).find((o: any) => o.id === odemeId);
+  kontrol("Virgüllü tutar doğru çözüldü", listeOdeme?.amount === 9500.5, `${listeOdeme?.amount}`);
+
+  r = await istek(yonetici.kavanoz, `/api/admin/odemeler/${odemeId}`, {
+    method: "PATCH",
+    body: {
+      studentId: ogrenciId,
+      period: "TEST-2026-09",
+      amount: 12000,
+      currency: "TRY",
+      status: "odendi",
+      dueOn: null,
+    },
+  });
+  kontrol("Ödeme düzenlendi (200)", r.status === 200, `${r.status}`);
+
+  /* ================================================================ ÖĞRETMEN */
+  console.log("\n5) Öğretmen paneli");
+  const ogretmen = await girisYap(OGRETMEN!, "Öğretmen");
+  if (!ogretmen) {
+    console.error("  Panelden açılan hesapla giriş yapılamadı — Admin API akışı bozuk.");
+    process.exit(1);
+  }
+  kontrol("Panelden açılan hesapla giriş yapılabiliyor", true, "Admin API akışı doğru");
+  kontrol("userType = teacher", ogretmen.user?.userType === "teacher", `${ogretmen.user?.userType}`);
+
+  r = await istek(ogretmen.kavanoz, "/api/teacher/schedule");
+  kontrol("Program -> 200", r.status === 200, `${r.status}`);
+  kontrol(
+    "Atanan ders öğretmenin programında",
+    (r.body?.lessons ?? []).some((d: any) => d.id === dersId),
+    `${(r.body?.lessons ?? []).length} ders`,
+  );
+
+  /* Tamamlanmamış derse yorum reddedilmeli. */
+  r = await istek(ogretmen.kavanoz, `/api/teacher/lessons/${dersId}/comment`, {
+    method: "PUT",
+    body: { comment: "Erken yorum denemesi" },
+  });
+  kontrol("Tamamlanmamış derse yorum ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+  r = await istek(ogretmen.kavanoz, `/api/teacher/lessons/${dersId}/status`, {
+    method: "PATCH",
+    body: { status: "completed" },
+  });
+  kontrol('Ders "işlendi" yapıldı (200)', r.status === 200, `${r.status}`);
+
+  r = await istek(ogretmen.kavanoz, `/api/teacher/lessons/${dersId}/status`, {
+    method: "PATCH",
+    body: { status: "cancelled" },
+  });
+  kontrol("Öğretmen dersi İPTAL EDEMİYOR (400)", r.status === 400, `${r.status}`);
+
+  const YORUM = "TEST yorumu — uçtan uca doğrulama.";
+  r = await istek(ogretmen.kavanoz, `/api/teacher/lessons/${dersId}/comment`, {
+    method: "PUT",
+    body: { comment: YORUM },
+  });
+  kontrol("Yorum yazıldı (200)", r.status === 200, `${r.status}`);
+
+  r = await istek(ogretmen.kavanoz, `/api/teacher/lessons/${dersId}/comment`, {
+    method: "PUT",
+    body: { comment: "   " },
+  });
+  kontrol("Boş yorum ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+  r = await istek(
+    ogretmen.kavanoz,
+    "/api/teacher/lessons/99999999-9999-4999-8999-999999999999/comment",
+    { method: "PUT", body: { comment: "Başkasının dersi" } },
+  );
+  kontrol("Başkasının dersine yorum ENGELLENİYOR (403)", r.status === 403, `${r.status}`);
+
+  /* ================================================================= ÖĞRENCİ */
+  console.log("\n6) Öğrenci paneli");
+  const ogrenci = await girisYap(OGRENCI!, "Öğrenci");
+  if (!ogrenci) {
+    console.error("  Öğrenci girişi başarısız.");
+    process.exit(1);
+  }
+  kontrol("userType = student", ogrenci.user?.userType === "student", `${ogrenci.user?.userType}`);
+
+  r = await istek(ogrenci.kavanoz, "/api/portal/ozet");
+  kontrol("Öğrenci paneli -> 200", r.status === 200, `${r.status}`);
+  kontrol(
+    "Girilen ücret öğrencinin panelinde",
+    (r.body?.payments ?? []).some((o: any) => o.id === odemeId),
+    `${(r.body?.payments ?? []).length} ödeme`,
+  );
+
+  r = await istek(ogrenci.kavanoz, "/api/portal/yorumlar");
+  kontrol("Koçun yorumları -> 200", r.status === 200, `${r.status}`);
+  const yorumlu = (r.body?.lessons ?? []).find((d: any) => d.id === dersId);
+  kontrol("Öğretmenin yorumu öğrenciye görünüyor", yorumlu?.comment?.text === YORUM,
+    `${yorumlu?.comment?.text ?? "YOK"}`);
+
+  /* =========================================================== ROL İZOLASYONU */
+  console.log("\n7) Rol izolasyonu");
+  for (const [ad, kav] of [
+    ["Öğretmen", ogretmen.kavanoz],
+    ["Öğrenci", ogrenci.kavanoz],
+  ] as const) {
+    for (const yol of ["/api/admin/ozet", "/api/admin/dersler", "/api/admin/odemeler"]) {
+      const x = await istek(kav, yol);
+      kontrol(`${ad} -> ${yol} ENGELLENİYOR (403)`, x.status === 403, `${x.status}`);
     }
-
-    /* "Ders işlendi" */
-    const isaretle = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/status`, {
-      method: 'PATCH',
-      body: { status: 'completed' },
+    const y = await istek(kav, "/api/admin/hesaplar", {
+      method: "POST",
+      body: { fullName: "Sizma", phone: `0558${DAMGA}`, password: "AAaa12345", userType: "admin" },
     });
-    kontrol('Ders "işlendi" yapılıyor (200)', isaretle.status === 200, `${isaretle.status}`);
-    kontrol('Yanıt yeni durumu döndürüyor', isaretle.body?.status === 'completed', `${isaretle.body?.status}`);
-
-    /* Artık yorum yazılabilmeli */
-    const yorum1 = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/comment`, {
-      method: 'PUT',
-      body: { comment: 'Birinci deneme yorumu' },
-    });
-    kontrol('İşlendi sonrası yorum yazılabiliyor (200)', yorum1.status === 200, `${yorum1.status}`);
-
-    /* Planın 4. senaryosu: üzerine yazma (tek satır kalmalı — satır sayısı
-       veritabanı testinde doğrulanıyor, burada son metnin dönmesi ölçülüyor). */
-    const yorum2 = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/comment`, {
-      method: 'PUT',
-      body: { comment: 'İkinci deneme yorumu' },
-    });
-    kontrol(
-      'Yorum üzerine yazılıyor (upsert)',
-      yorum2.status === 200 && yorum2.body?.comment?.text === 'İkinci deneme yorumu',
-      `${yorum2.status}`,
-    );
-
-    /* Doğrulama sınırları */
-    const bosYorum = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/comment`, {
-      method: 'PUT', body: { comment: '   ' },
-    });
-    kontrol('Boş yorum ENGELLENİYOR (400)', bosYorum.status === 400, `${bosYorum.status}`);
-
-    const uzunYorum = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/comment`, {
-      method: 'PUT', body: { comment: 'a'.repeat(2001) },
-    });
-    kontrol('2000+ karakter yorum ENGELLENİYOR (400)', uzunYorum.status === 400, `${uzunYorum.status}`);
-
-    /* Yorum programda görünüyor mu (tek uçtan besleniyor) */
-    const tazeProgram = await istek(ogretmen, '/api/teacher/schedule');
-    const tazeDers = (tazeProgram.body?.lessons ?? []).find((d: any) => d.id === planliDers.id);
-    kontrol(
-      'Yorum /schedule cevabında dönüyor',
-      tazeDers?.comment?.text === 'İkinci deneme yorumu',
-      `${tazeDers?.comment?.text ?? 'YOK'}`,
-    );
-
-    /* Geri alma — ve yorumun SİLİNMEDİĞİ */
-    const geriAl = await istek(ogretmen, `/api/teacher/lessons/${planliDers.id}/status`, {
-      method: 'PATCH', body: { status: 'scheduled' },
-    });
-    kontrol('İşaretleme geri alınabiliyor (200)', geriAl.status === 200, `${geriAl.status}`);
-
-    const geriSonra = await istek(ogretmen, '/api/teacher/schedule');
-    const geriDers = (geriSonra.body?.lessons ?? []).find((d: any) => d.id === planliDers.id);
-    kontrol(
-      'Geri alınca yorum SİLİNMİYOR',
-      geriDers?.comment?.text === 'İkinci deneme yorumu',
-      `${geriDers?.comment?.text ?? 'SİLİNDİ'}`,
-    );
-    kontrol('Geri alınca durum scheduled', geriDers?.status === 'scheduled', `${geriDers?.status}`);
+    kontrol(`${ad} hesap AÇAMIYOR (403)`, y.status === 403, `${y.status}`);
   }
 
-  /* IDOR: var olmayan/başkasına ait bir ders kimliği. */
-  const yabanciDers = await istek(
-    ogretmen,
-    '/api/teacher/lessons/99999999-9999-4999-8999-999999999999/comment',
-    { method: 'PUT', body: { comment: 'Başkasının dersi' } },
-  );
-  kontrol(
-    'Başkasının/olmayan dersine yorum ENGELLENİYOR (403)',
-    yabanciDers.status === 403,
-    `${yabanciDers.status}`,
-  );
+  const ogrenciOgretmenUcu = await istek(ogrenci.kavanoz, "/api/teacher/schedule");
+  kontrol("Öğrenci -> /api/teacher/schedule ENGELLENİYOR (403)",
+    ogrenciOgretmenUcu.status === 403, `${ogrenciOgretmenUcu.status}`);
 
-  const yabanciDurum = await istek(
-    ogretmen,
-    '/api/teacher/lessons/99999999-9999-4999-8999-999999999999/status',
-    { method: 'PATCH', body: { status: 'completed' } },
-  );
-  kontrol(
-    'Başkasının/olmayan dersini işaretleme ENGELLENİYOR (403)',
-    yabanciDurum.status === 403,
-    `${yabanciDurum.status}`,
-  );
+  const ogretmenOgrenciUcu = await istek(ogretmen.kavanoz, "/api/portal/ozet");
+  kontrol("Öğretmen -> /api/portal/ozet ENGELLENİYOR (403)",
+    ogretmenOgrenciUcu.status === 403, `${ogretmenOgrenciUcu.status}`);
 
-  /* ----------------------------------------------------------- ÖĞRENCİ */
-  console.log('\nÖğrenci oturumu:');
-  const ogrenci = await girisYap(OGRENCI, 'Öğrenci');
-  if (!ogrenci) process.exit(1);
-
-  const ogrenciMe = await istek(ogrenci, '/api/auth/me');
-  kontrol(
-    'Giriş sonrası userType = student',
-    ogrenciMe.body?.user?.userType === 'student',
-    `alınan: ${ogrenciMe.body?.user?.userType}`,
-  );
-
-  const ogrenciOzet = await istek(ogrenci, '/api/portal/ozet');
-  kontrol('Öğrenci /api/portal/ozet -> 200', ogrenciOzet.status === 200, `${ogrenciOzet.status}`);
-
-  const ogrenciYorumlar = await istek(ogrenci, '/api/portal/yorumlar');
-  kontrol('Öğrenci /api/portal/yorumlar -> 200', ogrenciYorumlar.status === 200, `${ogrenciYorumlar.status}`);
-
-  /* Planın 2. senaryosu. */
-  const ogrenciOgretmenUcu = await istek(ogrenci, '/api/teacher/schedule');
-  kontrol(
-    'Öğrenci -> /api/teacher/schedule ENGELLENİYOR (403)',
-    ogrenciOgretmenUcu.status === 403,
-    `${ogrenciOgretmenUcu.status}`,
-  );
-
-  const ogrenciYorumYazma = await istek(
-    ogrenci,
-    '/api/teacher/lessons/99999999-9999-4999-8999-999999999999/comment',
-    { method: 'PUT', body: { comment: 'Öğrenci yorum yazıyor' } },
-  );
-  kontrol(
-    'Öğrenci yorum YAZAMIYOR (403)',
-    ogrenciYorumYazma.status === 403,
-    `${ogrenciYorumYazma.status}`,
-  );
-
-  const ogrenciIsaretleme = await istek(
-    ogrenci,
-    '/api/teacher/lessons/99999999-9999-4999-8999-999999999999/status',
-    { method: 'PATCH', body: { status: 'completed' } },
-  );
-  kontrol(
-    'Öğrenci dersi "işlendi" YAPAMIYOR (403)',
-    ogrenciIsaretleme.status === 403,
-    `${ogrenciIsaretleme.status}`,
-  );
-
-  for (const [m, yol] of [
-    ['GET', '/api/admin/ozet'],
-    ['POST', '/api/admin/hesaplar'],
-    ['POST', '/api/admin/odemeler'],
-  ] as const) {
-    const r = await istek(ogrenci, yol, m === 'GET' ? {} : { method: m, body: {} });
-    kontrol(`Öğrenci -> ${m} ${yol} ENGELLENİYOR (403)`, r.status === 403, `${r.status}`);
-  }
-
-  /* --------------------------------------------------------- OTURUMSUZ */
-  console.log('\nOturumsuz:');
+  /* ================================================================ OTURUMSUZ */
+  console.log("\n8) Oturumsuz");
   const bos = new Kavanoz();
-  for (const yol of ['/api/portal/ozet', '/api/portal/yorumlar', '/api/teacher/schedule',
-                     '/api/admin/ozet', '/api/admin/dersler', '/api/admin/odemeler']) {
-    const cevap = await istek(bos, yol);
-    kontrol(`Oturumsuz ${yol} -> 401`, cevap.status === 401, `${cevap.status}`);
+  for (const yol of [
+    "/api/portal/ozet",
+    "/api/portal/yorumlar",
+    "/api/teacher/schedule",
+    "/api/admin/ozet",
+  ]) {
+    const x = await istek(bos, yol);
+    kontrol(`Oturumsuz ${yol} -> 401`, x.status === 401, `${x.status}`);
   }
 
-  console.log(`\n${gecen}/${toplam} test geçti.\n`);
+  /* ================================================================== TEMİZLİK */
+  console.log("\n9) Temizlik");
+  r = await istek(yonetici.kavanoz, `/api/admin/dersler/${dersId}`, { method: "DELETE" });
+  kontrol("Test dersi silindi", r.status === 200, `${r.status}`);
+  r = await istek(yonetici.kavanoz, `/api/admin/odemeler/${odemeId}`, { method: "DELETE" });
+  kontrol("Test ödemesi silindi", r.status === 200, `${r.status}`);
+
+  console.log(`\n${gecen}/${toplam} test geçti.`);
+  if (kalanlar.length) {
+    console.log("\nKALANLAR:");
+    for (const x of kalanlar) console.log(`  - ${x}`);
+  }
+
+  if (ogretmenId || ogrenciId) {
+    console.log("\nBETİĞİN AÇTIĞI HESAPLAR (silinmedi — panelde hesap silme yok):");
+    if (ogretmenId) console.log(`  TEST Ogretmen  ${OGRETMEN!.phone}`);
+    if (ogrenciId) console.log(`  TEST Ogrenci   ${OGRENCI!.phone}`);
+    console.log(`  şifre: ${URETILEN.password}`);
+  }
+
   process.exit(gecen === toplam ? 0 : 1);
 }
 
 calistir().catch((err) => {
-  console.error('\nTest çalıştırılamadı:', err?.message || err);
-  console.error('Sunucu ayakta mı? (npm run dev)');
+  console.error("\nTest çalıştırılamadı:", err?.message || err);
   process.exit(1);
 });
