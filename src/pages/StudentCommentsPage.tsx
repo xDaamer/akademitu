@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, MessageSquareQuote } from 'lucide-react';
+import { MessageSquareQuote } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
 import { apiFetch, ApiRequestError } from '../lib/api';
 import { SITE_URL } from '../config';
 import need from '../../need.json';
 import { routingMode, panelRootPath, COMMENTS_PATH } from '../lib/host';
+import { PanelHeader } from '../components/portal/PanelHeader';
 
 /*
  * KOÇUN YORUMLARI — öğrencinin ders bazlı geri bildirimleri
@@ -96,19 +96,11 @@ export const StudentCommentsPage: React.FC = () => {
       />
 
       <div className="min-h-dvh bg-slate-50">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-          <div className="mx-auto flex h-20 max-w-3xl items-center gap-3 px-4 sm:px-6">
-            {/* Panele dönüş: aynı host içinde olduğu için react-router Link
-                yeterli, tam sayfa yüklemesi gerekmiyor. */}
-            <Link
-              to={panelRootPath()}
-              className="flex items-center gap-1.5 rounded text-sm font-bold text-[#191F61] transition-colors hover:text-[#101442] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Panele dön
-            </Link>
-          </div>
-        </header>
+        <PanelHeader
+          geri={{ to: panelRootPath(), etiket: 'Panele dön' }}
+          cikis={false}
+          genislik="max-w-3xl"
+        />
 
         <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
           <div className="mb-8 flex items-center gap-3">

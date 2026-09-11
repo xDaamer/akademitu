@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, CalendarDays, TrendingUp, CreditCard, MessageSquareQuote, ChevronRight } from 'lucide-react';
+import { CalendarDays, TrendingUp, CreditCard, MessageSquareQuote, ChevronRight } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
-import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, ApiRequestError } from '../lib/api';
 import { formatNationalMobile, extractSignificantPhoneDigits } from '../lib/phone';
 import { SITE_URL } from '../config';
 import need from '../../need.json';
 import { routingMode, studentCommentsPath } from '../lib/host';
+import { PanelHeader } from '../components/portal/PanelHeader';
 
 /*
  * PANEL — portal.akademitu.com KÖKÜ
@@ -128,7 +128,7 @@ const Bos: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 export const PortalDashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [ozet, setOzet] = useState<Ozet | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -178,27 +178,7 @@ export const PortalDashboardPage: React.FC = () => {
       />
 
       <div className="min-h-dvh bg-slate-50">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-          <div className="mx-auto flex h-20 max-w-5xl items-center gap-3 px-4 sm:px-6">
-            {/*
-              Marka adı artık bir bağlantı: panel ayrı bir alt alan adında
-              olduğu için ana siteye dönmenin başka yolu kalmadı (header/footer
-              bu host'ta hiç render edilmiyor). react-router Link DEĞİL —
-              hedef başka bir host.
-            */}
-            <a
-              href={`${SITE_URL}/`}
-              className="rounded text-lg font-extrabold tracking-tight text-[#191F61] transition-colors hover:text-[#101442] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
-            >
-              akademITU
-            </a>
-
-            <Button variant="soft" size="sm" onClick={logout} className="ml-auto">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Çıkış yap</span>
-            </Button>
-          </div>
-        </header>
+        <PanelHeader />
 
         <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
           <div className="mb-8">

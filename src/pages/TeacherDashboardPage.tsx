@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LogOut, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +7,7 @@ import { apiFetch, ApiRequestError } from '../lib/api';
 import { SITE_URL } from '../config';
 import need from '../../need.json';
 import { routingMode, TEACHER_PATH } from '../lib/host';
+import { PanelHeader } from '../components/portal/PanelHeader';
 import {
   TeacherLessonList,
   trTarih,
@@ -144,7 +145,7 @@ const DersKarti: React.FC<{ ders: ProgramDersi; saatGoster?: boolean }> = ({
 };
 
 export const TeacherDashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [program, setProgram] = useState<ProgramCevabi | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -256,29 +257,7 @@ export const TeacherDashboardPage: React.FC = () => {
       />
 
       <div className="min-h-dvh bg-slate-50">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-          <div className="mx-auto flex h-20 max-w-6xl items-center gap-3 px-4 sm:px-6">
-            {/* Ana siteye dönüşün tek yolu: bu host'ta header/footer hiç
-                render edilmiyor. react-router Link DEĞİL — hedef başka host. */}
-            <a
-              href={`${SITE_URL}/`}
-              className="rounded text-lg font-extrabold tracking-tight text-[#191F61] transition-colors hover:text-[#101442] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
-            >
-              akademITU
-            </a>
-
-            {/* Öğretmen panelinde olunduğunu söyleyen tek işaret: iki panel
-                aynı kabuğu paylaştığı için ayırt edici bir şey gerekiyor. */}
-            <span className="rounded-full bg-[#191F61]/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#191F61]">
-              Öğretmen
-            </span>
-
-            <Button variant="soft" size="sm" onClick={logout} className="ml-auto">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Çıkış yap</span>
-            </Button>
-          </div>
-        </header>
+        <PanelHeader rozet={{ metin: 'Öğretmen', ton: 'mint' }} genislik="max-w-6xl" />
 
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
           <div className="mb-8">

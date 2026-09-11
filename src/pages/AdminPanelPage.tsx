@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
-import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, ApiRequestError } from '../lib/api';
 import { SITE_URL } from '../config';
 import need from '../../need.json';
 import { routingMode, ADMIN_PATH } from '../lib/host';
+import { PanelHeader } from '../components/portal/PanelHeader';
 import { AdminAccounts } from '../components/portal/admin/AdminAccounts';
 import { AdminLessons } from '../components/portal/admin/AdminLessons';
 import { AdminPayments } from '../components/portal/admin/AdminPayments';
@@ -38,7 +37,7 @@ const SEKMELER: { ad: Sekme; etiket: string }[] = [
 ];
 
 export const AdminPanelPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [sekme, setSekme] = useState<Sekme>('hesaplar');
   const [hesaplar, setHesaplar] = useState<Hesap[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -78,29 +77,7 @@ export const AdminPanelPage: React.FC = () => {
       />
 
       <div className="min-h-dvh bg-slate-50">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-          <div className="mx-auto flex h-20 max-w-5xl items-center gap-3 px-4 sm:px-6">
-            {/* Ana siteye dönüşün tek yolu: bu host'ta header/footer hiç
-                render edilmiyor. react-router Link DEĞİL — hedef başka host. */}
-            <a
-              href={`${SITE_URL}/`}
-              className="rounded text-lg font-extrabold tracking-tight text-[#191F61] transition-colors hover:text-[#101442] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
-            >
-              akademITU
-            </a>
-
-            {/* Üç panel aynı kabuğu paylaşıyor; hangisinde olunduğunu
-                söyleyen tek işaret bu rozet. */}
-            <span className="rounded-full bg-[#c5a059]/20 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#7a5f2a]">
-              Yönetim
-            </span>
-
-            <Button variant="soft" size="sm" onClick={logout} className="ml-auto">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Çıkış yap</span>
-            </Button>
-          </div>
-        </header>
+        <PanelHeader rozet={{ metin: 'Yönetim', ton: 'altin' }} />
 
         <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
           <div className="mb-6">
