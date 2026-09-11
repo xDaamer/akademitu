@@ -141,6 +141,20 @@ export function studentCommentsPath(): string {
   return routingMode() === 'both' ? `/panel${COMMENTS_PATH}` : COMMENTS_PATH;
 }
 
+/**
+ * YÖNETİM PANELİ. Öğretmen paneliyle aynı desende: panel kökünün altında
+ * bir alt yol, 'both' modunda /panel'in altına iniyor.
+ */
+export const ADMIN_PATH = '/yonetim';
+
+export function adminPanelPath(): string {
+  return routingMode() === 'both' ? `/panel${ADMIN_PATH}` : ADMIN_PATH;
+}
+
+export function adminPanelHref(): string {
+  return routingMode() === 'both' ? `/panel${ADMIN_PATH}` : `${PORTAL_ORIGIN}${ADMIN_PATH}`;
+}
+
 /** Panel kökünün bu ortamdaki YOLU — alt sayfalardan geri dönmek için. */
 export function panelRootPath(): string {
   return routingMode() === 'both' ? '/panel' : '/';
@@ -151,12 +165,13 @@ export function panelRootPath(): string {
  * yanıtında geliyor (bkz. server/routes/auth.ts).
  *
  * Rol null ise (profil satırı yok) hiçbir panele gönderilmiyor — çağıran
- * taraf bunu bir hata olarak göstermeli. 'admin' için henüz panel yok.
+ * taraf bunu bir hata olarak göstermeli.
  */
 export function panelHrefForRole(
   userType: 'student' | 'teacher' | 'admin' | null,
 ): string | null {
   if (userType === 'teacher') return teacherPanelHref();
+  if (userType === 'admin') return adminPanelHref();
   if (userType === 'student') return panelHref();
   return null;
 }

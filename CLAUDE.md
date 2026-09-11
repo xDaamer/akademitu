@@ -6,13 +6,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 akademITU — a Turkish-language marketing site (YKS/LGS exam coaching) built as a single-page React app with a small Express backend (`server.ts`). The backend proxies the two-step lead-capture form into Supabase; that proxy was unreachable in production on Vercel for a long time (root cause found and fixed 2026-09-08 — see Architecture below) and the form had meanwhile been rewired to talk to Supabase straight from the browser. On 2026-09-09 everything moved back behind the proxy and the browser stopped touching Supabase entirely; there is now also a user portal with cookie-based auth. On 2026-09-10 that portal moved onto its own subdomain: **login stays at `akademitu.com/login`, the panel itself lives at the root of `portal.akademitu.com`** (same Vercel project, second domain — see Architecture). It originated from a Google AI Studio scaffold (see `metadata.json` / `.env.example` Gemini references) but the app does **not** currently call the Gemini API anywhere in `src/` or `server.ts` — treat those as inherited boilerplate, not live functionality.
 
+## How this project is verified — read before testing anything
+
+**The local `.env` is deliberately incomplete and always will be.** It holds `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `ALLOWED_ORIGINS`, but **never `SUPABASE_SERVICE_ROLE_KEY`**. Do not ask for it, do not add it, and do not work around its absence.
+
+The consequence is larger than it looks: the service role backs lead capture, testimonials, the rate limiter, the audit log, the phone→email lookup **that login itself depends on**, and all of `/api/admin/*`. So on localhost **you cannot log in at all**, and anything behind a session is unreachable. `npm run dev` is still useful — it verifies validation, origin checks, 401/403 wiring and that the server boots — but it can never confirm a feature works.
+
+**Therefore: push to `main` and verify against the live deployment.** That is the normal, expected workflow here, not a last resort — `main` auto-deploys to Vercel (~35 s) across `akademitu.com`, `www` and `portal.akademitu.com`, and production has the full environment. Pushing for the purpose of testing needs no separate permission; it is how this repo is tested.
+
+Before pushing: `npm run lint` and `npm run build` must pass, and if anything in `server.ts`'s import graph changed, re-run the ESM cold-start probe (see the Vercel note in Architecture). After pushing: wait for `READY`, then exercise the real endpoints over HTTPS. `npm run test:panels` takes `--base https://www.akademitu.com`.
+
+When a live check writes data (a lead, a test account), say so, and clean it up afterwards unless it was asked for. A previous deployment stays available as a Vercel rollback candidate if a push turns out to be wrong.
+
 ## Commands
 
-- `npm run dev` — starts `dev-server.ts` via `tsx`, which boots Express (imported from `server.ts`) with Vite in middleware mode (one process serves both the API and the SPA with HMR). Not `server.ts` directly — see the vite-isolation note below.
+- `npm run dev` — starts `dev-server.ts` via `tsx`, which boots Express (imported from `server.ts`) with Vite in middleware mode (one process serves both the API and the SPA with HMR). **Login does not work here** — see the verification section above. Not `server.ts` directly — see the vite-isolation note below.
 - `npm run build` — runs `scripts/generate-seo.ts` (writes `public/sitemap.xml` / `public/robots.txt` from `need.json`), then `vite build`, then bundles `server.ts` to `server-dist/server.cjs` with esbuild.
 - `npm start` — runs the built `server-dist/server.cjs` (production mode, serves static `dist/` and falls back to `index.html` for SPA routes).
 - `npm run lint` — `tsc --noEmit`. There is no separate lint tool (no ESLint) and no general test suite/framework in this repo — don't assume `npm test` exists.
-- `npm run test:teacher-panel -- --base http://localhost:3000 --teacher 05xx:pw --student 05xx:pw` — the **only** executable test in the repo. It exercises the teacher-panel role gate and route status codes over real HTTP against a running server; it needs one teacher and one student account to exist (created by hand, see below). It deliberately does **not** cover RLS — that lives in `supabase-teacher-panel-tests.sql`, which runs in the Supabase SQL editor inside `BEGIN ... ROLLBACK` and leaves nothing behind. Both must pass; they test different layers and either one alone is misleading.
+- `npm run test:panels -- --base http://localhost:3000 --teacher 05xx:pw --student 05xx:pw` — the **only** executable test in the repo. It exercises every panel's role gate and route status codes over real HTTP against a running server; it needs one teacher and one student account to exist (created by hand, see below). It deliberately does **not** cover RLS — that lives in `supabase-teacher-panel-tests.sql`, which runs in the Supabase SQL editor inside `BEGIN ... ROLLBACK` and leaves nothing behind. Both must pass; they test different layers and either one alone is misleading.
 - `npm run clean` — removes `dist/`.
 - `npm run push` — plain `git push`, nothing more (a bare alias; `git push` works the same).
 
@@ -82,7 +94,7 @@ Be precise about *why* this was done, because the obvious reason is wrong: **Sup
 **Server-side Supabase clients — which one you use IS the security model** (`server/supabase.ts`):
 - `anonServerClient()` — auth calls only (login/signup/refresh). Holds the anon key, which now lives solely on the server.
 - `userClient(accessToken)` — **all logged-in user data**. Built per request from the cookie's JWT, so RLS applies as that user. An authorization bug in a route still hits the RLS safety net.
-- `serviceClient()` — **bypasses RLS.** Only for things that belong to nobody: lead capture (nobody is logged in yet), published testimonials, the rate-limit counter, and the phone→email lookup at login (the one moment when no session can exist yet). Reading user data with this defeats the entire layer.
+- `serviceClient()` — **bypasses RLS.** For things that belong to nobody: lead capture (nobody is logged in yet), published testimonials, the rate-limit counter, and the phone→email lookup at login (the one moment when no session can exist yet). Reading user data with this defeats the entire layer — with one deliberate exception, `/api/admin/*`, where the admin's legitimate scope is every row and account creation needs the Admin API anyway; the reasoning and what it costs are in the admin section below and at the top of `server/routes/admin.ts`.
 
 **Auth: login by phone, and there is no signup.** Accounts are created by hand — there is no registration screen and **no `/api/auth/signup` endpoint**. Removing the form while leaving the endpoint would have protected nothing (anyone could POST to it), so both are gone; `supabase-portal-auth.sql` §1b documents the two-step manual procedure (Dashboard "Add user" with *Auto Confirm User* ticked, then one `INSERT` into `profiles`). A user without a `profiles` row cannot log in even with the right password, because login resolves phone → email through that table.
 
@@ -95,6 +107,7 @@ Supabase Auth's own `phone` field is deliberately unused (it would require wirin
 | `portal.akademitu.com/` | student dashboard — `PanelDispatch` sends teachers on to `/ogretmen` |
 | `portal.akademitu.com/ogretmen` | teacher panel: weekly schedule + comments on completed lessons |
 | `portal.akademitu.com/yorumlar` | student's per-lesson teacher comments |
+| `portal.akademitu.com/yonetim` | admin panel: accounts, lesson assignment, fees |
 
 The student panel **stays at the root**: most users are students and that address is already in bookmarks, in `PANEL_URL` and in `vercel.json`'s redirects. In `both` mode (localhost/preview) everything shifts under `/panel`. `src/lib/host.ts` owns all four path helpers; no component composes these paths itself.
 
@@ -117,6 +130,16 @@ The student panel **stays at the root**: most users are students and that addres
 **Week boundaries are computed at `+03:00`, not UTC** (`server/routes/teacher.ts`). "Which week" is a local question: in UTC a Monday 01:00 lesson lands in the previous week. Türkiye has been on permanent UTC+3 since 2016, so a fixed offset is correct and lives in one constant; the client mirrors it with an explicit `timeZone: 'Europe/Istanbul'` so a teacher abroad still sees Turkish times. An invalid or missing `week` falls back to the current week rather than erroring — it is a navigation parameter, not data.
 
 **Teacher accounts are created by hand, like student ones** — there is still no signup. Same two steps as `supabase-portal-auth.sql` §1b plus `user_type = 'teacher'`; the procedure and the SQL for linking a lesson to a teacher are at the end of `supabase-teacher-panel.sql`.
+
+**Accounts are no longer created by hand — the admin panel does it** (added 2026-09-11). `/api/admin/hesaplar` calls Supabase's **Admin API** (`auth.admin.createUser` with `email_confirm: true`) and then inserts the `profiles` row. Do **not** replace this with raw SQL against `auth.users`: the password must be bcrypted by Supabase and newer versions also need a matching `auth.identities` row, whose absence shows up as "the account exists but cannot log in". If the `profiles` insert fails the auth user is **deleted again** — a half-created account is worse than none, because its email then blocks a retry. The manual two-step in `supabase-portal-auth.sql` §1b still works and stays documented as the fallback.
+
+The login email is **derived from the phone** (`<phone>@hesap.akademitu.com`) unless one is supplied. Login is by phone, so the email is internal plumbing; deriving it from a column that is already UNIQUE gets uniqueness for free.
+
+**`/api/admin/*` uses `serviceClient()`, and that is deliberate — it is the exception the three-client rule did not anticipate.** `portal.ts` and `teacher.ts` avoid the service role so that a routing bug still cannot cross a user boundary. In the admin panel there is no boundary to cross: listing every student, assigning any lesson and setting any fee *is* the job, so RLS has nothing left to filter. Account creation needs the service role regardless. The consequence is that **the role gate is the entire boundary** — `requireSession` + `requireUserType("admin")`, with the role re-read from `profiles` on every request and unchangeable by the user (`profiles_update_own` pins it). Two things follow: every admin write is written to `audit_log`, since that is the only remaining record of what happened; and a missing `.eq("id", …)` in that file updates *every* row, because nothing downstream will catch it.
+
+**The first admin was made by promoting the existing profile** (`update profiles set user_type='admin'`), not by touching `auth.users`. A chicken-and-egg otherwise: the panel that creates accounts is itself behind the admin role. Note the gate accepts exactly one role, so that account can no longer open the student panel — `/api/portal/*` returns 403 for it. An admin cannot demote themselves either; the route refuses it so the last admin cannot lock everyone out.
+
+**When the admin assigns a teacher to a lesson, `teacher_name` is written alongside `teacher_id`.** The student panel renders that text column, and it is kept denormalised so a deleted teacher account does not erase who gave the lesson. The route also verifies that the selected people actually hold the roles claimed — `lessons.user_id` only references `auth.users`, so nothing in the database stops a teacher being filed as the student.
 
 **CSRF and origin checks.** The `ALLOWED_ORIGINS` check in `server.ts` is **not** CSRF protection — it only inspects `Origin` when present and waves the request through when absent. Real protection is `requireTrustedOrigin` (`server/security.ts`), mounted on **both `/api/auth` and `/api/leads*`**: on state-changing methods `Origin` is **mandatory**, which is safe because browsers always send it on POST. A double-submit token was considered and rejected as redundant next to `sameSite=lax`. When `ALLOWED_ORIGINS` is unset it falls back to the request's own host, which is why production works without it — but set it anyway.
 

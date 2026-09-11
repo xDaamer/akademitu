@@ -1,5 +1,5 @@
 /*
- * ÖĞRETMEN PANELİ — HTTP / YETKİLENDİRME TESTLERİ
+ * PANELLER — HTTP / YETKİLENDİRME TESTLERİ (öğretmen + öğrenci + yönetim)
  * ============================================================================
  * Bu betik ROL KAPISINI ve route'ların döndürdüğü durum kodlarını ölçüyor.
  * RLS tarafı ayrı test ediliyor (supabase-teacher-panel-tests.sql) ve ikisi
@@ -14,7 +14,7 @@
  * KULLANIM
  * ----------------------------------------------------------------------------
  *   npm run dev            (ayrı bir terminalde)
- *   npx tsx scripts/test-teacher-panel.ts \
+ *   npx tsx scripts/test-panels.ts \
  *     --base http://localhost:3000 \
  *     --teacher 05xxxxxxxxx:sifre \
  *     --student 05xxxxxxxxx:sifre
@@ -206,6 +206,21 @@ async function calistir() {
   );
 
   /*
+   * YÖNETİM KAPISI. Bu testler diğerlerinden daha çok şey ölçüyor:
+   * /api/admin/* servis rolüyle çalıştığı için RLS orada emniyet ağı DEĞİL —
+   * bu 403'ler sınırın kendisi. Biri geçerse tüm öğrenci verisi açılır.
+   */
+  for (const [m, yol] of [
+    ['GET', '/api/admin/ozet'],
+    ['GET', '/api/admin/dersler'],
+    ['GET', '/api/admin/odemeler'],
+    ['POST', '/api/admin/hesaplar'],
+  ] as const) {
+    const r = await istek(ogretmen, yol, m === 'GET' ? {} : { method: m, body: {} });
+    kontrol(`Öğretmen -> ${m} ${yol} ENGELLENİYOR (403)`, r.status === 403, `${r.status}`);
+  }
+
+  /*
    * DERS DÖNGÜSÜ: planlı ders -> "işlendi" -> yorum -> geri al.
    * Bu akış /schedule'ın döndürdüğü derslerle çalışıyor; ayrı bir
    * "tamamlananlar" ucu yok (panel de tek uçtan besleniyor).
@@ -370,10 +385,20 @@ async function calistir() {
     `${ogrenciIsaretleme.status}`,
   );
 
+  for (const [m, yol] of [
+    ['GET', '/api/admin/ozet'],
+    ['POST', '/api/admin/hesaplar'],
+    ['POST', '/api/admin/odemeler'],
+  ] as const) {
+    const r = await istek(ogrenci, yol, m === 'GET' ? {} : { method: m, body: {} });
+    kontrol(`Öğrenci -> ${m} ${yol} ENGELLENİYOR (403)`, r.status === 403, `${r.status}`);
+  }
+
   /* --------------------------------------------------------- OTURUMSUZ */
   console.log('\nOturumsuz:');
   const bos = new Kavanoz();
-  for (const yol of ['/api/portal/ozet', '/api/portal/yorumlar', '/api/teacher/schedule']) {
+  for (const yol of ['/api/portal/ozet', '/api/portal/yorumlar', '/api/teacher/schedule',
+                     '/api/admin/ozet', '/api/admin/dersler', '/api/admin/odemeler']) {
     const cevap = await istek(bos, yol);
     kontrol(`Oturumsuz ${yol} -> 401`, cevap.status === 401, `${cevap.status}`);
   }

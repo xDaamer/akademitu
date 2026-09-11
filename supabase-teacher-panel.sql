@@ -495,10 +495,16 @@ DROP FUNCTION IF EXISTS public.ogrencim_mi(UUID);
 
 
 -- =========================================================================
--- ÖĞRETMEN HESABI AÇMA — ELLE, TEK YOL BUDUR
+-- ÖĞRETMEN HESABI AÇMA — ELLE (ARTIK YEDEK YOL)
 -- =========================================================================
--- Kayıt ekranı ve /api/auth/signup ucu YOK (bkz. supabase-portal-auth.sql
--- §1b). Öğretmen hesabı da aynı iki adımla açılır, tek farkı user_type:
+-- 2026-09-11'den beri hesapları YÖNETİM PANELİ açıyor (/yonetim): sunucu
+-- Supabase Admin API'sini çağırıp profiles satırını da yazıyor, tek adımda
+-- ve profil yazılamazsa auth kullanıcısını geri alarak
+-- (bkz. server/routes/admin.ts).
+--
+-- Aşağıdaki elle yöntem YEDEK olarak duruyor: panele girebilecek bir admin
+-- kalmadığında ya da yeni bir ortam kurarken ilk hesabı açmanın tek yolu bu.
+-- Kayıt ekranı ve /api/auth/signup ucu hâlâ YOK.
 --
 -- ADIM 1 — Authentication > Users > "Add user" > "Create new user"
 --            Email: ogretmen@ornek.com, güçlü şifre,

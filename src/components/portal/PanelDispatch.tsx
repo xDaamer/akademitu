@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { teacherPanelPath } from '../../lib/host';
+import { teacherPanelPath, adminPanelPath } from '../../lib/host';
 import { PortalDashboardPage } from '../../pages/PortalDashboardPage';
 
 /*
@@ -31,15 +31,19 @@ export const PanelDispatch: React.FC = () => {
     return <Navigate to={teacherPanelPath()} replace />;
   }
 
+  if (user.userType === 'admin') {
+    return <Navigate to={adminPanelPath()} replace />;
+  }
+
   if (user.userType === 'student') {
     return <PortalDashboardPage />;
   }
 
   /*
-   * 'admin' için panel HENÜZ YOK, rolü null olan hesabın ise profil satırı
-   * yok. İkisini de öğrenci paneline sokmak yanlış veriyi göstermek olurdu;
-   * 404 ise "böyle bir sayfa yok" der, oysa sayfa var — erişilecek bir panel
-   * yok. Aradaki fark kullanıcı için anlamlı.
+   * Buraya yalnızca rolü NULL olan (profil satırı silinmiş) hesap düşer.
+   * Öğrenci paneline sokmak yanlış veriyi göstermek olurdu; 404 ise "böyle
+   * bir sayfa yok" der, oysa sayfa var — erişilecek bir panel yok. Aradaki
+   * fark kullanıcı için anlamlı.
    */
   return (
     <div className="flex min-h-dvh items-center justify-center bg-slate-50 px-4">

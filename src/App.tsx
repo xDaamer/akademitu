@@ -15,11 +15,12 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { PortalLoginPage } from './pages/PortalLoginPage';
 import { TeacherDashboardPage } from './pages/TeacherDashboardPage';
 import { StudentCommentsPage } from './pages/StudentCommentsPage';
+import { AdminPanelPage } from './pages/AdminPanelPage';
 import { RequireAuth } from './components/portal/RequireAuth';
 import { RequireRole } from './components/portal/RequireRole';
 import { PanelDispatch } from './components/portal/PanelDispatch';
 import { CrossHostRedirect } from './components/CrossHostRedirect';
-import { routingMode, panelHref, teacherPanelHref, loginHref } from './lib/host';
+import { routingMode, panelHref, teacherPanelHref, adminPanelHref, loginHref } from './lib/host';
 import { Button } from './components/ui/Button';
 
 /*
@@ -307,6 +308,21 @@ export default function App() {
               </RequireAuth>
             }
           />
+          {/*
+            YÖNETİM PANELİ. RequireRole yine bir güvenlik sınırı DEĞİL —
+            /api/admin/* servis rolüyle çalıştığı için oradaki
+            requireUserType("admin") sınırın tamamı.
+          */}
+          <Route
+            path="/yonetim"
+            element={
+              <RequireAuth>
+                <RequireRole allow="admin">
+                  <AdminPanelPage />
+                </RequireRole>
+              </RequireAuth>
+            }
+          />
           {/* Eski yollar bu host'a da düşebilir (yer imi, elle yazım). */}
           <Route path="/panel" element={<Navigate to="/" replace />} />
           <Route path="/portal" element={<Navigate to="/" replace />} />
@@ -382,6 +398,9 @@ export default function App() {
           {mode !== 'both' && (
             <Route path="/yorumlar" element={<CrossHostRedirect to={panelHref()} />} />
           )}
+          {mode !== 'both' && (
+            <Route path="/yonetim" element={<CrossHostRedirect to={adminPanelHref()} />} />
+          )}
 
           {/* Ders yorumlarının 'both' modundaki karşılığı. */}
           <Route
@@ -395,6 +414,22 @@ export default function App() {
                 </RequireAuth>
               ) : (
                 <CrossHostRedirect to={panelHref()} />
+              )
+            }
+          />
+
+          {/* Yönetim panelinin 'both' modundaki karşılığı. */}
+          <Route
+            path="/panel/yonetim"
+            element={
+              mode === 'both' ? (
+                <RequireAuth>
+                  <RequireRole allow="admin">
+                    <AdminPanelPage />
+                  </RequireRole>
+                </RequireAuth>
+              ) : (
+                <CrossHostRedirect to={adminPanelHref()} />
               )
             }
           />

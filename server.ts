@@ -15,6 +15,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "./server/routes/auth.js";
 import portalRouter from "./server/routes/portal.js";
 import teacherRouter from "./server/routes/teacher.js";
+import adminRouter from "./server/routes/admin.js";
 import { serviceClient, describeConfiguration } from "./server/supabase.js";
 import { requireTrustedOrigin, isRateLimited, recordAttempt } from "./server/security.js";
 
@@ -174,6 +175,14 @@ app.use("/api/portal", requireTrustedOrigin, portalRouter);
  * sonra RLS (öğretmen yalnızca teacher_id'si kendisi olan dersleri görür).
  */
 app.use("/api/teacher", requireTrustedOrigin, teacherRouter);
+
+/*
+ * Yönetim paneli. Diğer iki panelden FARKLI bir yetki modeli: bu modül
+ * servis rolüyle çalışıyor (hesap açmanın başka yolu yok) ve dolayısıyla
+ * RLS emniyet ağı devrede DEĞİL — sınırın tamamı requireUserType("admin").
+ * Gerekçesi server/routes/admin.ts'in başında.
+ */
+app.use("/api/admin", requireTrustedOrigin, adminRouter);
 
 // API Routes
 app.get("/api/health", (_req, res) => {

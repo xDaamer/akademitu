@@ -48,6 +48,17 @@ export type AuditAction =
      Görüntüleme olaylarından farklı olarak bunun geriye dönük cevabı
      başka hiçbir yerde yok — lessons.status yalnızca son hâli tutuyor. */
   | "LESSON_STATUS_CHANGED"
+  /* Yönetim paneli. Bu olaylar diğerlerinden DAHA ÖNEMLİ: /api/admin/*
+     servis rolüyle çalışıyor, yani RLS emniyet ağı orada yok ve yapılan
+     işin geriye dönük tek kaydı burası (bkz. server/routes/admin.ts).
+     Detaya asla şifre ya da ödeme tutarı yazılmaz. */
+  | "ADMIN_ACCOUNT_CREATED"
+  | "ADMIN_ACCOUNT_UPDATED"
+  | "ADMIN_PASSWORD_RESET"
+  | "ADMIN_LESSON_WRITE"
+  | "ADMIN_LESSON_DELETED"
+  | "ADMIN_PAYMENT_WRITE"
+  | "ADMIN_PAYMENT_DELETED"
   | "FORBIDDEN_ROLE";
 
 function clientIp(req: Request): string {
