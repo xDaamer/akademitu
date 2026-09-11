@@ -97,6 +97,27 @@ function clientIp(req: Request): string {
  * Sınır aşıldıysa true döner ve yanıtı kendisi yazar.
  * Veritabanına ulaşılamazsa isteği GEÇİRİR (fail-open): sayaç yüzünden
  * girişin tamamen kapanması, sınırın gevşemesinden daha kötü bir arıza.
+ *
+ * YALNIZCA BAŞARISIZ DENEMELER SAYILIR — bu bir düzeltme, bir gevşetme değil.
+ * ---------------------------------------------------------------------------
+ * Sayaç eskiden o IP'ye ait BÜTÜN satırları sayıyordu ve `success` alanına hiç
+ * bakmıyordu. Sonuç: doğru şifreyle arka arkaya giren biri de kilitleniyordu.
+ * Yönetici panelini kullanan ya da testi birkaç kez koşturan biri için bu
+ * günlük bir arıza — ve korumaya hiçbir katkısı yok, çünkü kaba kuvvet
+ * saldırısını oluşturan şey BAŞARISIZ denemelerdir.
+ *
+ * Başarılı girişleri saymamak saldırgana bir şey kazandırmıyor: saldırganın
+ * elinde doğru şifre yok, dolayısıyla ürettiği her satır başarısız ve hepsi
+ * sayılmaya devam ediyor. Sınır (15 dakikada 10 başarısız) olduğu gibi duruyor.
+ *
+ * NEDEN "DOĞRU ŞİFRE GELİNCE KİLİDİ DEL" YAPILMADI: kilit, şifre kontrol
+ * edilmeden ÖNCE değerlendiriliyor — zaten koruduğu şey o kontrolün
+ * tekrarlanması. Kilit "şifre doğruysa" delinseydi her deneme yine
+ * değerlendirilir, yani deneme sayısına konan üst sınır tamamen kalkardı ve
+ * bu, en yetkili hesapta sınırsız tahmin demek olurdu.
+ *
+ * `success` NULL da sayılıyor: istek yarıda kalmış demek. Saymazsak bağlantıyı
+ * kasten koparan biri sayacı hiç artırmadan deneme yapabilirdi.
  */
 export async function isRateLimited(
   req: Request,
@@ -116,7 +137,10 @@ export async function isRateLimited(
       .select("id", { count: "exact", head: true })
       .eq("ip", ip)
       .eq("kind", kind)
-      .gt("created_at", since);
+      .gt("created_at", since)
+      /* Lead formunda `success` hiç işlenmiyor (hep NULL), yani orada bu
+         koşul her satırı kapsıyor ve davranış değişmiyor. */
+      .or("success.is.null,success.eq.false");
 
     if (error) {
       console.error("[Auth] hız limiti okunamadı:", error.message);
