@@ -248,8 +248,12 @@ async function calistir() {
   kontrol("8 karakterden kısa şifre ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
 
   /* Kullanıcı adı biçim kuralları — '@' özellikle sınanıyor: e-postayla
-     karışmaması bu özelliğin tanımının parçası. */
-  for (const kotu of ["ab", "COKBUYUK", "kullanici@ornek.com", "boşluk var", "a".repeat(31)]) {
+     karışmaması bu özelliğin tanımının parçası.
+     BÜYÜK HARF BU LİSTEDE DEĞİL, bilerek: kullanıcı adı küçültülerek
+     saklanıyor ve girişte de küçültülüyor, yani "AHMET" reddedilmez,
+     "ahmet"e çevrilir. Reddetmek, girişte büyük harfi kabul edip açılışta
+     etmemek olurdu. Normalleştirme aşağıda ayrıca sınanıyor. */
+  for (const kotu of ["ab", "kullanici@ornek.com", "boşluk var", "a".repeat(31)]) {
     const x = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
       method: "POST",
       body: {
@@ -274,6 +278,36 @@ async function calistir() {
     },
   });
   kontrol("Aynı kullanıcı adıyla ikinci hesap ENGELLENİYOR (409)", r.status === 409, `${r.status}`);
+
+  /* BÜYÜK HARF KÜÇÜLTÜLÜYOR. Düzenleme ucundan sınanıyor, açma ucundan
+     değil: açma her seferinde bir hesap daha yaratır ve panelde hesap silme
+     olmadığı için testin arkasında birikirdi. */
+  if (ogretmenId) {
+    const buyukAd = `BUYUK.${DAMGA}`;
+    r = await istek(yonetici.kavanoz, `/api/admin/hesaplar/${ogretmenId}`, {
+      method: "PATCH",
+      body: { username: buyukAd },
+    });
+    kontrol(
+      "Büyük harfli kullanıcı adı KABUL EDİLİP küçültülüyor",
+      r.status === 200 && r.body?.account?.username === buyukAd.toLowerCase(),
+      `${r.status} -> ${r.body?.account?.username}`,
+    );
+
+    /* Boş string = kaldır; sonra asıl adı geri koy. */
+    r = await istek(yonetici.kavanoz, `/api/admin/hesaplar/${ogretmenId}`, {
+      method: "PATCH",
+      body: { username: "" },
+    });
+    kontrol("Boş değer kullanıcı adını KALDIRIYOR", r.status === 200 && r.body?.account?.username === null,
+      `${r.status} -> ${r.body?.account?.username}`);
+
+    r = await istek(yonetici.kavanoz, `/api/admin/hesaplar/${ogretmenId}`, {
+      method: "PATCH",
+      body: { username: URETILEN.teacherUsername },
+    });
+    kontrol("Kullanıcı adı geri konuldu", r.status === 200, `${r.status}`);
+  }
 
   r = await istek(yonetici.kavanoz, "/api/admin/ozet");
   const beklenen = oncekiSayi + (ogretmenId ? 1 : 0) + (ogrenciId ? 1 : 0);

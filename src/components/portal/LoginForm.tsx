@@ -190,7 +190,7 @@ export const LoginForm: React.FC = () => {
             if (errors.username) setErrors((prev) => ({ ...prev, username: undefined }));
           }}
           error={errors.username}
-          hint="Harf, rakam, nokta, alt çizgi ve tire · 3-30 karakter"
+          hint="3-30 karakter · büyük/küçük harf farketmez"
           placeholder="kullanici.adi"
           /* autoCapitalize/spellCheck kapalı: mobil klavye ilk harfi büyütüp
              kullanıcı adını bozardı. Sunucu zaten küçültüyor ama kişi yazdığı

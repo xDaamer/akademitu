@@ -137,7 +137,7 @@ export const AdminAccounts: React.FC<{
           */}
           <Alan
             etiket="Kullanıcı adı (isteğe bağlı)"
-            ipucu="Küçük harf, rakam, . _ - · 3-30 karakter"
+            ipucu="3-30 karakter · harf, rakam, . _ - · büyük harfler küçüğe çevrilir"
           >
             <Girdi
               value={form.username}
