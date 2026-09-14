@@ -14,7 +14,8 @@
     "lint": "tsc --noEmit",
     "test:panels": "tsx scripts/test-panels.ts",
     "prepare": "husky",
-    "blog:check": "tsx scripts/blog/check.ts"
+    "blog:check": "tsx scripts/blog/check.ts",
+    "postbuild": "tsx scripts/blog/build.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
@@ -36,12 +37,16 @@
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^4.17.21",
+    "@types/markdown-it": "^14.2.0",
+    "@types/markdown-it-container": "^4.0.1",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
     "husky": "^9.1.7",
     "js-yaml": "^5.4.2",
     "lint-staged": "^16.4.0",
+    "markdown-it": "^15.0.2",
+    "markdown-it-container": "^4.0.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"

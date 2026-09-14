@@ -163,6 +163,9 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 text-center sm:text-left">
           <p>© {new Date().getFullYear()} akademITU. Tüm hakları saklıdır.</p>
           <div className="flex items-center gap-4">
+            {/* Blog statik olarak üretiliyor ve router'ın route ağacında yok;
+                <Link> yerine düz <a> (bkz. Header.tsx'teki uzun not). */}
+            <a href="/blog" className={linkClass}>Blog</a>
             <Link to="/gizlilik-politikasi" className={linkClass}>Gizlilik Politikası</Link>
             <Link to="/kullanim-kosullari" className={linkClass}>Kullanım Koşulları</Link>
             {/* text-slate-500 lacivert zeminde 2.82:1 kontrast veriyordu

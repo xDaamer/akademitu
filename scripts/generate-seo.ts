@@ -58,6 +58,13 @@ Allow: /
 # Sunucu uçları taranmasın (SPA rewrite dışında kalan tek alan).
 Disallow: /api/
 
+# Blog arama ve önizleme adresleri dizine girmemeli. AI tarayıcıları
+# (GPTBot, PerplexityBot, ClaudeBot, Google-Extended) BİLEREK engellenmiyor:
+# AI arama sonuçlarında alıntılanmak istiyoruz.
+Allow: /blog
+Disallow: /blog/ara
+Disallow: /blog/onizleme
+
 Sitemap: ${need.site.domain}/sitemap.xml`;
 
 fs.writeFileSync(

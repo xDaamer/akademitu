@@ -130,6 +130,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                 </Button>
               );
             })}
+
+            {/*
+              BLOG BİR BÖLÜM DEĞİL, AYRI BİR SAYFA — bu yüzden navItems'ın
+              içinde değil ve onClick/preventDefault YOK.
+
+              /blog build sırasında statik HTML olarak üretiliyor
+              (scripts/blog/build.ts) ve react-router'ın route ağacında hiç
+              yer almıyor. <Link> ya da preventDefault kullanılsaydı router
+              eşleşme bulamayıp 404 bileşenini gösterirdi; gereken şey tam
+              sayfa gezinmesi, yani düz bir href.
+            */}
+            <Button href="/blog" variant="ghost" size="sm" className="relative text-sm">
+              Blog
+            </Button>
           </nav>
 
           {/* SAĞ: GİRİŞ, CTA VE MOBİL MENÜ TETİKLEYİCİSİ */}
@@ -301,6 +315,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                     </a>
                   );
                 })}
+
+                {/* Masaüstündeki Blog bağlantısının mobil karşılığı; aynı
+                    gerekçeyle düz href (bkz. yukarıdaki not). */}
+                <a
+                  href="/blog"
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-left text-base font-medium text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059]"
+                >
+                  Blog
+                </a>
               </nav>
 
               <div className="border-t border-slate-100 p-4 shrink-0 space-y-2">
