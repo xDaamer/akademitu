@@ -248,7 +248,7 @@ export function analyzeBody(markdown: string): BodyAnalysis {
  * ----------------------------------------------------------------------- */
 export function splitSentences(text: string): string[] {
   return text
-    .split(/(?<=[.!?])\s+(?=[A-ZÇĞİÖŞÜ])/u)
+    .split(/(?<=[.!?])\s+(?=["“(«]?[A-ZÇĞİÖŞÜ])/u)
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 }
