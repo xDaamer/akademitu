@@ -48,6 +48,25 @@ import need from "../need.json" with { type: "json" };
  * kopyalayıp kök sitemap'i bir index dosyasına çeviriyor. Araya "yardımcı
  * olmak için" bir yazma eklemek o zinciri sessizce bozar.
  *
+ * vercel.json'DAKİ REWRITE SIRASI — BURAYLA BİRLİKTE OKUNMALI
+ * ---------------------------------------------------------------------------
+ * Vercel ilk eşleşen rewrite kuralını uyguluyor ve sıra taşıyıcı:
+ *
+ *   1. /api/(.*)                      -> fonksiyon
+ *   2. portal host'undaki her şey     -> /app.html   (boş kabuk)
+ *   3. /login, /panel*, /portal*      -> /app.html
+ *   4. geriye kalan her şey           -> /404.html   (statik noindex)
+ *
+ * Eskiden tek bir kural vardı ve her şeyi /index.html'e yolluyordu. O zaman
+ * zararsızdı çünkü index.html boş bir kabuktu; artık ana sayfanın tam içeriği,
+ * yani aynı kural panel açılışlarında pazarlama sayfasını çizer ve var olmayan
+ * adreslere "index, follow" ile ana sayfayı döndürürdü.
+ *
+ * DİKKAT: vercel.json şema doğrulamasından geçiyor ve TANIMSIZ ÜST DÜZEY
+ * ANAHTAR KABUL ETMİYOR. Bu açıklama oraya bir "_not" alanı olarak konmuştu ve
+ * dağıtım "should NOT have additional property" ile build'e hiç başlamadan
+ * düştü (2026-09-15). O dosyaya yorum da eklenemez — açıklama bu yüzden burada.
+ *
  * BİLİNEN SINIRLAR (eksiklik değil, bilinçli takas)
  * ---------------------------------------------------------------------------
  * 1) TestimonialsSection `isLoading: true` ile başlıyor ve yorumları

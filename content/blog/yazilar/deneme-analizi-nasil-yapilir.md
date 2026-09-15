@@ -44,7 +44,11 @@ Analizin kazandırdığı şey, çalışmanın yönünü değiştirmesi. Analiz 
 öğrenci çalışmaya kaldığı yerden devam ediyor; analiz yapıldığında en çok
 kaybettiği yerden devam ediyor.
 
-## Adım 1 — Yanlışları sebebe göre ayır
+## Analiz adım adım nasıl yapılır?
+
+Beş adım var ve dördüncüsüne kadar gelmeden analiz tamamlanmış sayılmıyor: yanlışı sebebine ayırmak tek başına bilgi verir, ama o bilgi bir sonraki haftanın planına yazılmazsa hiçbir şey değişmez.
+
+### Adım 1 — Yanlışları sebebe göre ayır
 
 Bu, analizin en önemli adımı ve en çok atlanan kısmı.
 
@@ -66,7 +70,7 @@ Bu ayrımı yapmanın en kolay yolu şu soruyu sormak: **çözümü gördüğüm
 "tabii ya" mı diyorum, yoksa "bunu hiç bilmiyorum" mu?** Birincisi dikkat,
 ikincisi bilgi.
 
-## Adım 2 — Boşları ayrı değerlendir
+### Adım 2 — Boşları ayrı değerlendir
 
 Boş bırakılan sorular yanlışlardan farklı bir bilgi veriyor ve ayrı sayılmalı.
 
@@ -80,7 +84,7 @@ kullanılamıyor.
 Emin olunamayan sorularda eleme yapılabiliyorsa işaretlemek matematiksel olarak
 avantajlı. İki şıkkı eleyebilen bir öğrenci için boş bırakmak net kaybı.
 
-## Adım 3 — Tekrar eden kalıpları bul
+### Adım 3 — Tekrar eden kalıpları bul
 
 Tek bir denemenin anlamı sınırlı. Asıl bilgi, birkaç deneme üst üste
 bakıldığında ortaya çıkıyor.
@@ -95,7 +99,7 @@ Aranacak kalıplar şunlar:
 Son madde çoğu öğrencinin fark etmediği bir kalıp. Denemenin ilk yarısında
 yanlış oranı düşük, ikinci yarısında yükseliyorsa sorun konu değil dayanıklılık.
 
-## Adım 4 — Tekrar planına yaz
+### Adım 4 — Tekrar planına yaz
 
 Analiz, bir sonraki haftanın planını değiştirmiyorsa yapılmamış sayılır.
 
@@ -114,6 +118,25 @@ Süre kaynaklı yanlışlar için ise ayrı bir çalışma gerekiyor: süreli so
 Planın nasıl güncelleneceği
 [haftalık çalışma programı nasıl hazırlanır](/blog/haftalik-calisma-programi-nasil-hazirlanir)
 yazısında ayrıca ele alınıyor.
+
+### Adım 5 — Doğru ölçütle takip et
+
+İlerlemeyi toplam netle takip etmek yanıltıcı. Toplam net, testler arasındaki
+ters yönlü değişimleri gizliyor.
+
+Takip edilecek şeyler:
+
+- **Test bazlı net**, her deneme için ayrı ayrı
+- **Sebep dağılımı**: bilgi eksiği yanlışları azalıyor mu
+- **Boş sayısı**: düşüyorsa konu kapsama alanı genişliyor demektir
+- **Süre kaynaklı yanlışlar**: azalıyor mu
+
+Bu dördü bir tabloda tutulduğunda, birkaç deneme sonra eğilim net biçimde
+görünüyor.
+
+Farklı yayınların denemelerini karşılaştırmak ise anlamlı değil. Zorluk
+seviyeleri farklı olduğu için iki yayının neti kıyaslanamıyor. Aynı seriyle
+devam etmek, gelişimi görmenin en temiz yolu.
 
 ## Örnek: bir TYT denemesinin analizi
 
@@ -187,25 +210,6 @@ kuruluyor.
 
 Üç deneme üst üste düşüş varsa o zaman yapısal bir sorun aranır. Bir denemede
 düşüş, dalgalanmadır.
-
-## Adım 5 — Doğru ölçütle takip et
-
-İlerlemeyi toplam netle takip etmek yanıltıcı. Toplam net, testler arasındaki
-ters yönlü değişimleri gizliyor.
-
-Takip edilecek şeyler:
-
-- **Test bazlı net**, her deneme için ayrı ayrı
-- **Sebep dağılımı**: bilgi eksiği yanlışları azalıyor mu
-- **Boş sayısı**: düşüyorsa konu kapsama alanı genişliyor demektir
-- **Süre kaynaklı yanlışlar**: azalıyor mu
-
-Bu dördü bir tabloda tutulduğunda, birkaç deneme sonra eğilim net biçimde
-görünüyor.
-
-Farklı yayınların denemelerini karşılaştırmak ise anlamlı değil. Zorluk
-seviyeleri farklı olduğu için iki yayının neti kıyaslanamıyor. Aynı seriyle
-devam etmek, gelişimi görmenin en temiz yolu.
 
 ## Analiz defteri nasıl tutulur?
 

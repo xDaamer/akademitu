@@ -65,7 +65,7 @@ sürecini, seçenekleri bilmek. Bu, çocuğun taşıdığı bilişsel yükün bi
 
 Bu üç başlığın hiçbiri "kaç saat çalıştığını takip etmek" değil.
 
-## Yapılması gerekenler
+### Yapılması gerekenler
 
 - **Süreci sorun, sonucu değil.** "Bugün hangi konuyu çalıştın" sorusu, "kaç net
   yaptın" sorusundan hem daha az baskı üretiyor hem daha çok bilgi veriyor.
@@ -80,7 +80,7 @@ Bu üç başlığın hiçbiri "kaç saat çalıştığını takip etmek" değil.
 - **Plan B'yi konuşun.** "Kazanamazsan ne olur" sorusunun somut bir cevabı
   olması, o düşüncenin taşıdığı ağırlığı azaltıyor.
 
-## Kaçınılması gerekenler
+### Kaçınılması gerekenler
 
 - **Karşılaştırma.** Kardeş, kuzen, komşu çocuğu ya da sosyal medyadaki net
   paylaşımları. Karşılaştırma motivasyon üretmiyor; yetersizlik hissi üretiyor.
@@ -95,7 +95,7 @@ Bu üç başlığın hiçbiri "kaç saat çalıştığını takip etmek" değil.
 - **Sosyal hayatı tamamen kesmek.** Tamamen izole edilen bir öğrencide süreç
   birkaç ay içinde tamamen duruyor.
 
-## Örnek diyalog
+### Örnek diyalog
 
 Aynı durumda iki farklı konuşma. Fark, cümlelerin uzunluğunda değil neye
 odaklandığında.

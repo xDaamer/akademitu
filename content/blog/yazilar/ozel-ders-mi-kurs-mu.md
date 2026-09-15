@@ -49,7 +49,7 @@ göre ayarlanıyor; kursta sınıfın ortalamasına göre.
 
 Bu tek fark, iki seçeneğin kime uygun olduğunu büyük ölçüde açıklıyor.
 
-## Özel dersin avantajları ve sınırları
+### Özel dersin avantajları ve sınırları
 
 **Avantajları:**
 
@@ -76,7 +76,7 @@ Son madde az konuşulan ama önemli bir risk. Özel derste öğrencinin kendi
 başına zorlanma payı korunmalı; aksi hâlde derste her şey anlaşılıyor ama
 sınavda hiçbiri çıkmıyor.
 
-## Kursun avantajları ve sınırları
+### Kursun avantajları ve sınırları
 
 **Avantajları:**
 
@@ -198,7 +198,7 @@ başlangıç seviyesine ve o günkü performansına bağlı; bunların hiçbiri 
 verenin kontrolünde değil. Sonuç vaat eden bir yaklaşımdan uzak durmakta
 fayda var.
 
-## Karar verilemiyorsa ne yapmalı?
+### Karar verilemiyorsa ne yapmalı?
 
 Bazen sorun seçenekler arasında değil, sorunun yanlış tanımlanmasında.
 
@@ -218,7 +218,7 @@ Kaygı kaynaklı bir tıkanma söz konusuysa tablo yine değişiyor; bu durumda 
 [Sınav kaygısı nasıl yenilir](/blog/sinav-kaygisi-nasil-yenilir) yazısı bu
 ayrımı ele alıyor.
 
-## Kararı kim vermeli?
+### Kararı kim vermeli?
 
 Bu kararın kimin verdiği, hangi seçeneğin seçildiği kadar önemli ve çoğu zaman
 atlanıyor.
@@ -240,7 +240,7 @@ Bu kararın evde nasıl konuşulacağı da ayrı bir konu.
 [Sınav döneminde veli ne yapmalı](/blog/sinav-doneminde-veli-ne-yapmali)
 yazısı bu tür konuşmaların hangi biçimde işe yaradığını örneklerle ele alıyor.
 
-## Ne zaman değişiklik yapılmalı?
+### Ne zaman değişiklik yapılmalı?
 
 Alınan hizmetten verim alınamıyorsa, bunu fark etmek için sınav sonunu beklemek
 gerekmiyor.

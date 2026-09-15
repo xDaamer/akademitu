@@ -49,7 +49,11 @@ günün yedisi dolu olan bir planda tek bir aksama tüm haftayı deviriyor.
 Bu üçünün ortak noktası, planın gerçek hayatı hesaba katmaması. İyi bir program
 ideal bir haftayı değil, ortalama bir haftayı tarif ediyor.
 
-## Adım 1 — Gerçek kapasiteyi ölç
+## Program adım adım nasıl kurulur?
+
+Altı adım var ve sırası önemli. Kapasiteyi ölçmeden ders dağıtmak, programın çökmesinin en yaygın sebebi: önce elinizdeki gerçek zamanı bulun, sonra o zamanı paylaştırın.
+
+### Adım 1 — Gerçek kapasiteyi ölç
 
 Program yazmadan önce bir hafta boyunca ölçüm yapın. Tahmin etmeyin, kaydedin.
 
@@ -62,7 +66,7 @@ gerçek sayısı genelde iki buçuk civarında çıkıyor.
 Bu sayı programın temeli. Ölçülen kapasitenin üstünde bir plan yazmak, plana
 baştan uymamayı garanti ediyor.
 
-## Adım 2 — Sabit blokları çıkar
+### Adım 2 — Sabit blokları çıkar
 
 Haftanın tamamı size ait değil. Önce size ait olmayan zamanı çıkarın:
 
@@ -78,7 +82,7 @@ dinlenme, plansız bir çöküşten iyi.
 
 Geriye kalan süre, gerçekten dağıtabileceğiniz süre.
 
-## Adım 3 — Dersleri soru sayısına göre dağıt
+### Adım 3 — Dersleri soru sayısına göre dağıt
 
 Ders dağılımında tek bir ölçüt işe yarıyor: o dersin sınavdaki ağırlığı.
 
@@ -95,7 +99,7 @@ Ancak bu artış, iyi olunan dersi sıfıra indirmemeli.
 dayalı konular, haftada bir gün blok yerine her güne az miktarda dağıtıldığında
 daha iyi çalışıyor.
 
-## Adım 4 — Tekrarı takvime yaz
+### Adım 4 — Tekrarı takvime yaz
 
 Tekrar, planda yeni konu kadar sabit bir yer tutmalı. "Vakit kalırsa" satırında
 yazan bir tekrar yapılmıyor.
@@ -107,7 +111,7 @@ Hangi konunun ne zaman tekrar edileceği aralıklı tekrar mantığına göre
 belirleniyor; [konu tekrarı nasıl yapılır](/blog/konu-tekrari-nasil-yapilir)
 yazısı bu takvimi ayrıntılı anlatıyor.
 
-## Adım 5 — Deneme gününü sabitle
+### Adım 5 — Deneme gününü sabitle
 
 Deneme ve analizi program içinde sabit bir yere oturmalı. Genellikle hafta sonu
 bir gün deneme, ertesi gün analiz.
@@ -117,7 +121,7 @@ Analizi denemeyle aynı güne koymak çoğu zaman işe yaramıyor: üç saat den
 [Deneme analizi nasıl yapılır](/blog/deneme-analizi-nasil-yapilir) yazısı
 analizin nasıl yapılacağını gösteriyor.
 
-## Adım 6 — Boş gün bırak
+### Adım 6 — Boş gün bırak
 
 Haftada bir gün tamamen boş kalmalı. Bu gün tembellik payı değil, telafi alanı.
 
@@ -208,7 +212,7 @@ Haftalık tamamlanma oranı %70'in altına düşüyorsa plan büyük demektir. %
 
 Bu oranı birkaç hafta takip etmek, doğru kapasiteyi bulmanın en hızlı yolu.
 
-## Ne zaman program değiştirilmeli?
+### Ne zaman program değiştirilmeli?
 
 Program her hafta baştan yazılmamalı. Omurga — hangi gün hangi ders — sabit
 kalmalı; değişen şey içerik olmalı.
@@ -223,7 +227,7 @@ Omurganın değişmesi gereken durumlar:
 Tek bir kötü hafta, programı değiştirmek için yeterli sebep değil. Her kötü
 haftada plan değiştiren bir öğrenci, hiçbir planı yeterince uygulamamış oluyor.
 
-## Sınav dönemine yaklaşırken program nasıl değişir?
+### Sınav dönemine yaklaşırken program nasıl değişir?
 
 Program yıl boyunca aynı kalmıyor; ağırlık üç aşamada kayıyor.
 
