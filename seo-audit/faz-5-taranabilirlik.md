@@ -49,6 +49,40 @@ Sonuçları:
 2. **Kritik içeriği `index.html`'e statik yazmak:** H1, ilk paragraf ve paketlerin özeti elle HTML'e konur, React hydrate edince üzerine biner. Ucuz ama iki kaynağı senkron tutma borcu yaratır.
 3. **SSR'a geçiş:** Tek landing page için aşırı; `server.ts` zaten Vercel'de çalışmıyor (aşağıda K-02).
 
+> ✅ **2026-09-15 — çözüldü. Seçenek 1 (prerender) uygulandı.**
+>
+> `vite build --ssr src/entry-server.tsx` + [scripts/prerender.ts](../scripts/prerender.ts):
+> rotalar build sırasında Node içinde render edilip statik HTML'e basılıyor.
+> Vercel dosya sistemine rewrite'lardan önce baktığı için sayfalar CDN'den
+> geliyor, fonksiyon hiç çalışmıyor — blog üreticisinin dayandığı mekanizmanın
+> aynısı. SSR altyapısı, sunucu ya da çalışma zamanı maliyeti yok, denetimin
+> öngördüğü gibi.
+>
+> Ana sayfada ölçülen fark:
+>
+> | | önce | sonra |
+> |---|---|---|
+> | HTML boyutu | 6 391 B | 62 431 B |
+> | `<h1>` | 0 | 1 |
+> | `<h2>` / `<h3>` | 0 / 0 | 4 / 16 |
+> | iç link | 0 | 15 |
+> | JSON-LD bloğu | 0 | 4 |
+>
+> Yasal sayfalar artık kendi `<title>`, `description` ve canonical'larını ilk
+> byte'ta taşıyor; üçü de birbirinden farklı. JSON-LD `useEffect`'ten JSX'e
+> taşındığı için (App, FAQSection, PackagesSection) statik HTML'de bulunuyor.
+>
+> Bu fazın "**[ÖNEMLİ] Var olmayan her URL 200 + `index, follow` dönüyor**"
+> bulgusu da kapandı: `vercel.json`'ın son rewrite'ı artık `/404.html`'e
+> düşüyor ve o dosya `noindex, follow` taşıyor, canonical taşımıyor — JS
+> çalışmadan. Durum kodu hâlâ 200; o, bu bölümde zaten kabul edilmiş mimari
+> sınır.
+>
+> Bilinen iki sınır [scripts/prerender.ts](../scripts/prerender.ts) başlığında
+> yazılı: yorumlar `useEffect`'te çekildiği için "Velilerimizin Görüşleri" H2'si
+> statik HTML'de yok, ve SSS cevaplarından yalnızca açık olan ilki DOM'da
+> (FAQPage şeması altısını da taşıyor).
+
 **[KRİTİK] | [api/[...path].ts](api/) + [server.ts](server.ts) | `/api/health` canlıda 500 dönüyor — sunucu tarafının tamamı kırık.**
 CLAUDE.md'de `FUNCTION_INVOCATION_FAILED` olarak belgelenen durum canlıda teyit edildi. Doğrudan SEO etkisi sınırlı (form ve yorumlar Supabase'e doğrudan gidiyor), **ancak**:
 - `server.ts`'teki dinamik `/sitemap.xml` ve `/robots.txt` route'ları ([server.ts:130](server.ts#L130), [server.ts:154](server.ts#L154)) hiçbir zaman çalışmıyor. Canlıda servis edilenler `public/` altındaki statik dosyalar. Yani **aynı işi yapan iki kod yolu var, biri ölü**.
@@ -119,7 +153,7 @@ Googlebot `Crawl-delay`'i desteklemez (tarama hızı GSC'den ayarlanır). Bing v
 | Hardcoded `http://` bağlantı | ✅ Yok (tek istisna console.log) |
 | Yönlendirme döngüsü | ✅ Yok |
 | Google Search Console doğrulaması | ✅ [index.html:5](index.html#L5) mevcut |
-| `hreflang` gerekliliği | ✅ Tek dil, tek pazar — gerekmiyor |
+| `hreflang` gerekliliği | ✅ Tek dil, tek pazar — gerçek bir ihtiyaç yok. 2026-09-15'te yine de kendine referans veren `tr` + `x-default` çifti eklendi: dış denetim araçları eksikliğini bulgu olarak raporluyordu. Sıfır riskli bir no-op; gerekçe `scripts/prerender.ts` içinde yazılı. |
 | Sayfalama / faceted URL kirliliği | ✅ Yok |
 
 ---

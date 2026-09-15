@@ -37,6 +37,7 @@
 
 | # | Bulgu | Ne yapıldı |
 |---|---|---|
+| **K-01** | **Her route boş HTML döndürüyordu** — `<div id="root"></div>`, sıfır H1/H2/iç link/JSON-LD. Denetimin en yüksek etkili tek bulgusu ve K-02 ile K-03'ün de kök nedeni. | **2026-09-15 — prerender.** `vite build --ssr` + yeni [prerender.ts](../scripts/prerender.ts) rotaları statik HTML'e basıyor. Ana sayfa 6 391 B → 62 431 B; h1 0→1, h2 0→4, h3 0→16, iç link 0→15, JSON-LD 0→4. Ayrıntı: [faz-5](faz-5-taranabilirlik.md) K-01 çözüm notu. |
 | **K-02** | Alt sayfalar ana sayfanın canonical'ını miras alıyordu | Yeni [PageMeta.tsx](../src/components/PageMeta.tsx): her route kendi canonical/description/robots/OG etiketlerini "upsert" ediyor. Doğrulandı: `/gizlilik-politikasi` → tek canonical, `.../gizlilik-politikasi` |
 | **K-03** | Üç sayfa aynı meta description'ı paylaşıyordu | Aynı bileşen; `need.json`'daki sayfa açıklamaları artık gerçekten kullanılıyor |
 | **K-04** | Canonical/sitemap www'suz, canlı site www'lu | `need.json.site.domain` → `https://www.akademitu.com`. Sitemap, robots.txt, canonical, OG, JSON-LD hepsi tek kaynaktan |
@@ -203,3 +204,54 @@ Bunlar **yerelde** doğrulandı, **canlı deploy'da değil**. Deploy sonrası ş
 ### Not: `/api/*` hâlâ kullanılmıyor
 
 Fonksiyon artık çalışıyor ama frontend ona bağlı değil — lead formu ve yorumlar Supabase'e doğrudan gidiyor, `robots.txt`/`sitemap.xml` statik. Yani bu düzeltme **SEO açısından bir şey değiştirmez**; kırık altyapıyı ve "çalışıyor sanılan ölü kod" durumunu ortadan kaldırır. `/api/*`'ı tamamen silme seçeneği hâlâ masada.
+
+---
+
+## 3. 2026-09-15 — dış denetim aracının bulguları
+
+Bir dış SEO denetim aracı yedi bulgu raporladı. Altısı tek kök nedene, K-01'e
+iniyordu: sunucudan gelen HTML boştu, dolayısıyla araç H1'i, başlık yapısını,
+iç linkleri ve structured data'yı göremiyordu — hepsi React kaynağında vardı.
+
+| Rapor edilen bulgu | Durum |
+|---|---|
+| H1 yok | ✅ K-01 (prerender) — ana sayfada 1 H1 |
+| Başlık yapısı bozuk / H2–H6 red-flag | ✅ K-01 — ana sayfada 4 H2 + 16 H3 |
+| Çok az iç link | ✅ K-01 — 0 → 15 |
+| Title içerikle uyuşmuyor | ✅ K-01 — her rota kendi title/canonical'ını ilk byte'ta taşıyor |
+| Structured data yok | ✅ JSON-LD `useEffect`'ten JSX'e taşındı — 4 blok statik HTML'de |
+| Meta description çok uzun | ⚠️ Rapor yanılıyor: ana sayfa 139 karakter, pencere içinde. **Asıl sorun tersiydi** — gizlilik 55, kullanım koşulları 45 karakterle çok kısaydı; ikisi de yeniden yazıldı (142 / 145) |
+| hreflang yok | ⚠️ Yanlış pozitif ama karşılandı. Tek dil, tek pazar; kendine referans veren `tr` + `x-default` çifti eklendi. Gerçek SEO değeri yok, gerekçe kodda yazılı |
+
+**Blog başlık hiyerarşisi.** "Başlıklar aşırı kullanılmış, seviye atlanmış"
+bulgusunun ikinci kaynağı bloğdu: 10 yazının hepsi düz bir H2 listesiydi,
+H3 hiç yoktu (11–24 arası H2). Gerçekten alt başlık olan bölümler H3'e indirildi;
+dört yazıda bir üst başlık eklendi.
+
+| Yazı | Önce | Sonra |
+|---|---|---|
+| ozel-ders-mi-kurs-mu | 12 H2 | 7 H2 + 5 H3 |
+| sinav-doneminde-veli-ne-yapmali | 11 H2 | 8 H2 + 3 H3 |
+| sinav-kaygisi-nasil-yenilir | 13 H2 | 10 H2 + 4 H3 |
+| konu-tekrari-nasil-yapilir | 14 H2 | 9 H2 + 5 H3 |
+| deneme-analizi-nasil-yapilir | 14 H2 | 10 H2 + 5 H3 |
+| haftalik-calisma-programi | 15 H2 | 8 H2 + 8 H3 |
+| yks-hazirlik-rehberi | 19 H2 | 11 H2 + 8 H3 |
+| egitim-koclugu-nedir | 23 H2 | 14 H2 + 9 H3 |
+| verimli-ders-calisma-rehberi | 24 H2 | 15 H2 + 10 H3 |
+| lgs-hazirlik-rehberi | 24 H2 | 18 H2 + 7 H3 |
+| **toplam** | **169 H2** | **110 H2 + 64 H3** |
+
+Üç not:
+
+1. **Başlık metinleri değişmedi**, yalnızca seviyeleri. Çapa `id`'leri metinden
+   türediği için hiçbir `#bölüm` adresi kırılmadı; yazıların içinde çapa linki
+   de yok (kontrol edildi).
+2. **Altyapı zaten hazırdı ve kullanılmıyordu.** `blog.css`'te `.toc-3` ve
+   `.govde h3` stilleri, `markdown.ts`'te TOC'un H3'ü de alması — üçü de
+   yazılmış ama hiç H3 üretilmediği için ölü duruyordu.
+3. **İçerik sırası bilinçli olarak korundu**, tek istisna dışında:
+   `deneme-analizi`de "Adım 5" diğer dört adımdan üç bölüm sonra duruyordu ve
+   sıraya alındı. `lgs-hazirlik-rehberi` ve `egitim-koclugu-nedir` bu yüzden
+   hâlâ başlık yoğun — daha fazla azaltmak bölümleri yeniden sıralamayı
+   gerektirirdi, o da başlık düzeltmesi değil içerik revizyonu olurdu.

@@ -48,7 +48,7 @@ mümkün değil. Deneme sonuçları değişiyor, bazı konular beklenenden uzun 
 motivasyon dalgalanıyor. Bu değişimleri takip edip planı güncelleyen biri
 olmadığında, plan genellikle ilk aksamada terk ediliyor.
 
-## Eğitim koçluğu ne yapar, ne yapmaz?
+### Eğitim koçluğu ne yapar, ne yapmaz?
 
 Eğitim koçluğu şunları yapar:
 
@@ -70,7 +70,7 @@ Son madde önemli. Sınav sonucu öğrencinin çalışmasına, başlangıç sevi
 o günkü performansına ve sınavın kendisine bağlı. Bunların hiçbiri koçun
 kontrolünde değil.
 
-## Koç ile öğretmen arasındaki fark nedir?
+### Koç ile öğretmen arasındaki fark nedir?
 
 | | Öğretmen | Koç |
 |---|---|---|
@@ -111,7 +111,7 @@ Görüşmenin motivasyon konuşmasına dönüşmemesi önemli. "Yapabilirsin, in
 kendine" cümlesi hiçbir şeyi değiştirmiyor; değiştiren şey somut bir plan ve
 onun takibi.
 
-## Süreç nasıl başlar? İlk görüşme
+### Süreç nasıl başlar? İlk görüşme
 
 İlk görüşme, sonraki her şeyin dayandığı ölçüm. Burada atlanan bir şey aylar
 sonra yanlış kurulmuş bir plan olarak geri geliyor.
@@ -132,7 +132,7 @@ hataya düşmesini engelliyor.
 bir deneme çözülmesi, bir hafta gerçek verinin toplanması gerekiyor. Ölçüm
 yapmadan program veren bir yaklaşım, hazır bir şablonu uyguluyor demektir.
 
-## Program neye göre kişiselleşir?
+### Program neye göre kişiselleşir?
 
 "Kişiye özel program" sık kullanılan bir ifade ama neye göre kişiselleştiği
 çoğu zaman belirsiz. Gerçekte program dört değişkene göre şekilleniyor.
@@ -156,7 +156,7 @@ Bu dört değişkenden herhangi biri değiştiğinde program da değişiyor. Yı
 boyunca aynı kalan bir program, ya baştan çok gevşek yazılmıştır ya da
 uygulanmıyordur.
 
-## Deneme sonuçları koçlukta nasıl okunur?
+### Deneme sonuçları koçlukta nasıl okunur?
 
 Deneme sonucu tek bir sayı değil; doğru okunduğunda birkaç ayrı bilgi veriyor.
 
@@ -184,7 +184,7 @@ Bu okuma biçiminin ayrıntısı
 [deneme analizi nasıl yapılır](/blog/deneme-analizi-nasil-yapilir) yazısında
 adım adım anlatılıyor.
 
-## Haftalık takip neden düzenli olmalı?
+### Haftalık takip neden düzenli olmalı?
 
 Takip aralığı uzadıkça değeri hızla düşüyor ve bunun mekanik bir sebebi var.
 
@@ -287,7 +287,7 @@ kalıyor. Bakılacak birkaç şey var.
 - **Sınırlarını söylüyor mu?** Ne yapmadığını açıkça söyleyen bir koç,
   genellikle ne yaptığını da biliyordur.
 
-## Online koçluk yüz yüze kadar etkili mi?
+### Online koçluk yüz yüze kadar etkili mi?
 
 Koçluğun içeriği konuşma, plan ve veri okuma üzerine kurulu. Bu üçü de ekran
 üzerinden aynı biçimde yapılabiliyor.
@@ -305,7 +305,7 @@ Ortaokul ve lise düzeyinde, düzenli yapıldığı sürece iki biçim arasında
 bir fark gözlenmiyor. Belirleyici olan mecra değil, görüşmelerin düzenliliği ve
 içeriği.
 
-## Ne zaman başlamalı, ne kadar sürer?
+### Ne zaman başlamalı, ne kadar sürer?
 
 Koçluğa başlamak için en uygun zaman dönem başı. Eylül-ekim aylarında kurulan
 bir düzen, yılın tamamına yayılıyor.
@@ -321,7 +321,7 @@ Süre tarafında: programın oturması genellikle üç dört hafta. Net üzerind
 etkinin görülmesi daha uzun sürüyor ve bu süre öğrencinin başlangıç durumuna
 göre değişiyor.
 
-## Sık karşılaşılan yanlış bilgiler
+### Sık karşılaşılan yanlış bilgiler
 
 **"Koçluk sadece başarısız öğrenciler içindir."** Tersine, en çok fayda gören
 grup genellikle çalışan ama yönünü bulamayan öğrenciler.

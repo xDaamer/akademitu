@@ -63,7 +63,7 @@ Dördüncü tekrardan sonra konu "tekrar listesinden" çıkıyor ve yalnızca
 denemeler içinde karşınıza geliyor. Denemede o konudan yanlış yapılırsa liste
 yeniden açılıyor.
 
-## Tekrar nasıl yapılmalı?
+### Tekrar nasıl yapılmalı?
 
 Tekrarın biçimi, aralığından daha önemli.
 
@@ -83,7 +83,7 @@ Bunun üç uygulaması var.
 Üçünün ortak noktası, bilgiyi dışarıdan almak yerine içeriden çıkarmaya
 çalışmak. Zorlandığınız için işe yarıyorlar.
 
-## Hangi konular daha sık tekrar edilmeli?
+### Hangi konular daha sık tekrar edilmeli?
 
 Bütün konular aynı tekrar sıklığını hak etmiyor.
 
@@ -100,7 +100,7 @@ analiz belirliyor.
 [Deneme analizi nasıl yapılır](/blog/deneme-analizi-nasil-yapilir) yazısı bu
 bağlantıyı gösteriyor.
 
-## Örnek: bir haftalık tekrar takvimi
+### Örnek: bir haftalık tekrar takvimi
 
 Aşağıda pazartesi "problemler", çarşamba "mutlak değer" konusunu çalışan bir
 öğrencinin tekrar takvimi var.
@@ -181,7 +181,7 @@ Bu yerleşimin haftalık program içindeki yeri
 [haftalık çalışma programı nasıl hazırlanır](/blog/haftalik-calisma-programi-nasil-hazirlanir)
 yazısında örnek tabloyla gösteriliyor.
 
-## Tekrarı takip etmenin pratik yolları
+### Tekrarı takip etmenin pratik yolları
 
 Konu sayısı arttıkça "hangi konu ne zaman tekrar edilecek" sorusu elle takip
 edilemez hâle geliyor. Birkaç pratik yöntem var.
@@ -200,7 +200,7 @@ uygulamalar var ve konu sayısı fazlaysa elle takipten güvenilir oluyorlar.
 Hangisi seçilirse seçilsin kural aynı: sistem basit olmalı. Takibin kendisi bir
 işe dönüşürse terk ediliyor ve tekrar da onunla birlikte gidiyor.
 
-## Tekrar ne kadar sürmeli?
+### Tekrar ne kadar sürmeli?
 
 Tekrarın uzunluğu, ilk öğrenmeye göre çok kısa olmalı. Bir konuyu ilk kez
 öğrenmek üç dört saat alıyorsa, tekrarı 15-20 dakika alıyor.

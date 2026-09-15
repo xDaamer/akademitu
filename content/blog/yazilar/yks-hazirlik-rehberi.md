@@ -62,7 +62,7 @@ sonunda kullanılmayacak bir teste ay harcamak anlamına gelebiliyor. Kararsız
 kalan bir öğrenci için en güvenli yol, ilk aylarda TYT'ye yüklenip AYT kararını
 ikinci döneme bırakmaktır — çünkü TYT her puan türünde kullanılır.
 
-## Sınav formatı ve puan sistemi nasıl işler?
+### Sınav formatı ve puan sistemi nasıl işler?
 
 | Oturum | Soru sayısı | Süre | Ne ölçer |
 |---|---|---|---|
@@ -93,7 +93,7 @@ yapılamayan soruda ise boş bırakmak doğru karardır.
 > ÖSYM'nin yayımladığı kılavuzlara dayanıyor; başvuru döneminde **güncel yılın
 > kılavuzu esastır**.
 
-## Hangi testten kaç soru geliyor?
+### Hangi testten kaç soru geliyor?
 
 TYT'nin 120 sorusu dört teste dağılır:
 
@@ -146,7 +146,7 @@ Bu üçü netleştikten sonra yapılacak iş, haftalık bir düzen kurmak.
 [Haftalık çalışma programı nasıl hazırlanır](/blog/haftalik-calisma-programi-nasil-hazirlanir)
 yazısı bunun adımlarını ayrı ayrı anlatıyor.
 
-## Hedef net nasıl belirlenir?
+### Hedef net nasıl belirlenir?
 
 "Hedefim tıp" cümlesi bir hedef değil, bir istektir. Hedef, haftalık çalışmayı
 yönlendirebiliyorsa hedeftir; bunun için sayıya çevrilmesi gerekir.
@@ -163,7 +163,7 @@ Taban puanlar her yıl değişir, dolayısıyla geçen yılın verisi bir tahmin
 Sıralamaya bakmak puana bakmaktan daha güvenilirdir: puan enflasyonundan
 etkilenmez.
 
-## Nereden başlamalı? İlk iki hafta
+### Nereden başlamalı? İlk iki hafta
 
 İlk iki hafta konu bitirme haftası değildir. Bu iki haftada üç şey yapılır:
 
@@ -185,7 +185,7 @@ kullanıldığı, hangisinin rafta durduğu bu sürede görülür. Kullanılmaya
 kaldırılır — açık duran fazladan her kaynak, her oturuşta yeniden karar vermek
 demektir.
 
-## Konu sırası nasıl olmalı?
+### Konu sırası nasıl olmalı?
 
 Konu sırasında iki kural işe yarar.
 
@@ -214,7 +214,7 @@ Fen derslerinde konular birbirine zincirlidir; atlanan bir konu sonrakini
 yarım bırakır. Sosyalde ise bu bağ zayıftır, dolayısıyla sosyal konuları sıraya
 sokarken soru getirisi esas alınabilir.
 
-## TYT ve AYT arasında zaman nasıl bölüşülür?
+### TYT ve AYT arasında zaman nasıl bölüşülür?
 
 Bu, hazırlık boyunca en sık sorulan sorulardan biri ve tek bir cevabı yok —
 oran dönem boyunca değişiyor.
@@ -239,7 +239,7 @@ tekrarı ve deneme. Mayısta yeni bir AYT konusuna başlamak, sınavda o konudan
 soru çıkma ihtimalinden çok, mevcut konuların tekrarından çalınan zamanla
 zarar veriyor.
 
-## Haftalık çalışma düzeni nasıl kurulur?
+### Haftalık çalışma düzeni nasıl kurulur?
 
 İşe yarayan bir haftada dört bileşen bulunur:
 
@@ -260,7 +260,7 @@ bir yere yatırılmasıdır.
 Programda bir de boş gün bulunmalı. Boş gün tembellik payı değil, kaçan işlerin
 telafi alanıdır; olmadığında ilk aksama tüm haftayı domino gibi deviriyor.
 
-## Kaynak seçimi nasıl yapılır?
+### Kaynak seçimi nasıl yapılır?
 
 Kaynak sayısı arttıkça verim düşer. İşe yarayan kurulum sadedir: ders başına
 bir konu anlatımı, bir soru bankası, bir deneme seti.

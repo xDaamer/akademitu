@@ -74,7 +74,11 @@ Son maddeyi ayırt etmek önemli. Hazırlık eksikliğinden gelen kaygıyı nefe
 egzersiziyle çözmeye çalışmak işe yaramıyor; orada yapılacak şey planı
 düzeltmek.
 
-## Hazırlık aşamasında ne yapılmalı?
+## Kaygı hangi aşamada nasıl azaltılır?
+
+Kaygıyla baş etmenin üç ayrı zamanı var ve her birinde işe yarayan şey farklı: aylar öncesinde hazırlığın kendisi, son haftada düzen, sınav salonunda ise birkaç dakikalık somut adımlar.
+
+### Hazırlık aşamasında ne yapılmalı?
 
 Kaygıyı azaltmanın en etkili yolu sınav gününde değil, aylar öncesinde
 uygulanıyor.
@@ -94,7 +98,7 @@ somut veriyle karşılaştırma imkânı veriyor.
 **Hedefi parçalayın.** "Tıp kazanmalıyım" tek parça ve ulaşılamaz görünüyor.
 "Bu ay matematik netimi üçe çıkaracağım" ulaşılabilir ve kontrol edilebilir.
 
-## Sınav öncesi son haftada ne yapılmalı?
+### Sınav öncesi son haftada ne yapılmalı?
 
 Son hafta kaygının en yükseldiği dönem ve burada yapılan birkaç şey fark
 yaratıyor.
@@ -113,7 +117,7 @@ yaratıyor.
 Son gün tamamen boş durmak da iyi bir fikir değil. Birkaç kolay soru çözmek
 zihni ısıtıyor ve "hiçbir şey bilmiyorum" hissini kırıyor.
 
-## Sınav sırasında ne yapılmalı?
+### Sınav sırasında ne yapılmalı?
 
 Sınav salonunda kaygı yükseldiğinde uygulanabilecek somut adımlar var.
 
@@ -132,7 +136,7 @@ besliyor.
 **Süreyi kontrol etmek ama saate sürekli bakmamak.** Testin ortasında bir kez
 bakmak yeterli; her beş dakikada bir bakmak kaygıyı artırıyor.
 
-## Örnek: bir öğrencinin son hafta düzeni
+### Örnek: bir öğrencinin son hafta düzeni
 
 Aşağıda TYT öncesi son haftada, kaygısı yüksek bir öğrenciyle kurulan düzen
 var. Toplam çalışma süresi bilerek düşük tutuluyor.

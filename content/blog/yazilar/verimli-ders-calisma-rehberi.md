@@ -72,7 +72,11 @@ kalıyor. Harcanan ilk saat boşa gitmiş oluyor.
 
 Dolayısıyla soru "kaç saat çalışıyorum" değil, "o saat nereye gidiyor" olmalı.
 
-## Aktif hatırlama nedir, neden işe yarıyor?
+## Hangi öğrenme yöntemleri işe yarıyor?
+
+Dört yöntem öne çıkıyor ve dördü de aynı şeyi yapıyor: beyni bilgiyi tanımak yerine geri çağırmaya zorluyor. Okumak kolay geldiği için tercih ediliyor, ama kolay gelmesi tam olarak işe yaramamasının sebebi.
+
+### Aktif hatırlama nedir, neden işe yarıyor?
 
 Aktif hatırlama, konuyu kapattıktan sonra hatırlayabildiklerinizi geri çağırmak
 demek. Okumak değil, kendini sınamak.
@@ -92,7 +96,7 @@ cevabı bulmaya çalışmak tam olarak geri çağırma işlemi. Bu yüzden soru 
 İkinci biçimi kendi kendine anlatmak. Bir konuyu sesli olarak, kimse yokmuş
 gibi anlatmaya çalışmak nerede tıkandığınızı anında gösteriyor.
 
-## Aralıklı tekrar nasıl uygulanır?
+### Aralıklı tekrar nasıl uygulanır?
 
 Unutma eğrisi keskin başlıyor: bir konu öğrenildikten sonraki ilk günlerde
 kaybın büyük kısmı yaşanıyor. Her tekrar bu eğriyi yeniden yukarı çekiyor ve
@@ -114,7 +118,7 @@ zaman kalmıyor. Tekrarın plandaki yeri, yeni konu kadar sabit olmalı.
 [Konu tekrarı nasıl yapılır](/blog/konu-tekrari-nasil-yapilir) yazısı bu
 döngünün kurulumunu ayrıntılı anlatıyor.
 
-## Araya karıştırma ne demek?
+### Araya karıştırma ne demek?
 
 Çoğu öğrenci blok hâlinde çalışıyor: bir gün boyunca sadece üçgenler, ertesi
 gün sadece çember. Bu yöntem oturum içinde iyi hissettiriyor, çünkü aynı tip
@@ -131,7 +135,7 @@ içinde daha zor geliyor ve daha çok yanlış yapılıyor — ama sınav perfor
 Pratik uygulama: konu çalışırken blok, tekrar ederken karışık. Yeni bir konu
 öğrenilirken odaklanmak gerekiyor; öğrenildikten sonra karıştırmak gerekiyor.
 
-## Soru çözmek ne zaman öğretir?
+### Soru çözmek ne zaman öğretir?
 
 Soru çözmek tek başına öğretmiyor. Öğreten şey, yanlış yapılan soruyla sonradan
 ne yapıldığı.
@@ -202,7 +206,7 @@ ilerleme hissi veriyor hem temeli sağlamlaştırıyor.
 çoğu zaman o anki konu değil, iki yıl önceki bir eksik. Temel işlem becerisi
 oturmadan türev çalışmak, zorlanmanın sebebini yanlış yerde aratıyor.
 
-## Ezber gerektiren dersler nasıl çalışılır?
+### Ezber gerektiren dersler nasıl çalışılır?
 
 Tarih, coğrafya, biyoloji ve din kültürü gibi derslerde ezber kaçınılmaz
 görünüyor. Ama ezberin de verimli ve verimsiz biçimi var.
@@ -273,7 +277,7 @@ soru, zor konudan çözülen elli sorudan daha az iş görüyor.
 vermiyor; aylık bakmak yönü gösteriyor. En iyisi ikisini birlikte tutmak:
 haftalık kayıt, aylık değerlendirme.
 
-## Yanlış defteri nasıl tutulur?
+### Yanlış defteri nasıl tutulur?
 
 Yanlış defteri, doğru tutulduğunda en verimli araçlardan biri; yanlış
 tutulduğunda ise zaman kaybı.
@@ -309,7 +313,7 @@ kitap, her oturuşta yeniden karar vermek demek.
 Çalışma yerinin sabit olması da işe yarıyor. Aynı masaya oturmak, zamanla
 başlama sürtünmesini azaltıyor — beyin o yeri o işle ilişkilendiriyor.
 
-## Kaç saat çalışmalı, nasıl bölünmeli?
+### Kaç saat çalışmalı, nasıl bölünmeli?
 
 | Profil | Hafta içi | Hafta sonu |
 |---|---|---|
@@ -329,7 +333,7 @@ Süre hedefi yerine iş hedefi koymak da işe yarıyor. "İki saat çalışacağ
 yerine "bu konuyu bitirip 20 soru çözeceğim" demek, oturumun saate değil işe
 odaklanmasını sağlıyor.
 
-## Uyku, mola ve hareket performansı nasıl etkiliyor?
+### Uyku, mola ve hareket performansı nasıl etkiliyor?
 
 Uyku, öğrenilenin kalıcı hâle geldiği zaman dilimi. Uykudan çalınan saat,
 ertesi gün iki saat olarak geri ödeniyor.
@@ -344,7 +348,7 @@ programa yazmak, "vakit kalırsa" bırakmaktan daha gerçekçi.
 Beslenme tarafında karmaşık bir formül yok: uzun aralıklarla aç kalmamak ve
 ağır öğünlerden sonra çalışma planlamamak yeterli.
 
-## Grup çalışması işe yarar mı?
+### Grup çalışması işe yarar mı?
 
 Cevap, grubun ne yaptığına bağlı. Aynı masada ayrı ayrı ders çalışmak grup
 çalışması değil; sadece aynı odada olmak.
@@ -362,7 +366,7 @@ bakmak. Burada zihinsel iş yapılmıyor ve grup, dikkat dağıtıcıya dönüş
 Pratik kural: grup çalışması, bireysel çalışmanın yerine değil üstüne gelmeli.
 Konu tek başına çalışılır, sonra grupta sınanır.
 
-## Dijital araçlar gerçekten gerekli mi?
+### Dijital araçlar gerçekten gerekli mi?
 
 Uygulama ve dijital planlayıcılar cazip görünüyor, ama çoğu öğrenci için
 aracın kendisi bir erteleme biçimine dönüşüyor. Programı uygulamak yerine

@@ -51,7 +51,7 @@ soruları yerini uzun metinli, grafikli, tablolu, birkaç adımda çözülen sor
 bırakmış durumda. Bu, bir okuduğunu anlama sınavı olduğu anlamına geliyor —
 matematik ve fen soruları için bile.
 
-## Sınav formatı ve puan sistemi nasıl işler?
+### Sınav formatı ve puan sistemi nasıl işler?
 
 | Bölüm | Soru sayısı | Süre |
 |---|---|---|
@@ -71,7 +71,7 @@ için işaretlemek matematiksel olarak avantajlı hâle geliyor.
 > kılavuzla belirleniyor ve değişebiliyor. Buradaki bilgiler MEB'in
 > duyurularına dayanıyor; **başvuru döneminde güncel kılavuz esastır.**
 
-## Hangi dersten kaç soru geliyor?
+### Hangi dersten kaç soru geliyor?
 
 | Bölüm | Ders | Soru |
 |---|---|---|
@@ -111,7 +111,7 @@ haziranda büyük ölçüde unutulmuş oluyor.
 [Konu tekrarı nasıl yapılır](/blog/konu-tekrari-nasil-yapilir) yazısı
 tekrarın hangi aralıklarla yapıldığında kalıcı olduğunu anlatıyor.
 
-## Kaynak seçimi nasıl yapılır?
+### Kaynak seçimi nasıl yapılır?
 
 Kaynak sayısı arttıkça verim düşüyor. LGS için işe yarayan kurulum sade: ders
 başına bir soru bankası, bir deneme seti, bir de MEB'in yayımladığı örnek
@@ -230,7 +230,11 @@ yalnızca süreli denemeyle gelişiyor.
 Son iki ayda deneme sıklığı haftada ikiye çıkarılabilir. Ama analiz yapılmadan
 çözülen iki deneme, analiz edilen bir denemeden daha az işe yarıyor.
 
-## Türkçe nasıl çalışılmalı?
+## Derslere göre nasıl çalışılmalı?
+
+Dört testin dördü de aynı biçimde çalışılmıyor. Matematik ve fen soru çözümüyle, Türkçe düzenli okumayla ilerliyor; az soru getiren dersler ise ayrı bir hesap istiyor.
+
+### Türkçe nasıl çalışılmalı?
 
 Türkçe, LGS'nin en çok soru getiren dersi ve aynı zamanda diğer tüm derslerin
 zemini. Matematik sorusunu okuyup anlayamayan bir öğrenci, işlemi bilse bile
@@ -252,7 +256,7 @@ korunabilir.
 Sözcükte anlam ve deyim soruları için ayrı bir çalışma yapmaya gerek yok.
 Bunların en iyi kaynağı okumak — özellikle roman ve deneme türü metinler.
 
-## Matematikte net nasıl artar?
+### Matematikte net nasıl artar?
 
 Matematik, LGS'de net farkının en çok açıldığı ders. İyi öğrenciyle orta
 öğrenci arasındaki mesafe genellikle burada oluşuyor.
@@ -275,7 +279,7 @@ atlamamak ve sonucu soruyla karşılaştırmak gerekiyor.
 işlemi birleştiriyor. Bu tip sorularda işe yarayan yöntem, soruyu okurken
 verilen bilgileri kenara sıralamak ve ne istendiğini bir cümleyle yazmak.
 
-## Fen bilimlerinde hangi konular belirleyici?
+### Fen bilimlerinde hangi konular belirleyici?
 
 Fen, matematikten farklı bir sorun çıkarıyor: konular birbirine zincirli ve
 atlanan bir konu sonrakini yarım bırakıyor.
@@ -296,7 +300,7 @@ Deney düzeneği soruları fen testinin ayrı bir kategorisi. Burada sorulan şe
 bilgi değil, değişken kontrolü: hangi değişkenin sabit tutulduğu, hangisinin
 ölçüldüğü. Bu mantık bir kez oturduğunda konudan bağımsız olarak işe yarıyor.
 
-## Az soru getiren dersler nasıl çalışılmalı?
+### Az soru getiren dersler nasıl çalışılmalı?
 
 İnkılap Tarihi, Din Kültürü ve Yabancı Dil toplamda 30 soru ediyor — sınavın
 üçte biri. Buna rağmen en çok ihmal edilen dersler bunlar.
