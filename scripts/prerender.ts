@@ -62,6 +62,22 @@ import need from "../need.json" with { type: "json" };
  * yani aynı kural panel açılışlarında pazarlama sayfasını çizer ve var olmayan
  * adreslere "index, follow" ile ana sayfayı döndürürdü.
  *
+ * AMA 2. KURAL PORTAL HOST'UNUN KÖKÜNÜ (/) YAKALAYAMIYOR — ölçüldü.
+ * Vercel'in sırası: redirects -> DOSYA SİSTEMİ -> rewrites. "/" diskte
+ * index.html'e çözülüyor, dolayısıyla hiçbir rewrite oraya ulaşamıyor. Bu,
+ * prerender'ın çalışmasını sağlayan mekanizmanın ta kendisi (/gizlilik-politikasi
+ * gerçek bir dosya olduğu için 4. kurala düşmüyor) — ama iki yönlü kesiyor.
+ * 2. kural portal host'undaki DOSYASI OLMAYAN yolları (/ogretmen, /yorumlar,
+ * /yonetim) doğru şekilde boş kabuğa yolluyor; yalnızca kök için çaresiz.
+ *
+ * Kök için tek altyapısal çözüm middleware (dosya sisteminden ÖNCE çalışan tek
+ * yer). Bu proje statik servis üzerine kurulu ve serverless kırılganlığıyla
+ * geçmişi var (bkz. CLAUDE.md, FUNCTION_INVOCATION_FAILED), o yüzden kökteki
+ * pazarlama gövdesi index.html'e gömülen altı satırlık bir korumayla
+ * temizleniyor — panelHostKorumasi(). Kozmetik bir sorun için kozmetik bir
+ * çözüm: panel zaten çalışıyordu, sorun yalnızca React mount olmadan önceki
+ * anlık pazarlama sayfası görüntüsüydü.
+ *
  * DİKKAT: vercel.json şema doğrulamasından geçiyor ve TANIMSIZ ÜST DÜZEY
  * ANAHTAR KABUL ETMİYOR. Bu açıklama oraya bir "_not" alanı olarak konmuştu ve
  * dağıtım "should NOT have additional property" ile build'e hiç başlamadan
@@ -198,6 +214,49 @@ function degistir(html: string, desen: RegExp, yeni: string, ne: string): string
     );
   }
   return html.replace(desen, () => yeni);
+}
+
+/**
+ * PANEL HOST'UNDAKİ PAZARLAMA GÖVDESİNİ, BOYANMADAN SİLER.
+ *
+ * Yalnızca dist/index.html'e giriyor, çünkü portal.akademitu.com'un kökü
+ * kaçınılmaz olarak o dosyayı alıyor (yukarıdaki rewrite notuna bakın).
+ *
+ * İki parça: <head>'deki betik host'u işaretliyor ve <style> #root'u görünmez
+ * yapıyor — böylece gövde ayrıştırılırken hiçbir şey boyanmıyor. Gövdenin
+ * sonundaki betik #root'u boşaltıp işareti kaldırıyor, yani React mount
+ * olduğunda kap hem boş hem görünür. Ana host'ta öznitelik hiç konmadığı için
+ * kural hiç eşleşmiyor, maliyeti sıfır.
+ *
+ * Host testi host.ts'teki routingMode() ile aynı: ilk etiketi "portal" olan her
+ * host panel sayılıyor (portal.akademitu.local gibi yerel kurulumlar dahil).
+ *
+ * JS kapalıyken panel host'unda pazarlama sayfası görünür kalıyor — panel zaten
+ * JS'siz çalışmadığı için bu bir kayıp değil.
+ */
+function panelHostKorumasi(html: string): string {
+  const kafa =
+    '    <script>\n' +
+    '      /* Panel host\'u da bu dosyayı alıyor: "/" diskte index.html\'e\n' +
+    '         çözüldüğü için vercel.json\'daki host kuralı köke ulaşamıyor.\n' +
+    '         Ayrıntı: scripts/prerender.ts */\n' +
+    '      if (location.hostname.split(".")[0] === "portal") {\n' +
+    '        document.documentElement.setAttribute("data-panel-host", "");\n' +
+    '      }\n' +
+    '    </' + 'script>\n' +
+    '    <style>[data-panel-host] #root { visibility: hidden }</style>\n';
+
+  const govde =
+    '\n    <script>\n' +
+    '      if (document.documentElement.hasAttribute("data-panel-host")) {\n' +
+    '        document.getElementById("root").textContent = "";\n' +
+    '        document.documentElement.removeAttribute("data-panel-host");\n' +
+    '      }\n' +
+    '    </' + 'script>';
+
+  html = degistir(html, /(\n\s*<\/head>)/, kafa + "  </head>", "</head>");
+  html = degistir(html, /(\n\s*<\/body>)/, govde + "\n  </body>", "</body>");
+  return html;
 }
 
 function kafayiYaz(kabuk: string, rota: Rota): string {
@@ -383,6 +442,8 @@ async function main() {
         '#root',
       );
     }
+
+    if (rota.cikti === "index.html") html = panelHostKorumasi(html);
 
     dogrula(rota, html, hatalar);
     yaz(rota.cikti, html);
