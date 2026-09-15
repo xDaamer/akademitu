@@ -493,6 +493,17 @@ değil, çalışma biçimi.
 [Verimli ders çalışma rehberi](/blog/verimli-ders-calisma-rehberi) hangi
 yöntemlerin ölçülmüş biçimde işe yaradığını anlatıyor.
 
+Müfredat değişikliğinin sınavlara ne zaman yansıyacağı sık sorulan bir konu;
+[maarif modeli sınav değişikliği](/blog/maarif-modeli-sinav-degisikligi) yazısı
+hangi sınıfın hangi programda olduğunu ve 2028'de neyin değiştiğini anlatıyor.
+
+Yılın ilk dönemine özel plan
+[8. sınıf ilk dönem planı](/blog/8-sinif-ilk-donem-plani) yazısında, sınavın
+sayısal fotoğrafı [LGS istatistikleri](/blog/lgs-istatistikleri) yazısında ve
+lise tercihi
+[fen lisesi mi Anadolu lisesi mi](/blog/fen-lisesi-anadolu-lisesi) yazısında
+ele alındı.
+
 Diğer LGS yazıları için [LGS kategorisine](/blog/kategori/lgs) bakabilirsiniz.
 Lise sonrası süreç merak ediliyorsa
 [YKS hazırlık rehberi](/blog/yks-hazirlik-rehberi) aynı çerçeveyi üniversite

@@ -459,6 +459,15 @@ Yol haritası kurulduktan sonra iş, haftalık düzenin sürekliliğine kalıyor
 [verimli ders çalışma rehberi](/blog/verimli-ders-calisma-rehberi) hangi
 yöntemlerin ölçülmüş biçimde işe yaradığını anlatıyor.
 
+Planın kaç haftaya kurulacağı ise takvimden çıkıyor;
+[2026-2027 eğitim öğretim yılı takvimi](/blog/egitim-ogretim-yili-takvimi)
+tatilleri ve verimli hafta sayısını bir arada veriyor.
+
+Son sınıfa özel, ay ay kurulmuş bir plan
+[12. sınıf çalışma planı](/blog/12-sinif-calisma-plani) yazısında; hedef net
+belirlerken işe yarayan ÖSYM verileri ise
+[TYT ortalama net](/blog/tyt-ortalama-net) yazısında.
+
 Süreci tek başına yönetmek zorlanılan bir noktaya gelirse
 [eğitim koçluğunun ne yaptığı](/blog/egitim-koclugu-nedir) da bu blogda ayrıca
 ele alınıyor. Diğer YKS yazıları için [YKS kategorisine](/blog/kategori/yks)

@@ -517,6 +517,14 @@ kitabı kapatıp denemekle bir dakikada alınıyor.
 Yöntem, sınavdan bağımsız. Buradaki her şey hem YKS hem LGS hazırlığında
 geçerli — değişen şey konular ve takvim.
 
+Yöntemin en çok sınandığı yer tatiller oluyor; ara tatilde çalışma düzeninin
+nasıl korunacağı [kasım ara tatili](/blog/kasim-ara-tatili) yazısında ele
+alındı.
+
+Sınavların giderek ağırlık verdiği soru tipine nasıl çalışılacağı
+[beceri temelli sorular](/blog/beceri-temelli-sorular) yazısında ayrıca
+anlatılıyor.
+
 Sınava özel yol haritaları için
 [YKS hazırlık rehberi](/blog/yks-hazirlik-rehberi) ve
 [LGS hazırlık rehberi](/blog/lgs-hazirlik-rehberi) yazılarına, diğer yöntem

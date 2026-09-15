@@ -510,6 +510,10 @@ koçla çalışılsın çalışılmasın geçerli:
 [verimli ders çalışma rehberi](/blog/verimli-ders-calisma-rehberi) hangi
 çalışma biçimlerinin işe yaradığını anlatıyor.
 
+Evdeki düzenin en çok tartışılan başlığı olan ekran süresi
+[okulda telefon yasağı](/blog/okulda-telefon-yasagi) yazısında, veliye düşen
+kısımla birlikte ele alındı.
+
 Sınava özel yol haritaları için
 [YKS hazırlık rehberi](/blog/yks-hazirlik-rehberi) ve
 [LGS hazırlık rehberi](/blog/lgs-hazirlik-rehberi) yazılarına, diğer koçluk
