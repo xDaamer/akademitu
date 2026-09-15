@@ -85,13 +85,13 @@
       `activeImagesLeft[0]` ile aynı olmalıdır. O listeyi değiştirirseniz
       bu satırı da güncelleyin.
 
-      DİKKAT 2: index.html tüm route'lara servis edildiği için bu ön yükleme
-      yasal sayfalarda ve 404'te de çalışır ve orada kullanılmaz (~21 KB boşa
-      gider, konsolda "preloaded but not used" uyarısı görürsünüz). Bilinçli
-      bir takas: ana sayfa hem tek para sayfası hem de LCP'nin ölçüldüğü yer,
-      oradaki ~800 ms kazanç diğer route'lardaki 21 KB'den ağır basıyor.
-      SPA statik HTML'inde route'a göre koşullu preload yapmanın yolu yok;
-      prerender'a geçilirse bu satır yalnızca ana sayfaya konulmalı.
+      DİKKAT 2: bu blok ARTIK YALNIZCA ANA SAYFADA. Eskiden index.html tüm
+      route'lara servis edildiği için yasal sayfalarda ve 404'te de çalışıyor,
+      orada kullanılmıyordu (~21 KB boşa gidiyor, konsolda "preloaded but not
+      used" uyarısı çıkıyordu) ve buradaki yorum "prerender'a geçilirse bu
+      satır yalnızca ana sayfaya konulmalı" diyordu. O geçiş yapıldı:
+      scripts/prerender.ts bu bloğu ana sayfa dışındaki her çıktıdan siliyor.
+      Yani burası prerender'ın girdisi — silme işini orada arayın.
     -->
     <link
       rel="preload"

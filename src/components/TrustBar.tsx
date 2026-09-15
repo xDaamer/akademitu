@@ -1,6 +1,7 @@
 import React from 'react';
 import { Award, Gift, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
+import { IS_SERVER } from '../lib/ssr';
 
 // SADE GÜVEN ŞERİDİ: Hero'nun hemen altında, ziyaretçiye anında güven veren
 // kısa maddeler. Uydurma istatistik yok — sitenin zaten savunduğu gerçek
@@ -27,7 +28,7 @@ export const TrustBar: React.FC = () => {
             return (
               <motion.div
                 key={item.label}
-                initial={{ opacity: 0, y: 8 }}
+                initial={IS_SERVER ? false : { opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: index * 0.06 }}

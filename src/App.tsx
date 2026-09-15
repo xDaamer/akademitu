@@ -36,6 +36,76 @@ const PopUpForm = lazy(() =>
   import('./components/PopUpForm').then((m) => ({ default: m.PopUpForm }))
 );
 
+/*
+ * KURULUŞ VE SİTE ŞEMALARI — MODÜL DÜZEYİNDE, ÇÜNKÜ JSX'TE RENDER EDİLİYORLAR.
+ * ============================================================================
+ * Eskiden bunlar bir useEffect içinde document.head'e enjekte ediliyordu.
+ * useEffect SUNUCU RENDER'INDA HİÇ ÇALIŞMAZ: prerender'a geçince (bkz.
+ * scripts/prerender.ts) statik HTML'de tek bir şema bulunmuyordu — yani JS
+ * çalıştırmayan her tarayıcı için site yapılandırılmış veri taşımıyordu.
+ *
+ * Kalıp uydurulmadı, depoda zaten vardı: LegalPageChrome.tsx BreadcrumbList'i
+ * aynı şekilde gövdede basıyor ve gerekçeyi yazıyor — Google ld+json bloklarını
+ * <head>'de olduğu gibi gövdede de okur.
+ *
+ * İki nesne de yalnızca need.json ve SITE_URL'e bağlı, yani her render'da
+ * yeniden kurmanın anlamı yok; modül düzeyinde bir kez kuruluyorlar.
+ */
+const organizationSchema = {
+  "@context": "https://schema.org",
+  /*
+   * Tip `EducationalOrganization`: schema.org'da Organization'ın alt tipi ve
+   * eğitim hizmeti veren bir kuruluşu Organization'dan daha isabetli anlatır.
+   *
+   * `@id` şart: paket şemalarındaki `Service.provider` bu kimliğe referans
+   * verir. Eskiden sadece isimle bağlanıyordu ve grafik parçalı kalıyordu.
+   */
+  "@type": "EducationalOrganization",
+  "@id": `${SITE_URL}/#organization`,
+  "name": need.site.name,
+  "url": `${SITE_URL}/`,
+  "logo": `${SITE_URL}${need.site.logoUrl}`,
+  "image": `${SITE_URL}/og-image.png`,
+  "description": need.site.description,
+  // E.164: tireli biçim yerine uluslararası standart.
+  "telephone": "+905303699539",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": need.contact.address.street,
+    "addressLocality": need.contact.address.city,
+    "addressRegion": need.contact.address.region,
+    "addressCountry": need.contact.address.country
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+905303699539",
+    "contactType": "customer service",
+    "areaServed": "TR",
+    "availableLanguage": ["Turkish"]
+  },
+  "sameAs": [
+    need.social.instagram,
+    need.social.youtube,
+    need.social.twitter
+  ]
+};
+
+/*
+ * `potentialAction`/`SearchAction` kaldırıldı: sitede arama kutusu yok ve
+ * `?q=` parametresini işleyen hiçbir kod yok. Var olmayan bir işlevi
+ * işaretlemek yapılandırılmış veri politikası ihlali riskidir; ayrıca
+ * Google Sitelinks Searchbox'ı 2024'te büyük ölçüde kullanımdan kaldırdı.
+ */
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
+  "name": need.site.name,
+  "url": `${SITE_URL}/`,
+  "inLanguage": "tr-TR",
+  "publisher": { "@id": `${SITE_URL}/#organization` }
+};
+
 export default function App() {
   const [formMode, setFormMode] = useState<'scroll' | 'button' | null>(null);
   const [hasScrolledTriggered, setHasScrolledTriggered] = useState(false);
@@ -77,87 +147,6 @@ export default function App() {
     location.pathname === '/login' ||
     location.pathname.startsWith('/panel') ||
     location.pathname.startsWith('/portal');
-
-  // SEO: Add Organization & WebSite Schema to document head
-  useEffect(() => {
-    /*
-     * Panel host'unda YAYINLANMAZ: portal.akademitu.com tamamen noindex
-     * (vercel.json'daki X-Robots-Tag) ve orada kuruluş/site şeması basmak,
-     * dizine girmemesi istenen bir adresi kanonik site gibi gösterirdi.
-     */
-    if (isPortalHost) return;
-
-    /*
-     * Tip `EducationalOrganization`: schema.org'da Organization'ın alt tipi ve
-     * eğitim hizmeti veren bir kuruluşu Organization'dan daha isabetli anlatır.
-     *
-     * `@id` şart: paket şemalarındaki `Service.provider` bu kimliğe referans
-     * verir. Eskiden sadece isimle bağlanıyordu ve grafik parçalı kalıyordu.
-     */
-    const organizationSchema = {
-      "@context": "https://schema.org",
-      "@type": "EducationalOrganization",
-      "@id": `${SITE_URL}/#organization`,
-      "name": need.site.name,
-      "url": `${SITE_URL}/`,
-      "logo": `${SITE_URL}${need.site.logoUrl}`,
-      "image": `${SITE_URL}/og-image.png`,
-      "description": need.site.description,
-      // E.164: tireli biçim yerine uluslararası standart.
-      "telephone": "+905303699539",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": need.contact.address.street,
-        "addressLocality": need.contact.address.city,
-        "addressRegion": need.contact.address.region,
-        "addressCountry": need.contact.address.country
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+905303699539",
-        "contactType": "customer service",
-        "areaServed": "TR",
-        "availableLanguage": ["Turkish"]
-      },
-      "sameAs": [
-        need.social.instagram,
-        need.social.youtube,
-        need.social.twitter
-      ]
-    };
-
-    /*
-     * `potentialAction`/`SearchAction` kaldırıldı: sitede arama kutusu yok ve
-     * `?q=` parametresini işleyen hiçbir kod yok. Var olmayan bir işlevi
-     * işaretlemek yapılandırılmış veri politikası ihlali riskidir; ayrıca
-     * Google Sitelinks Searchbox'ı 2024'te büyük ölçüde kullanımdan kaldırdı.
-     */
-    const websiteSchema = {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "@id": `${SITE_URL}/#website`,
-      "name": need.site.name,
-      "url": `${SITE_URL}/`,
-      "inLanguage": "tr-TR",
-      "publisher": { "@id": `${SITE_URL}/#organization` }
-    };
-
-    // Create script tags
-    const orgScript = document.createElement('script');
-    orgScript.type = 'application/ld+json';
-    orgScript.textContent = JSON.stringify(organizationSchema);
-    document.head.appendChild(orgScript);
-
-    const webScript = document.createElement('script');
-    webScript.type = 'application/ld+json';
-    webScript.textContent = JSON.stringify(websiteSchema);
-    document.head.appendChild(webScript);
-
-    return () => {
-      document.head.removeChild(orgScript);
-      document.head.removeChild(webScript);
-    };
-  }, [isPortalHost]);
 
   // AUTOMATIC POP-UP ON SCROLL DOWN (Triggers scroll mode form) — home page only
   useEffect(() => {
@@ -245,6 +234,24 @@ export default function App() {
     >
       <Analytics />
       <SpeedInsights />
+      {/*
+        KURULUŞ + SİTE ŞEMASI. Panel host'unda YAYINLANMAZ:
+        portal.akademitu.com tamamen noindex (vercel.json'daki X-Robots-Tag) ve
+        orada kuruluş/site şeması basmak, dizine girmemesi istenen bir adresi
+        kanonik site gibi gösterirdi.
+      */}
+      {!isPortalHost && (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+          />
+        </>
+      )}
       {/* 1. SABİT HEADER (LOGO, YAZI, MENÜ VE BEYAZ METİNLİ MAVİ DÜĞME) */}
       {!isPortal && (
         <Header

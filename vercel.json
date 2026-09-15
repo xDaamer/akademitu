@@ -40,8 +40,18 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
     }
   ],
+  "_rewritesNotu": "SIRA ÖNEMLİ — Vercel ilk eşleşen kuralı uygular. Prerender'dan (scripts/prerender.ts) sonra dist/index.html artık ana sayfanın TAM içeriği; eskiden boş bir kabuktu ve her şeye servis edilebiliyordu. Artık edilemez: panel host'u ve giriş ekranı boş kabuğu (app.html), bilinmeyen adresler statik noindex 404'ü almalı. Prerender edilen /gizlilik-politikasi ve /kullanim-kosullari buraya hiç gelmiyor — Vercel rewrite'lardan ÖNCE dosya sistemine bakıyor ve orada gerçek birer index.html buluyor (blog sayfalarının dayandığı mekanizmanın aynısı).",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[...path]" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+
+    { "source": "/((?!api/).*)", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "/app.html" },
+
+    { "source": "/login", "destination": "/app.html" },
+    { "source": "/panel", "destination": "/app.html" },
+    { "source": "/panel/:path*", "destination": "/app.html" },
+    { "source": "/portal", "destination": "/app.html" },
+    { "source": "/portal/:path*", "destination": "/app.html" },
+
+    { "source": "/((?!api/).*)", "destination": "/404.html" }
   ]
 }

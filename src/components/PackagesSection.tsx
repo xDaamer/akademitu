@@ -1,110 +1,108 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Check, Gift, Zap, ArrowRight, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { SITE_URL } from '../config';
+import { IS_SERVER } from '../lib/ssr';
 import { Button } from './ui/Button';
 
 interface PackagesSectionProps {
   onOpenTrialForm: () => void;
 }
 
-export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialForm }) => {
-  // SEO: Add Service Schema for packages
-  useEffect(() => {
-    /*
-     * ŞEMA KURALLARI — bozmadan önce okuyun:
-     *
-     * 1) Fiyat `Service` üzerinde DEĞİL, `offers` altındaki `Offer` üzerinde
-     *    durur. Eskiden `Service.price` / `Service.priceSpecification`
-     *    yazılıydı; bunlar Service'in özellikleri olmadığı için Google
-     *    hepsini yok sayıyordu — yani sayfanın en güçlü ticari sinyali
-     *    (şeffaf fiyat) yapılandırılmış veri olarak hiç iletilmiyordu.
-     *
-     * 2) Her hizmetin `@id`'si BENZERSİZ olmalı. Eskiden "Ücretsiz Deneme
-     *    Dersi" ile "Özel Ders Paketi" aynı `#ozel-ders` kimliğini
-     *    paylaşıyordu; ayrıştırıcı ikisini tek varlık sanıp birleştiriyordu.
-     *
-     * 3) `itemListElement` ögeleri `ListItem` + `position` ile sarılır;
-     *    böylece sıralama (hangisi öne çıkan paket) da iletilir.
-     *
-     * 4) `unitCode` UN/CEFACT Rec 20 kodu bekler. "MON" (ay) geçerlidir;
-     *    eskiden yazan "H27" o listede yok. "Ders başına" için standart bir
-     *    kod olmadığından serbest metin alanı `unitText` kullanılıyor.
-     */
-    const provider = { "@id": `${SITE_URL}/#organization` };
+/*
+ * ŞEMA KURALLARI — bozmadan önce okuyun:
+ *
+ * 1) Fiyat `Service` üzerinde DEĞİL, `offers` altındaki `Offer` üzerinde
+ *    durur. Eskiden `Service.price` / `Service.priceSpecification`
+ *    yazılıydı; bunlar Service'in özellikleri olmadığı için Google
+ *    hepsini yok sayıyordu — yani sayfanın en güçlü ticari sinyali
+ *    (şeffaf fiyat) yapılandırılmış veri olarak hiç iletilmiyordu.
+ *
+ * 2) Her hizmetin `@id`'si BENZERSİZ olmalı. Eskiden "Ücretsiz Deneme
+ *    Dersi" ile "Özel Ders Paketi" aynı `#ozel-ders` kimliğini
+ *    paylaşıyordu; ayrıştırıcı ikisini tek varlık sanıp birleştiriyordu.
+ *
+ * 3) `itemListElement` ögeleri `ListItem` + `position` ile sarılır;
+ *    böylece sıralama (hangisi öne çıkan paket) da iletilir.
+ *
+ * 4) `unitCode` UN/CEFACT Rec 20 kodu bekler. "MON" (ay) geçerlidir;
+ *    eskiden yazan "H27" o listede yok. "Ders başına" için standart bir
+ *    kod olmadığından serbest metin alanı `unitText` kullanılıyor.
+ *
+ * 5) MODÜL DÜZEYİNDE ve JSX'te render ediliyor, useEffect ile head'e
+ *    enjekte EDİLMİYOR: useEffect sunucu render'ında çalışmaz, yani
+ *    prerender edilmiş HTML'de fiyatların şeması hiç bulunmuyordu.
+ */
+const provider = { "@id": `${SITE_URL}/#organization` };
 
-    const services = [
-      {
-        id: 'deneme-dersi',
-        name: 'Ücretsiz Deneme Dersi',
-        description:
-          'Hedefinize ve seviyenize uygun derece koçunuz ile 30-40 dakikalık tanışma seansı. Hiçbir ücret veya taahhüt ödemezsiniz.',
-        price: '0',
-        unitText: 'ders',
-      },
-      {
-        id: 'ozel-ders-paketi',
-        name: 'Özel Ders Paketi',
-        description:
-          'Haftalık belirlenmiş saatlerde derece hocalarımızdan online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.',
-        price: '950',
-        unitText: 'ders',
-      },
-      {
-        id: 'kocluk-programi',
-        name: 'Koçluk Programı',
-        description:
-          'Haftalık revizyon ve planlama görüşmesi ile kişiye özel çalışma planı. Farklı teknikler ile en verimli çalışma yolunu keşfet.',
-        price: '3150',
-        unitCode: 'MON',
-      },
-    ];
+const services = [
+  {
+    id: 'deneme-dersi',
+    name: 'Ücretsiz Deneme Dersi',
+    description:
+      'Hedefinize ve seviyenize uygun derece koçunuz ile 30-40 dakikalık tanışma seansı. Hiçbir ücret veya taahhüt ödemezsiniz.',
+    price: '0',
+    unitText: 'ders',
+  },
+  {
+    id: 'ozel-ders-paketi',
+    name: 'Özel Ders Paketi',
+    description:
+      'Haftalık belirlenmiş saatlerde derece hocalarımızdan online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.',
+    price: '950',
+    unitText: 'ders',
+  },
+  {
+    id: 'kocluk-programi',
+    name: 'Koçluk Programı',
+    description:
+      'Haftalık revizyon ve planlama görüşmesi ile kişiye özel çalışma planı. Farklı teknikler ile en verimli çalışma yolunu keşfet.',
+    price: '3150',
+    unitCode: 'MON',
+  },
+];
 
-    const serviceSchema = {
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      "name": "YKS ve LGS özel ders ve koçluk paketleri",
-      "itemListElement": services.map((service, index) => ({
-        "@type": "ListItem",
-        "position": index + 1,
-        "item": {
-          "@type": "Service",
-          "@id": `${SITE_URL}/#${service.id}`,
-          "name": service.name,
-          "description": service.description,
-          "serviceType": "Online özel ders ve sınav koçluğu",
-          "provider": provider,
-          "areaServed": { "@type": "Country", "name": "Türkiye" },
-          "offers": {
-            "@type": "Offer",
-            "price": service.price,
-            "priceCurrency": "TRY",
-            "availability": "https://schema.org/InStock",
-            "url": `${SITE_URL}/#paketler`,
-            "priceSpecification": {
-              "@type": "UnitPriceSpecification",
-              "price": service.price,
-              "priceCurrency": "TRY",
-              ...(service.unitCode
-                ? { "unitCode": service.unitCode }
-                : { "unitText": service.unitText }),
-            },
-          },
+const serviceSchema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "YKS ve LGS özel ders ve koçluk paketleri",
+  "itemListElement": services.map((service, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "item": {
+      "@type": "Service",
+      "@id": `${SITE_URL}/#${service.id}`,
+      "name": service.name,
+      "description": service.description,
+      "serviceType": "Online özel ders ve sınav koçluğu",
+      "provider": provider,
+      "areaServed": { "@type": "Country", "name": "Türkiye" },
+      "offers": {
+        "@type": "Offer",
+        "price": service.price,
+        "priceCurrency": "TRY",
+        "availability": "https://schema.org/InStock",
+        "url": `${SITE_URL}/#paketler`,
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": service.price,
+          "priceCurrency": "TRY",
+          ...(service.unitCode
+            ? { "unitCode": service.unitCode }
+            : { "unitText": service.unitText }),
         },
-      })),
-    };
+      },
+    },
+  })),
+};
 
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.textContent = JSON.stringify(serviceSchema);
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
+export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialForm }) => {
   return (
     <section id="paketler" className="py-16 sm:py-24 bg-slate-50 relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* SEKTÖR BAŞLIĞI VE ALT METİN */}
@@ -128,7 +126,7 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
           
           {/* 1. SOL PAKET: ÜCRETSİZ DENEME DERSİ */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={IS_SERVER ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.45 }}
@@ -204,7 +202,7 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
               motion'a y-transform verilmiyor, aksi halde giriş animasyonu bitince
               motion'ın satır-içi transform'u bu kaymayı ezer. Sadece opacity animasyonu var. */}
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={IS_SERVER ? false : { opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.45, delay: 0.08 }}
@@ -296,7 +294,7 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
 
           {/* 3. KOÇLUK PAKETİ */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={IS_SERVER ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.45, delay: 0.16 }}

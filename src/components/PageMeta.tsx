@@ -27,8 +27,23 @@ import { SITE_URL } from '../config';
  * `index.html`'deki statik değerler JS çalışmayan tarayıcılar için yerinde
  * kalır; JS çalışınca doğru değerle üzerine yazılır.
  *
- * NOT: Sunucudan gelen ilk HTML hâlâ ana sayfanın etiketlerini taşır.
- * Kalıcı çözüm prerender'dır (bkz. seo-audit/faz-5-taranabilirlik.md, K-01).
+ * İŞ BÖLÜMÜ — PRERENDER'DAN SONRA (2026-09-15)
+ * ---------------------------------------------------------------------------
+ * Buradaki eski not "sunucudan gelen ilk HTML hâlâ ana sayfanın etiketlerini
+ * taşır, kalıcı çözüm prerender'dır" diyordu. O çözüm uygulandı
+ * (scripts/prerender.ts), dolayısıyla iş ikiye ayrıldı:
+ *
+ *   - STATİK <head>  -> scripts/prerender.ts. Her rotanın title/description/
+ *     canonical/robots/og/twitter/hreflang etiketleri build sırasında kendi
+ *     HTML dosyasına yazılıyor. İkisi de need.json'daki AYNI seo.pages dizisini
+ *     okuduğu için metinler ayrışamaz.
+ *   - SPA GEÇİŞLERİ  -> bu bileşen, değişmeden. İlk mount'ta doğru değerin
+ *     üzerine aynı doğru değeri yazıyor (etkisiz); asıl işini istemci tarafı
+ *     gezinmede yapıyor.
+ *
+ * Bu bileşeni React 19'un hoistable etiketlerine ÇEVİRMEYİN. Yukarıdaki
+ * ölçüm (çift canonical) hâlâ geçerli ve prerender sonrası daha da kötü:
+ * artık her prerender edilmiş dosya da o etiketleri taşıyor.
  */
 interface PageMetaProps {
   /** Sekmede ve SERP'te görünen başlık. */

@@ -15,9 +15,14 @@ export const NotFoundPage: React.FC = () => {
         işaretliyordu. Durum kodu bu mimaride düzeltilemez; noindex ile
         "bunu dizine alma" demek elimizdeki tek doğru sinyal.
       */}
+      {/*
+        Metinler need.json'dan: aynı başlık/açıklama prerender sırasında
+        dist/404.html'in <head>'ine de basılıyor (scripts/prerender.ts). İki
+        yerde elle yazılsaydı biri güncellenip diğeri unutulurdu.
+      */}
       <PageMeta
-        title={`Sayfa Bulunamadı | ${need.site.name}`}
-        description="Aradığınız sayfa bulunamadı. akademITU ana sayfasından YKS ve LGS koçluk paketlerimize ulaşabilirsiniz."
+        title={need.seo.notFound.title}
+        description={need.seo.notFound.description}
         path="/404"
         noIndex
       />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Award, BarChart3, Users, MessageSquare, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
+import { IS_SERVER } from '../lib/ssr';
 
 interface WhyUsSectionProps {
   onOpenTrialForm: () => void;
@@ -55,7 +56,7 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
             return (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 16 }}
+                initial={IS_SERVER ? false : { opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}

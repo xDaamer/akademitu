@@ -1,6 +1,9 @@
 node_modules/
 build/
 dist/
+# `vite build --ssr` çıktısı: scripts/prerender.ts bunu import edip sayfaları
+# üretiyor, sonra kimse kullanmıyor. Tarayıcıya hiç gitmez.
+dist-ssr/
 server-dist/
 coverage/
 .DS_Store
