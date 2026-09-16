@@ -452,6 +452,105 @@ Puan türü kararı en başta veriliyor ve hangi AYT testlerine çalışılacağ
 belirliyor. Bölüm listesi ise mart-nisan gibi kabaca oluşturulmalı: hedefin
 gerektirdiği net aralığını bilmek, son üç ayın planını doğrudan etkiliyor.
 
+## Derslere göre yol haritası
+
+Buraya kadarki çerçeve tüm dersler için ortak. Her dersin kendi soru dağılımı,
+kendi zorluk kaynağı ve kendi çalışma yöntemi var; aşağıdaki bölümler bunları
+ders ders ayırıyor.
+
+### Türkçe ve edebiyat
+
+TYT Türkçe 40 soruyla sınavın en çok sorulu testi ve bu soruların yaklaşık
+yarısı paragraf. Hangi konudan kaç soru geldiği
+[TYT Türkçe konuları](/blog/tyt-turkce-konulari) yazısında, günlük çalışma
+düzeni ve yanlış defterinin biçimi
+[TYT Türkçe nasıl çalışılır](/blog/tyt-turkce-nasil-calisilir) yazısında
+anlatılıyor.
+
+Paragraf hem Türkçe testinin yarısı hem de sınavın tamamındaki okuma
+becerisinin kaynağı; çözüm sırası ve çeldirici kalıpları
+[paragraf soruları nasıl çözülür](/blog/paragraf-sorulari-nasil-cozulur)
+yazısında ele alındı. AYT tarafında ise edebiyat 24 soruyla tek bir dersten
+gelen en yüksek sayıya sahip. Dağılımı
+[AYT edebiyat konuları](/blog/ayt-edebiyat-konulari) yazısında, yöntemi
+[edebiyat nasıl çalışılır](/blog/edebiyat-nasil-calisilir) yazısında. En hızlı
+net getiren blok ise
+[edebi sanatlar nasıl öğrenilir](/blog/edebi-sanatlar-nasil-ogrenilir)
+yazısında anlatılıyor.
+
+### Matematik
+
+Ortalamanın en düşük olduğu test matematik ve bu, yapılan her netin sıralamada
+en çok karşılık bulduğu yer anlamına geliyor. Konu dağılımı ve geometrinin payı
+[TYT matematik konuları](/blog/tyt-matematik-konulari) yazısında.
+
+Çalışma yönteminin kendisi — anlatım ile soru dengesi, işlem hatasının gerçek
+sebebi, yanlış defterinin biçimi —
+[matematik nasıl çalışılır](/blog/matematik-nasil-calisilir) yazısında.
+Son sınıfın en çok tartışılan planlama sorusu olan öncelik kararı ise
+[TYT matematik mi AYT matematik mi](/blog/tyt-matematik-ayt-matematik)
+yazısında ele alındı.
+
+### Fen bilimleri
+
+Fizik TYT'de 7, AYT'de 14 soru getiriyor; dağılımı ve hangi konuların bağımsız
+çalışılabileceği
+[fizik konuları ve soru dağılımı](/blog/fizik-konulari-soru-dagilimi)
+yazısında. Çözüm sırası
+[fizik nasıl çalışılır](/blog/fizik-nasil-calisilir), formül yükünün nasıl
+azaltılacağı
+[fizik formülleri nasıl öğrenilir](/blog/fizik-formulleri-nasil-ogrenilir)
+yazısında.
+
+Kimya, ezber ve hesap tarafı ayrı yöntem isteyen bir ders. Soru dağılımı
+[kimya konuları ve soru dağılımı](/blog/kimya-konulari-soru-dagilimi)
+yazısında, günlük ve haftalık düzen
+[kimya nasıl çalışılır](/blog/kimya-nasil-calisilir) yazısında. Hangi konunun
+hangi yöntemle çalışılacağı ise
+[kimyada ezber mi mantık mı](/blog/kimyada-ezber-mantik) yazısında.
+
+Biyoloji, AYT fen testleri içinde en yüksek ortalamaya sahip ders. Dağılımı
+[biyoloji konuları ve soru dağılımı](/blog/biyoloji-konulari-soru-dagilimi),
+süreç konularının şemayla öğrenilmesi
+[biyoloji nasıl çalışılır](/blog/biyoloji-nasil-calisilir), ezber yükünün
+azaltılması
+[biyoloji nasıl ezberlenir](/blog/biyoloji-nasil-ezberlenir) yazısında.
+
+### Sosyal bilimler
+
+Tarih, TYT ve AYT birlikte 26 soruyla sözel derslerin en büyüğü. Tarih-1 ile
+Tarih-2 ayrımı ve dağılım
+[tarih konuları ve soru dağılımı](/blog/tarih-konulari-soru-dagilimi)
+yazısında; neden-sonuç zinciri kurma yöntemi
+[tarih nasıl çalışılır](/blog/tarih-nasil-calisilir), sıralama sorularının
+mantığı
+[tarih kronolojisi nasıl öğrenilir](/blog/tarih-kronolojisi-nasil-ogrenilir)
+yazısında.
+
+Coğrafyanın ortak dili harita ve ders bu yüzden az süreyle yüksek net veriyor.
+Dağılım
+[coğrafya konuları ve soru dağılımı](/blog/cografya-konulari-soru-dagilimi),
+çalışma düzeni [coğrafya nasıl çalışılır](/blog/cografya-nasil-calisilir),
+izohips ve koordinat sorularının çözümü
+[coğrafya harita soruları](/blog/cografya-harita-sorulari) yazısında.
+
+Felsefe grubu tek ders gibi görünse de dört ayrı alt dersten oluşuyor.
+Dağılımı
+[felsefe konuları ve soru dağılımı](/blog/felsefe-konulari-soru-dagilimi)
+yazısında, dördünün ayrı yöntemleri
+[felsefe nasıl çalışılır](/blog/felsefe-nasil-calisilir) yazısında. Filozof
+eşleştirmesinin gruplama mantığı
+[filozoflar nasıl ezberlenir](/blog/filozoflar-nasil-ezberlenir) yazısında
+anlatıldı.
+
+Din kültürü ise 11 soruyla, soru başına en az süre isteyen ders. Konu dağılımı
+[din kültürü konuları](/blog/din-kulturu-konulari) yazısında, haftada bir
+saatlik düzen
+[din kültürü nasıl çalışılır](/blog/din-kulturu-nasil-calisilir) yazısında.
+AYT'de bu soruların yerine ilave felsefe sorularını kimin cevapladığı ise
+[din kültürü mü ek felsefe mi](/blog/din-kulturu-ek-felsefe) yazısında
+açıklandı.
+
 ## Sonraki adım
 
 Yol haritası kurulduktan sonra iş, haftalık düzenin sürekliliğine kalıyor.
