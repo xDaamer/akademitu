@@ -2,6 +2,7 @@ import express from "express";
 import { userClient } from "../supabase.js";
 import { auditLog } from "../audit.js";
 import { requireSession, requireUserType, type SessionLocals } from "../roles.js";
+import { TR_OFFSET, haftaBasi, haftaSonrasi } from "../weekUtils.js";
 
 /*
  * PANEL VERİSİ — /api/portal/*
@@ -68,39 +69,37 @@ router.get("/ozet", async (req, res) => {
     auditLog(req, "VIEW_PORTAL_SUMMARY", { userId });
 
     /*
-     * exam_results / payments / coach_notes'ta `user_id` filtresi YOK —
-     * gerekmiyor, o üç tabloda tek bir SELECT politikası var ve o da
-     * "user_id = auth.uid()" diyor. Filtreyi elle eklemek, güvenliğin oradan
-     * geldiği izlenimi verirdi; gelmiyor, politikadan geliyor.
+     * payments / coach_notes'ta `user_id` filtresi YOK — gerekmiyor, o iki
+     * tabloda tek bir SELECT politikası var ve o da "user_id = auth.uid()"
+     * diyor. Filtreyi elle eklemek, güvenliğin oradan geldiği izlenimi
+     * verirdi; gelmiyor, politikadan geliyor.
      *
-     * lessons İSTİSNA VE FİLTRESİ VAR — sebebi öğretmen panelinin eklenmesi:
-     * o tabloda artık İKİ SELECT politikası duruyor (lessons_select_own ve
-     * lessons_select_as_teacher) ve politikalar OR'lanıyor. Yani RLS'in
-     * açtığı küme "benim derslerim VEYA benim verdiğim dersler". Öğrenci
-     * paneli bunlardan yalnızca ilkini soruyor. Filtresiz bırakılırsa, bir
-     * veri girişi hatasıyla bu kullanıcının kimliği bir dersin teacher_id'sine
-     * yazılmış olsaydı o ders öğrencinin "bu hafta" listesinde belirirdi.
-     * RLS hâlâ başkasının verisini vermiyor; filtre, DOĞRU SORUYU sormak için.
+     * lessons İSTİSNA VE FİLTRESİ VAR (iki sorguda da) — sebebi öğretmen
+     * panelinin eklenmesi: o tabloda artık İKİ SELECT politikası duruyor
+     * (lessons_select_own ve lessons_select_as_teacher) ve politikalar
+     * OR'lanıyor. Yani RLS'in açtığı küme "benim derslerim VEYA benim
+     * verdiğim dersler". Öğrenci paneli bunlardan yalnızca ilkini soruyor.
+     * Filtresiz bırakılırsa, bir veri girişi hatasıyla bu kullanıcının
+     * kimliği bir dersin teacher_id'sine yazılmış olsaydı o ders öğrencinin
+     * "bu hafta" listesinde belirirdi. RLS hâlâ başkasının verisini vermiyor;
+     * filtre, DOĞRU SORUYU sormak için.
      *
-     * Dört sorgu paralel: birbirini beklemelerinin sebebi yok.
+     * "BU HAFTA" TAKVİM HAFTASI, KAYAN 7 GÜN DEĞİL: sınırlar /api/teacher/
+     * schedule ile AYNI ../weekUtils.js'ten geliyor (Türkiye saatiyle
+     * pazartesi-pazar). Böylece bir öğrencinin "bu hafta" gördüğü aralıkla
+     * öğretmeninin programındaki hafta sessizce ayrışmıyor.
      */
-    const simdi = new Date();
-    const haftaSonu = new Date(simdi.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const pazartesi = haftaBasi(undefined);
+    const sonrakiPazartesi = haftaSonrasi(pazartesi);
 
-    const [dersler, denemeler, odemeler, notlar] = await Promise.all([
+    const [dersler, odemeler, notlar, gecmisDersler] = await Promise.all([
       supabase
         .from("lessons")
-        .select("id, subject, teacher_name, starts_at, kind")
+        .select("id, subject, teacher_name, starts_at, status, kind")
         .eq("user_id", userId)
-        .gte("starts_at", simdi.toISOString())
-        .lte("starts_at", haftaSonu.toISOString())
+        .gte("starts_at", `${pazartesi}T00:00:00${TR_OFFSET}`)
+        .lt("starts_at", `${sonrakiPazartesi}T00:00:00${TR_OFFSET}`)
         .order("starts_at", { ascending: true }),
-      supabase
-        .from("exam_results")
-        .select("id, title, net, taken_on")
-        .order("taken_on", { ascending: true })
-        // Grafik son 8 denemeyi gösteriyor; tamamını çekmenin anlamı yok.
-        .limit(8),
       supabase
         .from("payments")
         .select("id, period, amount, currency, status, due_on")
@@ -111,20 +110,66 @@ router.get("/ozet", async (req, res) => {
         .select("id, author_name, body, written_on")
         .order("written_on", { ascending: false })
         .limit(1),
+      /*
+       * GEÇMİŞ DERSLER — panelin küçük önizleme alanı için son 4 tamamlanmış
+       * ders. Tam liste (ve tamamı) zaten /yorumlar'da var; burası "hepsini
+       * gör" öncesi bir bakış, o yüzden limit küçük ve ayrı bir uç yerine
+       * AYNI özet isteğine ekleniyor — dosyanın başındaki gerekçe (tek
+       * istekte dört bölüm) burada da geçerli, beşinci bölüm ekstra bir tur
+       * atmasın diye.
+       */
+      supabase
+        .from("lessons")
+        .select("id, subject, teacher_name, starts_at")
+        .eq("user_id", userId)
+        .eq("status", "completed")
+        .order("starts_at", { ascending: false })
+        .limit(4),
     ]);
 
-    const hata = dersler.error || denemeler.error || odemeler.error || notlar.error;
+    const hata = dersler.error || odemeler.error || notlar.error || gecmisDersler.error;
     if (hata) {
       console.error("[Portal] özet sorgusu başarısız:", hata.message);
       return res.status(502).json({ success: false, error: GENERIC_ERROR });
     }
 
+    /*
+     * Geçmiş derslerin yorumları AYRI sorguda — /yorumlar'daki gerekçenin
+     * aynısı: lessons ve lesson_comments'ın RLS'i burada da ayrı ayrı
+     * çalışıyor, bunu açıkça görmek daha iyi. Ders yoksa hiç çalışmıyor.
+     */
+    const gecmisDersIdleri = (gecmisDersler.data ?? []).map((d) => d.id);
+    const yorumlar = new Map<string, { text: string; updatedAt: string }>();
+
+    if (gecmisDersIdleri.length > 0) {
+      const { data: yorumSatirlari, error: yorumHatasi } = await supabase
+        .from("lesson_comments")
+        .select("lesson_id, comment, updated_at")
+        .in("lesson_id", gecmisDersIdleri);
+
+      if (yorumHatasi) {
+        console.error("[Portal] geçmiş ders yorumları okunamadı:", yorumHatasi.message);
+        return res.status(502).json({ success: false, error: GENERIC_ERROR });
+      }
+
+      for (const y of yorumSatirlari ?? []) {
+        yorumlar.set(y.lesson_id, { text: y.comment, updatedAt: y.updated_at });
+      }
+    }
+
     return res.json({
       success: true,
+      weekStart: pazartesi,
       lessons: dersler.data ?? [],
-      examResults: denemeler.data ?? [],
       payments: odemeler.data ?? [],
       coachNote: notlar.data?.[0] ?? null,
+      pastLessons: (gecmisDersler.data ?? []).map((d) => ({
+        id: d.id,
+        subject: d.subject,
+        teacherName: d.teacher_name,
+        startsAt: d.starts_at,
+        comment: yorumlar.get(d.id) ?? null,
+      })),
     });
   } catch (err: any) {
     console.error("[Portal] özet istisnası:", err?.message || err);

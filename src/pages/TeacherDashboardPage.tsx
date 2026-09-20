@@ -7,6 +7,7 @@ import { apiFetch, ApiRequestError } from '../lib/api';
 import { SITE_URL } from '../config';
 import need from '../../need.json';
 import { routingMode, TEACHER_PATH } from '../lib/host';
+import { GUN_ADLARI, gunEkle, gunEtiketi } from '../lib/haftaTarih';
 import { PanelHeader } from '../components/portal/PanelHeader';
 import {
   TeacherLessonList,
@@ -48,7 +49,7 @@ interface ProgramCevabi {
  * Program Türkiye saatiyle konuşulan bir şey: yurt dışındaki bir öğretmen
  * panelini açtığında dersinin "09:00"da olduğunu görmeli, kendi saatiyle
  * 06:00 değil. Sunucu da hafta sınırlarını +03:00 ile kuruyor
- * (server/routes/teacher.ts) — iki taraf aynı varsayımda.
+ * (server/weekUtils.ts) — iki taraf aynı varsayımda.
  */
 const TZ = 'Europe/Istanbul';
 
@@ -69,32 +70,6 @@ function trSaatMetni(iso: string): string {
     minute: '2-digit',
   }).format(new Date(iso));
 }
-
-/** "2026-09-08" -> o günden n gün sonrası, yine "YYYY-MM-DD". */
-function gunEkle(tarih: string, n: number): string {
-  const d = new Date(`${tarih}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-/** "2026-09-08" -> "8 Eylül". Hafta başlığı ve gün etiketleri için. */
-function gunEtiketi(tarih: string): string {
-  return new Intl.DateTimeFormat('tr-TR', {
-    timeZone: 'UTC',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date(`${tarih}T00:00:00Z`));
-}
-
-const GUN_ADLARI = [
-  'Pazartesi',
-  'Salı',
-  'Çarşamba',
-  'Perşembe',
-  'Cuma',
-  'Cumartesi',
-  'Pazar',
-] as const;
 
 const DURUM_ETIKET: Record<ProgramDersi['status'], { metin: string; sinif: string }> = {
   scheduled: { metin: 'Planlandı', sinif: 'bg-[#191F61]/10 text-[#191F61]' },

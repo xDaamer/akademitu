@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, TrendingUp, CreditCard, MessageSquareQuote, ChevronRight } from 'lucide-react';
+import { CalendarDays, History, CreditCard, MessageSquareQuote, ChevronRight } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch, ApiRequestError } from '../lib/api';
@@ -8,6 +8,8 @@ import { formatNationalMobile, extractSignificantPhoneDigits } from '../lib/phon
 import { SITE_URL } from '../config';
 import need from '../../need.json';
 import { routingMode, studentCommentsPath } from '../lib/host';
+import { GUN_ADLARI, gunEkle, gunEtiketi } from '../lib/haftaTarih';
+import { trTarih } from '../components/portal/TeacherLessonList';
 import { PanelHeader } from '../components/portal/PanelHeader';
 
 /*
@@ -33,14 +35,22 @@ interface Ders {
   subject: string;
   teacher_name: string | null;
   starts_at: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
   kind: 'ders' | 'koclu';
 }
 
-interface Deneme {
+interface Yorum {
+  text: string;
+  updatedAt: string;
+}
+
+/** Küçük "Geçmiş dersler" önizlemesi — tam liste /yorumlar sayfasında. */
+interface GecmisDers {
   id: string;
-  title: string;
-  net: number;
-  taken_on: string;
+  subject: string;
+  teacherName: string | null;
+  startsAt: string;
+  comment: Yorum | null;
 }
 
 interface Odeme {
@@ -60,21 +70,57 @@ interface KocNotu {
 }
 
 interface Ozet {
+  weekStart: string;
   lessons: Ders[];
-  examResults: Deneme[];
   payments: Odeme[];
   coachNote: KocNotu | null;
+  pastLessons: GecmisDers[];
 }
 
-const GUNLER = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'] as const;
+const DURUM_ETIKET: Record<Ders['status'], { metin: string; sinif: string }> = {
+  scheduled: { metin: 'Planlandı', sinif: 'bg-slate-100 text-slate-600' },
+  completed: { metin: 'İşlendi', sinif: 'bg-emerald-100 text-emerald-800' },
+  cancelled: { metin: 'İptal', sinif: 'bg-slate-200 text-slate-500' },
+};
 
-function gunKisa(iso: string) {
-  return GUNLER[new Date(iso).getDay()];
-}
+/** Takvimdeki tek ders kartı — mobil gün listesinde ve masaüstü ızgarada aynı. */
+const DersKarti: React.FC<{ ders: Ders }> = ({ ders }) => {
+  const durum = DURUM_ETIKET[ders.status];
 
-function ayinGunu(iso: string) {
-  return new Date(iso).getDate();
-}
+  return (
+    <div
+      className={`rounded-lg border p-2 text-left ${
+        ders.status === 'cancelled'
+          ? 'border-slate-200 bg-slate-50 opacity-70'
+          : 'border-[#191F61]/15 bg-[#191F61]/5'
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs font-bold text-slate-500">{saat(ders.starts_at)}</p>
+        {/* Koçluk seansı, normal dersten renkle ayrılıyor — eski düz listedeki
+            aynı ayrım, kartlara taşındı. */}
+        {ders.kind === 'koclu' && (
+          <span className="rounded-full bg-[#B6D6CC]/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#191F61]">
+            Koçluk
+          </span>
+        )}
+      </div>
+      <p className="truncate text-sm font-bold text-[#191F61]" title={ders.subject}>
+        {ders.subject}
+      </p>
+      {ders.teacher_name && (
+        <p className="truncate text-xs text-slate-600" title={ders.teacher_name}>
+          {ders.teacher_name}
+        </p>
+      )}
+      <span
+        className={`mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${durum.sinif}`}
+      >
+        {durum.metin}
+      </span>
+    </div>
+  );
+};
 
 function saat(iso: string) {
   return new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -156,10 +202,25 @@ export const PortalDashboardPage: React.FC = () => {
   }, []);
 
   const ilkAd = user?.fullName?.trim().split(' ')[0];
-  const denemeler = ozet?.examResults ?? [];
-  const enYuksekNet = denemeler.length ? Math.max(...denemeler.map((d) => Number(d.net))) : 0;
-  const sonNet = denemeler.length ? Number(denemeler[denemeler.length - 1].net) : 0;
-  const ilkNet = denemeler.length ? Number(denemeler[0].net) : 0;
+
+  /* Haftanın yedi günü, "YYYY-MM-DD" listesi. Takvimin sütunları/bölümleri. */
+  const gunler = useMemo(
+    () => (ozet?.weekStart ? Array.from({ length: 7 }, (_, i) => gunEkle(ozet.weekStart, i)) : []),
+    [ozet?.weekStart]
+  );
+
+  /* Gün -> o günün dersleri. Takvim her hücrede listeyi taramasın diye tek
+     seferde kuruluyor — TeacherDashboardPage'deki aynı desen. */
+  const gunlereGore = useMemo(() => {
+    const harita = new Map<string, Ders[]>();
+    for (const ders of ozet?.lessons ?? []) {
+      const gun = trTarih(ders.starts_at);
+      const mevcut = harita.get(gun);
+      if (mevcut) mevcut.push(ders);
+      else harita.set(gun, [ders]);
+    }
+    return harita;
+  }, [ozet]);
 
   return (
     <>
@@ -186,7 +247,7 @@ export const PortalDashboardPage: React.FC = () => {
               Hoş geldin{ilkAd ? `, ${ilkAd}` : ''}.
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Ders programın, deneme sonuçların ve ödemelerin burada.
+              Bu haftanın ders programı, geçmiş derslerin ve ödemelerin burada.
             </p>
           </div>
 
@@ -204,103 +265,109 @@ export const PortalDashboardPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               {/*
-                BU HAFTA — panelin merkezi ve tam genişlikte.
-                Öğrencinin panele her girişte bakacağı tek şey hangi gün hangi
-                ders; diğer bölümler yanında bilinçli olarak sessiz.
+                BU HAFTA — panelin merkezi ve tam genişlikte, artık pazartesi-
+                pazar 7 günlük bir takvim. Sınırlar sunucuda /api/teacher/
+                schedule ile AYNI hafta tanımından geliyor (bkz.
+                server/weekUtils.ts), o yüzden bir dersin "bu hafta" olup
+                olmadığı öğrenci ve öğretmen panelinde aynı cevabı verir.
               */}
               <Bolum baslik="Bu hafta" ikon={<CalendarDays className="h-5 w-5" />} genis>
-                {ozet?.lessons.length ? (
-                  <ul className="divide-y divide-slate-100">
-                    {ozet.lessons.map((d) => (
-                      <li key={d.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                        <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-slate-50 py-1.5">
-                          <span className="text-[11px] font-semibold uppercase text-slate-500">
-                            {gunKisa(d.starts_at)}
-                          </span>
-                          <span className="text-sm font-bold text-[#191F61]">
-                            {ayinGunu(d.starts_at)}
-                          </span>
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-slate-900">{d.subject}</p>
-                          {d.teacher_name && (
-                            <p className="truncate text-sm text-slate-500">{d.teacher_name}</p>
-                          )}
-                        </div>
-
-                        <span
-                          className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                            d.kind === 'koclu'
-                              ? 'bg-[#B6D6CC]/50 text-[#191F61]'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {saat(d.starts_at)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
+                {!ozet?.lessons.length ? (
                   <Bos>Bu hafta planlanmış dersin görünmüyor.</Bos>
+                ) : (
+                  <>
+                    {/*
+                      MOBİL: gün gün liste. Yedi sütunlu bir ızgara telefonda
+                      okunamaz — TeacherDashboardPage'deki aynı gerekçe.
+                    */}
+                    <div className="space-y-5 lg:hidden">
+                      {gunler.map((gun, i) => {
+                        const dersler = gunlereGore.get(gun) ?? [];
+                        if (dersler.length === 0) return null;
+
+                        return (
+                          <div key={gun}>
+                            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                              {GUN_ADLARI[i]} · {gunEtiketi(gun)}
+                            </h3>
+                            <div className="space-y-2">
+                              {dersler.map((ders) => (
+                                <DersKarti key={ders.id} ders={ders} />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* MASAÜSTÜ: pazartesi-pazar 7 sütun. */}
+                    <div className="hidden gap-2 lg:grid lg:grid-cols-7">
+                      {gunler.map((gun, i) => {
+                        const dersler = gunlereGore.get(gun) ?? [];
+
+                        return (
+                          <div key={gun} className="min-w-0">
+                            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                              {GUN_ADLARI[i]}
+                              <span className="block font-medium normal-case text-slate-400">
+                                {gunEtiketi(gun)}
+                              </span>
+                            </h3>
+                            <div className="space-y-1.5">
+                              {dersler.length ? (
+                                dersler.map((ders) => <DersKarti key={ders.id} ders={ders} />)
+                              ) : (
+                                <p className="text-xs text-slate-300">—</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </Bolum>
 
-              {/* Grafik CSS sütunlarıyla — birkaç çubuk için kütüphane eklemeye değmez. */}
-              <Bolum baslik="Deneme gelişimi" ikon={<TrendingUp className="h-5 w-5" />}>
-                {denemeler.length ? (
+              {/*
+                GEÇMİŞ DERSLER — küçük önizleme. Tam liste ve tamamlanan her
+                dersin yorumu zaten /yorumlar sayfasında (StudentCommentsPage);
+                burası "hepsini gör"e gitmeden önce son birkaç dersin ve varsa
+                koçun notunun hızlı bir özeti.
+              */}
+              <Bolum baslik="Geçmiş dersler" ikon={<History className="h-5 w-5" />}>
+                {ozet?.pastLessons.length ? (
                   <>
-                    {/*
-                      Çubuk ve etiketler AYRI SATIRDA: yüzde yükseklik ancak ana
-                      kutunun yüksekliği belirli olduğunda çözülür. Aynı sütunda
-                      dururken sütun auto yüksekliğe düşüyor ve çubuklar hiç
-                      görünmüyordu.
-                    */}
-                    <div
-                      className="flex h-32 items-end gap-2"
-                      role="img"
-                      aria-label={`Deneme netleri: ${denemeler.map((d) => d.net).join(', ')}`}
+                    <ul className="space-y-2.5">
+                      {ozet.pastLessons.map((ders) => (
+                        <li key={ders.id} className="rounded-xl bg-slate-50 px-4 py-3">
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="text-sm font-bold text-[#191F61]">
+                              {ders.subject}
+                            </span>
+                            {ders.teacherName && (
+                              <span className="text-xs text-slate-500">· {ders.teacherName}</span>
+                            )}
+                            <span className="ml-auto text-xs text-slate-400">
+                              {tarihUzun(ders.startsAt)}
+                            </span>
+                          </div>
+                          <p className="mt-1 truncate text-xs text-slate-500">
+                            {ders.comment ? ders.comment.text : 'Henüz yorum eklenmedi.'}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Link
+                      to={studentCommentsPath()}
+                      className="mt-4 inline-flex items-center gap-1.5 rounded text-sm font-bold text-[#191F61] transition-colors hover:text-[#101442] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
                     >
-                      {denemeler.map((d, i) => (
-                        <div key={d.id} className="flex h-full flex-1 items-end">
-                          <div
-                            className={`w-full rounded-t-lg ${
-                              i === denemeler.length - 1 ? 'bg-[#191F61]' : 'bg-[#191F61]/25'
-                            }`}
-                            style={{
-                              height: enYuksekNet
-                                ? `${(Number(d.net) / enYuksekNet) * 100}%`
-                                : '0%',
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-2 flex gap-2" aria-hidden="true">
-                      {denemeler.map((d) => (
-                        <span
-                          key={d.id}
-                          className="flex-1 text-center text-xs font-bold text-slate-600"
-                        >
-                          {Number(d.net)}
-                        </span>
-                      ))}
-                    </div>
-
-                    <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">
-                      Son denemede <span className="font-bold text-[#191F61]">{sonNet} net</span>
-                      {denemeler.length > 1 && (
-                        <>
-                          {' '}
-                          — ilk denemeye göre {sonNet >= ilkNet ? '' : '−'}
-                          {Math.abs(sonNet - ilkNet)} {sonNet >= ilkNet ? 'artış' : 'düşüş'}.
-                        </>
-                      )}
-                    </p>
+                      Tümünü gör
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
                   </>
                 ) : (
-                  <Bos>Henüz deneme sonucun girilmemiş.</Bos>
+                  <Bos>Henüz tamamlanmış dersin yok.</Bos>
                 )}
               </Bolum>
 
