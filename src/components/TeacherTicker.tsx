@@ -317,7 +317,7 @@ export const TeacherTicker: React.FC = () => {
           items={col1Items}
           pixelsPerSecond={pixelsPerSecond}
           reverse={false}
-          phaseOffsetSeconds={0}
+          phaseOffsetSeconds={config.phaseOffsetSeconds}
           enabled={speedResolved}
           onMeasure={handleLeftMeasure}
         />
@@ -326,7 +326,7 @@ export const TeacherTicker: React.FC = () => {
           items={col2Items}
           pixelsPerSecond={pixelsPerSecond}
           reverse={true}
-          phaseOffsetSeconds={config.phaseOffsetSeconds}
+          phaseOffsetSeconds={0}
           enabled={speedResolved}
         />
       </div>
