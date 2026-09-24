@@ -10,6 +10,11 @@
 -- iptal dersi fixture'ı eklendikten sonra; dosyanın tamamı tek script
 -- olarak henüz koşulmadı — SQL Editor'de bir kez çalıştırıp doğrulayın.)
 --
+-- 28-32 numaralı testler 2026-09-24'te lessons_insert_as_teacher politikası
+-- için EKLENDİ (öğretmenin kendi öğrencisine ders açması) ve HENÜZ
+-- ÇALIŞTIRILMADI — supabase-teacher-panel.sql'deki §5'i uyguladıktan sonra
+-- bu dosyayı SQL Editor'de çalıştırıp bu notu gerçek sonuçla güncelleyin.
+--
 -- ---------------------------------------------------------------------------
 -- NEDEN BURADA, ARAYÜZDE DEĞİL
 -- ---------------------------------------------------------------------------
@@ -276,6 +281,44 @@ BEGIN
     INSERT INTO sonuc VALUES (26,'Ogretmen ders silme','RED','RED '||sqlstate, true);
   END;
 
+  -- ============================================ ÖĞRETMENİN KENDİ DERSİNİ AÇMASI
+  -- lessons_insert_as_teacher + kolon bazlı GRANT INSERT — eklendi 2026-09-24.
+  -- Hâlâ ÖĞRETMEN A kimliğindeyiz (yukarıdaki UPDATE testleriyle aynı context).
+  BEGIN
+    INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
+    VALUES (s1, tA, 'Ogretmen A', 'Yeni ders', now() + interval '2 days', 'scheduled');
+    INSERT INTO sonuc VALUES (28,'OgretmenA kendi ogrencisine ders acma','izin','izin', true);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (28,'OgretmenA kendi ogrencisine ders acma','izin','RED '||sqlstate, false);
+  END;
+
+  -- Planin asil sinirlamasi: hic ortak dersi olmayan (OgretmenB'nin) ogrencisine acamaz.
+  BEGIN
+    INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
+    VALUES (s2, tA, 'Ogretmen A', 'Izinsiz ders', now() + interval '2 days', 'scheduled');
+    INSERT INTO sonuc VALUES (29,'OgretmenA, OgretmenB nin ogrencisine ders acma','RED','IZIN VERILDI!', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (29,'OgretmenA, OgretmenB nin ogrencisine ders acma','RED','RED '||sqlstate, true);
+  END;
+
+  -- Baskasi adina (teacher_id=tB) ders acma denemesi -- kendi ogrencisi olsa bile.
+  BEGIN
+    INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
+    VALUES (s1, tB, 'Ogretmen B', 'Baskasi adina', now() + interval '2 days', 'scheduled');
+    INSERT INTO sonuc VALUES (30,'OgretmenA, OgretmenB adina ders acma','RED','IZIN VERILDI!', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (30,'OgretmenA, OgretmenB adina ders acma','RED','RED '||sqlstate, true);
+  END;
+
+  -- 'cancelled' durumuyla acma denemesi -- iptal bir yonetim karari, olusturmada da kapali.
+  BEGIN
+    INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
+    VALUES (s1, tA, 'Ogretmen A', 'Iptal ders', now() + interval '2 days', 'cancelled');
+    INSERT INTO sonuc VALUES (31,'OgretmenA cancelled durumla ders acma','RED','IZIN VERILDI!', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (31,'OgretmenA cancelled durumla ders acma','RED','RED '||sqlstate, true);
+  END;
+
   PERFORM set_config('request.jwt.claims', json_build_object('sub',s1,'role','authenticated')::text, true);
   BEGIN
     UPDATE public.lessons SET status='completed' WHERE id=dA2;
@@ -283,6 +326,15 @@ BEGIN
     INSERT INTO sonuc VALUES (27,'Ogrenci kendi dersini isledi yapma','0 satir', n||' satir', n=0);
   EXCEPTION WHEN others THEN
     INSERT INTO sonuc VALUES (27,'Ogrenci kendi dersini isledi yapma','0 satir','RED '||sqlstate, true);
+  END;
+
+  -- Ogrenci kendi adina INSERT ile ders acmaya calisiyor -- bu uc hicbir ogrenciye acik degil.
+  BEGIN
+    INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
+    VALUES (s1, s1, 'Sahte', 'Ogrenci acti', now() + interval '2 days', 'scheduled');
+    INSERT INTO sonuc VALUES (32,'Ogrenci kendi dersini INSERT ile acma','RED','ACTI!', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (32,'Ogrenci kendi dersini INSERT ile acma','RED','RED '||sqlstate, true);
   END;
 
   -- ========================================================= ÖĞRENCİ 2 GİBİ

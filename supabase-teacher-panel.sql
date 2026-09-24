@@ -591,3 +591,51 @@ DROP FUNCTION IF EXISTS public.ogrencim_mi(UUID);
 --  where conrelid in ('public.profiles'::regclass,'public.lessons'::regclass,
 --                     'public.lesson_comments'::regclass)
 --    and contype in ('c','u') order by conname;
+
+
+-- =========================================================================
+-- 5) lessons — ÖĞRETMENİN KENDİ DERSİNİ AÇMASI (INSERT) — eklendi 2026-09-24
+-- =========================================================================
+-- Şimdiye kadar ders girişi yalnızca yönetim panelindeydi (server/routes/
+-- admin.ts, serviceClient() ile). Artık öğretmen kendi panelinden de ders
+-- açabiliyor (server/routes/teacher.ts > POST /api/teacher/dersler) — ama
+-- HERKESE değil: yalnızca DAHA ÖNCE DERS VERDİĞİ ya da YÖNETİCİNİN ATADIĞI
+-- öğrencilere. İkisi de aynı koşula indirgeniyor — "bu öğretmenle bu
+-- öğrencinin ortak bir lessons satırı var mı" — çünkü admin bir öğrenciyi
+-- bir öğretmene ATAMANIN tek yolu zaten böyle bir satır yazmak. Bu koşulu
+-- 4d'deki private.ogrencim_mi(uuid) zaten cevaplıyor (profiles_select_as_
+-- teacher'ın kullandığı fonksiyon), o yüzden burada tekrar yazılmıyor.
+--
+-- SONUÇ: yeni bir öğretmen hesabının HİÇ dersi yoksa (admin henüz kimseyi
+-- atamadıysa) bu öğretmen kendi başına İLK dersi bile açamaz — bilerek.
+-- Bootstrap admin'in işi, tıpkı hesap açmanın kendisi gibi.
+--
+-- teacher.ts kendi route'unda da AYNI kontrolü yapıyor (kullanıcıya anlamlı
+-- 403 döndürmek için), ama asıl sınır burası: route hatalı olsa bile bu
+-- politika olmadan satır yazılamaz.
+--
+-- authenticated'a GENİŞ bir INSERT yetkisi verilmiyor — KOLON BAZLI, tıpkı
+-- 4b'deki GRANT UPDATE (status) gibi: yalnızca aşağıdaki sekiz kolon.
+-- id ve created_at listede YOK, ikisinin de veritabanı varsayılanı var.
+GRANT INSERT (user_id, teacher_id, teacher_name, subject, starts_at, ends_at, kind, status)
+  ON public.lessons TO authenticated;
+
+-- status: 'cancelled' BİLEREK dışarıda — 4b'deki gerekçenin aynısı, iptal
+-- ücretlendirmeyi de ilgilendiren bir yönetim kararı. kind: yalnızca
+-- bilinen iki değer; tabloda bunun için bir CHECK yok (admin tarafı da
+-- yalnızca route'ta doğruluyor), politika burada aynı disiplini kuruyor.
+DROP POLICY IF EXISTS "lessons_insert_as_teacher" ON public.lessons;
+CREATE POLICY "lessons_insert_as_teacher" ON public.lessons
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    teacher_id = auth.uid()
+    AND private.ogrencim_mi(user_id)
+    AND status IN ('scheduled', 'completed')
+    AND kind IN ('ders', 'koclu')
+  );
+
+-- Doğrulama (supabase-teacher-panel-tests.sql'e eklenmedi çünkü o dosya
+-- panelin uçtan uca akışını test ediyor ve bu satır oraya organik olarak
+-- girer — testteki öğretmen zaten kendi öğrencisine bu uçla ders açar):
+-- beklenen: kendi öğrencin DEĞİLSE 0 satır/RLS reddi, öğrencinse 1 satır,
+-- 'cancelled' ya da başka bir teacher_id ile denemek RLS reddi.

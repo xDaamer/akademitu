@@ -285,6 +285,202 @@ router.patch("/lessons/:lessonId/status", async (_req, res) => {
   }
 });
 
+/* =========================================================================
+ * ÖĞRETMENİN KENDİ DERSİNİ AÇMASI — eklendi 2026-09-24
+ * =========================================================================
+ * Bu uca kadar ders girişi yalnızca yönetim panelindeydi. Artık öğretmen de
+ * ders açabiliyor ama HERKESE değil: yalnızca DAHA ÖNCE DERS VERDİĞİ ya da
+ * YÖNETİCİNİN ATADIĞI öğrencilere — ikisi aynı koşula indirgeniyor, çünkü
+ * bir öğrenciyi bir öğretmene ATAMANIN tek yolu zaten teacher_id'li bir
+ * lessons satırı yazmak (admin panelinden ya da öğretmenin kendisinden).
+ * Yani "bu öğretmenle bu öğrencinin ortak bir dersi var mı" sorusu ikisini
+ * de kapsıyor.
+ *
+ * KORUMA KATMANLARI (dersGovdesi'nin admin.ts'teki eşleniği burada da var):
+ *   1. Bu route: studentId biçimi, alanlar, öğrencinin GERÇEKTEN bu
+ *      öğretmenle ortak dersi var mı — kullanıcıya anlamlı 403/400 dönmek
+ *      için.
+ *   2. RLS (lessons_insert_as_teacher, supabase-teacher-panel.sql §5): route
+ *      hatalı olsa bile satır teacher_id=auth.uid() ve ogrencim_mi(user_id)
+ *      olmadan yazılamaz. 'cancelled' de veritabanı seviyesinde kapalı.
+ *   3. Kolon bazlı GRANT INSERT: yalnızca aşağıdaki sekiz kolon yazılabilir.
+ *
+ * serviceClient() KULLANILMIYOR — dosyanın başındaki gerekçe burada da
+ * geçerli: RLS emniyet ağı düşmesin.
+ */
+const OGRENCI_ERROR = "Öğrenci listesi alınamadı. Lütfen tekrar deneyin.";
+const DERS_OLUSTURMA_ERROR = "Ders oluşturulamadı. Lütfen tekrar deneyin.";
+const DERS_TURLERI = new Set(["ders", "koclu"]);
+/* 'cancelled' BİLEREK yok — RLS'teki (§5) ve /status ucundaki (yukarıda)
+   gerekçenin aynısı: iptal ücretlendirmeyi de ilgilendiren bir yönetim
+   kararı, öğretmenin işi değil. */
+const OLUSTURMA_DURUMLARI = new Set(["scheduled", "completed"]);
+
+function metinAlan(value: unknown, maks = 200): string | null {
+  if (typeof value !== "string") return null;
+  const temiz = value.trim();
+  if (!temiz || temiz.length > maks) return null;
+  return temiz;
+}
+
+/** ISO tarih-saat. Geçersizse null — istemci `datetime-local` gönderiyor. */
+function zamanAlan(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
+ * "KENDİ ÖĞRENCİLERİM" — GET /api/teacher/ogrenciler
+ *
+ * Ders açma formunun öğrenci listesi. Admin panelindeki gibi TÜM öğrenciler
+ * değil — yalnızca öğretmenin daha önce ders verdiği / kendisine atanmış
+ * olanlar, çünkü liste zaten "kime ders açabilirsin" sorusunun cevabı
+ * olmalı; daha geniş bir liste göstermek RLS'in reddedeceği bir seçimi
+ * arayüzde önceden sunmak olurdu.
+ */
+router.get("/ogrenciler", async (_req, res) => {
+  const { accessToken, userId } = res.locals as unknown as SessionLocals;
+
+  const supabase = userClient(accessToken);
+  if (!supabase) {
+    return res.status(503).json({ success: false, error: OGRENCI_ERROR });
+  }
+
+  try {
+    const { data: dersler, error: derslerHatasi } = await supabase
+      .from("lessons")
+      .select("user_id")
+      .eq("teacher_id", userId);
+
+    if (derslerHatasi) {
+      console.error("[Teacher] öğrenci listesi sorgusu başarısız:", derslerHatasi.message);
+      return res.status(502).json({ success: false, error: OGRENCI_ERROR });
+    }
+
+    const ogrenciIdleri = [...new Set((dersler ?? []).map((d) => d.user_id))];
+    if (!ogrenciIdleri.length) {
+      return res.json({ success: true, students: [] });
+    }
+
+    /* profiles_select_as_teacher (private.ogrencim_mi ile) zaten aynı
+       koşulu uyguluyor — bu sorgu genişletici değil, sadece adları getiriyor. */
+    const { data: profiller, error: profilHatasi } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", ogrenciIdleri)
+      .order("full_name", { ascending: true });
+
+    if (profilHatasi) {
+      console.error("[Teacher] öğrenci profilleri okunamadı:", profilHatasi.message);
+      return res.status(502).json({ success: false, error: OGRENCI_ERROR });
+    }
+
+    return res.json({
+      success: true,
+      students: (profiller ?? []).map((p) => ({ id: p.id, fullName: p.full_name })),
+    });
+  } catch (err: any) {
+    console.error("[Teacher] öğrenci listesi istisnası:", err?.message || err);
+    return res.status(500).json({ success: false, error: OGRENCI_ERROR });
+  }
+});
+
+/** DERS AÇ — POST /api/teacher/dersler */
+router.post("/dersler", async (req, res) => {
+  const { accessToken, userId, fullName } = res.locals as unknown as SessionLocals;
+
+  const studentId = typeof req.body?.studentId === "string" ? req.body.studentId : "";
+  const subject = metinAlan(req.body?.subject, 120);
+  const startsAt = zamanAlan(req.body?.startsAt);
+  const endsAt = req.body?.endsAt ? zamanAlan(req.body.endsAt) : null;
+  const kind = typeof req.body?.kind === "string" ? req.body.kind : "ders";
+  const status = typeof req.body?.status === "string" ? req.body.status : "scheduled";
+
+  if (!UUID_BICIMI.test(studentId)) {
+    return res.status(400).json({ success: false, error: "Öğrenci seçilmedi." });
+  }
+  if (!subject) return res.status(400).json({ success: false, error: "Ders konusu gerekli." });
+  if (!startsAt) return res.status(400).json({ success: false, error: "Başlangıç tarihi geçersiz." });
+  if (req.body?.endsAt && !endsAt) {
+    return res.status(400).json({ success: false, error: "Bitiş tarihi geçersiz." });
+  }
+  if (endsAt && endsAt <= startsAt) {
+    return res.status(400).json({ success: false, error: "Bitiş, başlangıçtan sonra olmalı." });
+  }
+  if (!DERS_TURLERI.has(kind)) {
+    return res.status(400).json({ success: false, error: "Geçersiz ders türü." });
+  }
+  if (!OLUSTURMA_DURUMLARI.has(status)) {
+    return res.status(400).json({ success: false, error: "Geçersiz ders durumu." });
+  }
+
+  const supabase = userClient(accessToken);
+  if (!supabase) {
+    return res.status(503).json({ success: false, error: DERS_OLUSTURMA_ERROR });
+  }
+
+  try {
+    /*
+     * Öğrenci GERÇEKTEN bu öğretmenin öğrencisi mi — RLS (§5) aynı koşulu
+     * zaten uyguluyor, ama bu kontrol olmadan reddedilen bir INSERT
+     * kullanıcıya PostgREST'in genel "satır dönmedi" hatası olarak görünür.
+     * Burada anlamlı bir 403 döndürüyoruz.
+     */
+    const { data: mevcutDers, error: kontrolHatasi } = await supabase
+      .from("lessons")
+      .select("id")
+      .eq("teacher_id", userId)
+      .eq("user_id", studentId)
+      .limit(1)
+      .maybeSingle();
+
+    if (kontrolHatasi) {
+      console.error("[Teacher] öğrenci kontrolü başarısız:", kontrolHatasi.message);
+      return res.status(502).json({ success: false, error: DERS_OLUSTURMA_ERROR });
+    }
+    if (!mevcutDers) {
+      return res.status(403).json({
+        success: false,
+        error: "Bu öğrenciye yalnızca daha önce ders verdiyseniz veya yönetici sizi atadıysa ders açabilirsiniz.",
+      });
+    }
+
+    /* teacher_name DENORMALİZE — admin.ts'teki aynı gerekçe: öğrenci paneli
+       bunu gösteriyor ve hesap silinse bile dersin kimden alındığı kalmalı.
+       Kullanıcının gönderebileceği bir alan DEĞİL, oturumdaki kendi adı. */
+    const { data: yeni, error: yazmaHatasi } = await supabase
+      .from("lessons")
+      .insert({
+        user_id: studentId,
+        teacher_id: userId,
+        teacher_name: fullName,
+        subject,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        kind,
+        status,
+      })
+      .select("id")
+      .single();
+
+    if (yazmaHatasi) {
+      console.error("[Teacher] ders oluşturulamadı:", yazmaHatasi.message);
+      return res.status(502).json({ success: false, error: DERS_OLUSTURMA_ERROR });
+    }
+
+    auditLog(req, "TEACHER_LESSON_CREATED", {
+      userId,
+      detay: { dersId: yeni.id, ogrenciId: studentId },
+    });
+
+    return res.json({ success: true, id: yeni.id });
+  } catch (err: any) {
+    console.error("[Teacher] ders oluşturma istisnası:", err?.message || err);
+    return res.status(500).json({ success: false, error: DERS_OLUSTURMA_ERROR });
+  }
+});
+
 /**
  * YORUM YAZ/GÜNCELLE — PUT /api/teacher/lessons/:lessonId/comment
  *

@@ -48,6 +48,11 @@ export type AuditAction =
      Görüntüleme olaylarından farklı olarak bunun geriye dönük cevabı
      başka hiçbir yerde yok — lessons.status yalnızca son hâli tutuyor. */
   | "LESSON_STATUS_CHANGED"
+  /* Öğretmenin kendi başına ders açması (eklendi 2026-09-24). RLS
+     (lessons_insert_as_teacher) bunu zaten sınırlıyor, ama bu da yönetim
+     yazmalarıyla aynı gerekçeyle kayıt altında: kim, hangi öğrenciye,
+     ne zaman ders açtı sorusunun geriye dönük tek cevabı bu satır. */
+  | "TEACHER_LESSON_CREATED"
   /* Yönetim paneli. Bu olaylar diğerlerinden DAHA ÖNEMLİ: /api/admin/*
      servis rolüyle çalışıyor, yani RLS emniyet ağı orada yok ve yapılan
      işin geriye dönük tek kaydı burası (bkz. server/routes/admin.ts).
