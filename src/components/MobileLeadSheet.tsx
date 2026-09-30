@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, Phone, User, ArrowRight } from 'lucide-react';
 import { motion, PanInfo } from 'motion/react';
-import logoWhite from '../assets/logo-white.png';
 import { Button } from './ui/Button';
+import { BrandWordmark } from './ui/BrandWordmark';
 
 /*
  * MOBİL: ALTTAN AÇILAN İLK ADIM
@@ -97,7 +97,7 @@ export const MobileLeadSheet: React.FC<MobileLeadSheetProps> = ({
       {/* LOGO, ADIM VE KAPAT */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <img src={logoWhite} alt="Sherpa Akademi" className="h-9 w-auto object-contain shrink-0" />
+          <BrandWordmark className="text-[10px] shrink-0" />
           <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
             <span className="w-2 h-2 rounded-full bg-[#191F61]" />
             Adım 1/2

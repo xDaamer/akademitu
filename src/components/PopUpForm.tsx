@@ -11,8 +11,8 @@ import {
 } from '../lib/phone';
 import { KvkkModal } from './KvkkModal';
 import { MobileLeadSheet } from './MobileLeadSheet';
-import logoWhite from '../assets/logo-white.png';
 import { Button } from './ui/Button';
+import { BrandWordmark } from './ui/BrandWordmark';
 
 interface PopUpFormProps {
   isOpen: boolean;
@@ -528,11 +528,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                             Geri
                           </Button>
                         )}
-                        <img
-                          src={logoWhite}
-                          alt="Sherpa Akademi Logo"
-                          className="h-10 w-auto object-contain"
-                        />
+                        <BrandWordmark className="text-xs" />
                         <div className="flex items-center gap-1.5">
                           <span className={`w-2.5 h-2.5 rounded-full ${currentStep === 1 ? 'bg-[#191F61] animate-pulse' : 'bg-slate-300'}`} />
                           <span className="text-xs font-bold text-slate-600">
@@ -802,11 +798,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           <span className="hidden sm:inline">Geri</span>
                         </Button>
                       )}
-                      <img
-                        src={logoWhite}
-                        alt="Sherpa Akademi Logo"
-                        className="h-11 sm:h-12 w-auto object-contain shrink-0"
-                      />
+                      <BrandWordmark className="text-sm sm:text-base shrink-0" />
                       <div className="min-w-0">
                         <h3 className="text-lg sm:text-xl font-extrabold text-[#191F61] tracking-tight">
                           {currentStep === 1 && 'Ücretsiz Deneme Dersi'}

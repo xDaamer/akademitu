@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, UserRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import logoWhite from '../assets/logo-white.png';
 import { Button } from './ui/Button';
+import { BrandWordmark } from './ui/BrandWordmark';
 
 interface HeaderProps {
   onOpenTrialForm: () => void;
@@ -76,21 +76,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             }}
             className="flex shrink-0 items-center gap-3 group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
           >
-            {/* width/height: görsel inmeden yer ayrılır (CLS güvencesi).
-                alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
-            <img
-              src={logoWhite}
-              alt="Sherpa Akademi"
-              width={512}
-              height={512}
-              className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105"
-            />
-            {/* "Sherpa Akademi" eski "akademITU"dan belirgin şekilde uzun;
-                375px'te logo + yazı + ikonlar dar sığıyordu (bkz. aşağıdaki not),
-                bu yüzden mobilde küçük, md+'de eski boyut. */}
-            <span className="text-base sm:text-lg md:text-2xl font-extrabold tracking-tight text-[#191F61] whitespace-nowrap">
-              Sherpa Akademi
-            </span>
+            {/* Logo görseli burada YOK: kendi lacivert kare zemini bu beyaz
+                çubukla uyumsuz durur (bkz. BrandWordmark). 375px'te bile
+                dar sığıyordu (bkz. aşağıdaki not), o yüzden mobilde küçük,
+                md+'de daha büyük. */}
+            <BrandWordmark className="text-xs sm:text-sm md:text-base" />
           </a>
 
           {/*
@@ -272,14 +262,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             >
               <div className="flex items-center justify-between border-b border-slate-100 px-5 h-20 shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <img
-                    src={logoWhite}
-                    alt=""
-                    className="h-10 w-auto object-contain"
-                  />
-                  <span className="text-lg font-extrabold tracking-tight text-[#191F61]">
-                    Sherpa Akademi
-                  </span>
+                  <BrandWordmark className="text-base" />
                 </div>
 
                 <Button

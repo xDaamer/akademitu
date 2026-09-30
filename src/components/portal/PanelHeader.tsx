@@ -4,6 +4,7 @@ import { ArrowLeft, LogOut } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { SITE_URL } from '../../config';
+import logo from '../../assets/logo-white.png';
 
 /*
  * PANEL BAŞLIĞI — ÜÇ PANELİN ORTAK ÜST ÇUBUĞU
@@ -77,8 +78,9 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
           */
           <a
             href={`${SITE_URL}/`}
-            className="rounded text-lg font-extrabold tracking-tight text-white transition-colors hover:text-[#B6D6CC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#191F61]"
+            className="flex items-center gap-2 rounded text-lg font-extrabold tracking-tight text-white transition-colors hover:text-[#B6D6CC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#191F61]"
           >
+            <img src={logo} alt="" className="h-7 w-auto object-contain" />
             Sherpa Akademi
           </a>
         )}

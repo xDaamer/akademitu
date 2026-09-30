@@ -1,4 +1,5 @@
 import React from 'react';
+import logo from '../../assets/logo-white.png';
 
 /*
  * PORTALIN SOL PANELİ
@@ -24,9 +25,12 @@ export const PortalBrandPanel: React.FC = () => {
       <div className="pointer-events-none absolute -left-24 bottom-8 h-80 w-80 rounded-full bg-[#c5a059]/12 blur-2xl" />
       <div className="pointer-events-none absolute left-1/4 top-1/3 h-[30rem] w-[30rem] -translate-y-1/4 rounded-full bg-[#2a3080]/60 blur-3xl" />
 
-      <p className="relative z-10 text-sm font-semibold tracking-tight text-white/60">
-        Sherpa Akademi
-      </p>
+      <div className="relative z-10 flex items-center gap-2">
+        <img src={logo} alt="" className="h-8 w-auto object-contain" />
+        <p className="text-sm font-semibold tracking-tight text-white/60">
+          Sherpa Akademi
+        </p>
+      </div>
 
       <div className="relative z-10 max-w-lg">
         {/*
