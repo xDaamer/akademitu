@@ -6,14 +6,14 @@ import need from '../../need.json';
  * Site iki host'tan servis ediliyor ve ikisi de AYNI Vercel projesinden,
  * aynı `dist/` çıktısıyla geliyor:
  *
- *   akademitu.com          -> pazarlama sayfaları + /login (giriş ekranı)
- *   portal.akademitu.com   -> panelin kendisi, kökte (/)
+ *   sherpakademi.com          -> pazarlama sayfaları + /login (giriş ekranı)
+ *   portal.sherpakademi.com   -> panelin kendisi, kökte (/)
  *
  * Yani "hangi sayfa var" sorusunun cevabını yol değil HOST veriyor. Bu dosya
  * o kararın tek yeri; başka hiçbir bileşen `window.location.hostname`
  * okumamalı, aksi halde alan adı değiştiğinde düzeltilecek yer sayısı artar.
  *
- * ADRESLER need.json'DAN GELİR. Kodun içine "https://portal.akademitu.com"
+ * ADRESLER need.json'DAN GELİR. Kodun içine "https://portal.sherpakademi.com"
  * yazmayın — SITE_URL için geçerli olan gerekçenin (bkz. src/config.ts) aynısı.
  *
  * BU BİR GÜVENLİK SINIRI DEĞİL. Bundle tek olduğu için panel bileşenlerinin
@@ -25,7 +25,7 @@ import need from '../../need.json';
 /*
  * Yerel geliştirme ve Vercel önizlemeleri için kaçış kapısı. Tanımlıysa
  * need.json'daki canlı adreslerin yerine geçer; örneğin /etc/hosts'a
- * akademitu.local + portal.akademitu.local ekleyip iki host'lu kurulumu
+ * sherpakademi.local + portal.sherpakademi.local ekleyip iki host'lu kurulumu
  * birebir denemek için (bkz. .env.example, COOKIE_DOMAIN).
  */
 const MAIN_ORIGIN: string =
@@ -53,8 +53,8 @@ export const PANEL_URL = `${PORTAL_ORIGIN}/`;
 /**
  * UYGULAMANIN HANGİ ROUTE AĞACINI KURACAĞI
  * ---------------------------------------------------------------------------
- * 'portal' : yalnızca panel (portal.akademitu.com)
- * 'main'   : yalnızca pazarlama + giriş (akademitu.com / www.akademitu.com)
+ * 'portal' : yalnızca panel (portal.sherpakademi.com)
+ * 'main'   : yalnızca pazarlama + giriş (sherpakademi.com / www.sherpakademi.com)
  * 'both'   : ikisi birden — localhost ve *.vercel.app önizlemeleri
  *
  * 'both' BİLEREK var: tek host'lu bir ortamda ("npm run dev") panel adresi
@@ -72,7 +72,7 @@ export function routingMode(): RoutingMode {
   const hostname = window.location.hostname.toLowerCase();
 
   /* İlk etiketi "portal" olan her host panel sayılır: canlı adresin yanı sıra
-     portal.akademitu.local gibi yerel kurulumları da kapsar. */
+     portal.sherpakademi.local gibi yerel kurulumları da kapsar. */
   if (host === PORTAL_HOST || hostname.split('.')[0] === 'portal') return 'portal';
 
   /* Ana site: www'lu ve www'suz hâl aynı şey. */

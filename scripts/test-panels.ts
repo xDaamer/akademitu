@@ -15,7 +15,7 @@
  *
  * KULLANIM
  * ----------------------------------------------------------------------------
- *   npm run test:panels -- --base https://www.akademitu.com \
+ *   npm run test:panels -- --base https://www.sherpakademi.com \
  *     --admin 05xxxxxxxxx:yonetici-sifresi
  *
  * Yalnızca YÖNETİCİ kimliği gerekiyor; öğretmen ve öğrenci hesaplarını betik
@@ -54,7 +54,7 @@ function kimlikAyristir(ham: string | undefined): Kimlik | null {
   return { phone: ham.slice(0, i), password: ham.slice(i + 1) };
 }
 
-const BASE = (argOku("base") || "https://www.akademitu.com").replace(/\/$/, "");
+const BASE = (argOku("base") || "https://www.sherpakademi.com").replace(/\/$/, "");
 const YONETICI = kimlikAyristir(argOku("admin"));
 let OGRETMEN = kimlikAyristir(argOku("teacher"));
 let OGRENCI = kimlikAyristir(argOku("student"));

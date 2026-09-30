@@ -19,7 +19,7 @@ export const TrustBar: React.FC = () => {
           Şerit görsel olarak Hero'nun devamı olduğu için başlık sadece
           erişilebilirlik ağacında var: sr-only. */}
       <h2 id="guven-basligi" className="sr-only">
-        Neden akademITU ile çalışmalısınız?
+        Neden Sherpa Akademi ile çalışmalısınız?
       </h2>
       <div className="max-w-6xl mx-auto -mt-6 sm:-mt-8 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-900/5 px-5 sm:px-8 py-5 sm:py-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-5 gap-x-4 sm:gap-6">

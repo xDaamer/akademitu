@@ -97,7 +97,7 @@ export const MobileLeadSheet: React.FC<MobileLeadSheetProps> = ({
       {/* LOGO, ADIM VE KAPAT */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <img src={logoWhite} alt="akademITU" className="h-9 w-auto object-contain shrink-0" />
+          <img src={logoWhite} alt="Sherpa Akademi" className="h-9 w-auto object-contain shrink-0" />
           <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
             <span className="w-2 h-2 rounded-full bg-[#191F61]" />
             Adım 1/2

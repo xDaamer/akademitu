@@ -28,8 +28,8 @@ export const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children 
 
   if (!user) {
     /*
-     * Giriş ekranı ARTIK BAŞKA BİR HOST'TA (akademitu.com/login); panel
-     * portal.akademitu.com'da. Bu yüzden react-router <Navigate> yetmiyor,
+     * Giriş ekranı ARTIK BAŞKA BİR HOST'TA (sherpakademi.com/login); panel
+     * portal.sherpakademi.com'da. Bu yüzden react-router <Navigate> yetmiyor,
      * tam sayfa yüklemesi gerekiyor — bkz. CrossHostRedirect.
      *
      * `state.from` da bu yüzden kaldırıldı: router state'i host geçişinde

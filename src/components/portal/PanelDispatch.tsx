@@ -7,7 +7,7 @@ import { PortalDashboardPage } from '../../pages/PortalDashboardPage';
 /*
  * PANEL KÖKÜ — KİM GELDİYSE ONUN PANELİ
  * ---------------------------------------------------------------------------
- * portal.akademitu.com/ (ve 'both' modunda /panel) iki rol tarafından da
+ * portal.sherpakademi.com/ (ve 'both' modunda /panel) iki rol tarafından da
  * açılabiliyor: giriş sonrası yönlendirme rolü zaten biliyor ama yer imi,
  * elle yazılan adres ve eski /portal* yönlendirmeleri hep köke düşüyor.
  *

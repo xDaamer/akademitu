@@ -17,7 +17,7 @@ import {
 import { TeacherLessonForm } from '../components/portal/TeacherLessonForm';
 
 /*
- * ÖĞRETMEN PANELİ — portal.akademitu.com/ogretmen
+ * ÖĞRETMEN PANELİ — portal.sherpakademi.com/ogretmen
  * ===========================================================================
  * Öğrenci paneliyle (PortalDashboardPage) aynı host'ta, aynı çerezle, aynı
  * kabuk diliyle; ayrı olan yalnızca veri ve hangi soruyu cevapladığı:
@@ -230,8 +230,8 @@ export const TeacherDashboardPage: React.FC = () => {
           yaşıyor, adresi ana siteninki değil. 'both' modunda (localhost/
           önizleme) ayrı host olmadığı için ana origin doğru cevap. */}
       <PageMeta
-        title="Öğretmen Paneli | akademITU"
-        description="akademITU öğretmen paneli."
+        title="Öğretmen Paneli | Sherpa Akademi"
+        description="Sherpa Akademi öğretmen paneli."
         origin={yerel ? SITE_URL : need.portal.domain}
         path={yerel ? `/panel${TEACHER_PATH}` : TEACHER_PATH}
         noIndex

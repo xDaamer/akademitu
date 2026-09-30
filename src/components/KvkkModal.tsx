@@ -60,7 +60,7 @@ export const KvkkModal: React.FC<KvkkModalProps> = ({ isOpen, onClose }) => {
 
               <div>
                 <h4 className="font-bold text-slate-800 mb-1">1. Veri Sorumlusu</h4>
-                <p>6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) kapsamında, Akademitu internet sitesi üzerinden toplanan kişisel verilerinizin veri sorumlusu <strong>Kerem Ünal</strong>&apos;dır.</p>
+                <p>6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) kapsamında, Sherpa Akademi internet sitesi üzerinden toplanan kişisel verilerinizin veri sorumlusu <strong>Kerem Ünal</strong>&apos;dır.</p>
                 <p className="mt-1">Adres: Katar Cd., Maslak Mah., Sarıyer/İstanbul<br />E-posta: keremunl0616@gmail.com</p>
               </div>
 

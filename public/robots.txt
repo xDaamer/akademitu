@@ -1,4 +1,4 @@
-# robots.txt for akademITU
+# robots.txt for Sherpa Akademi
 
 User-agent: *
 Allow: /
@@ -13,4 +13,4 @@ Allow: /blog
 Disallow: /blog/ara
 Disallow: /blog/onizleme
 
-Sitemap: https://www.akademitu.com/sitemap.xml
+Sitemap: https://www.sherpakademi.com/sitemap.xml

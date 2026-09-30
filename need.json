@@ -1,9 +1,9 @@
 {
   "site": {
-    "name": "akademITU",
+    "name": "Sherpa Akademi",
     "version": "2.1.0",
-    "domain": "https://www.akademitu.com",
-    "domainLocal": "www.akademitu.com",
+    "domain": "https://www.sherpakademi.com",
+    "domainLocal": "www.sherpakademi.com",
     "title": "YKS ve LGS Koçluğu | Derece Hocalarıyla Online Özel Ders",
     "description": "Derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve koçluk. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
     "keywords": "YKS koçluk, LGS koçluk, online YKS özel ders, online LGS özel ders, TYT matematik özel ders, AYT matematik özel ders, LGS matematik özel ders, üniversite hazırlık koçluğu",
@@ -12,9 +12,9 @@
     "logoUrl": "/logo.png"
   },
   "portal": {
-    "_note": "PANEL ALT ALAN ADI. Panel akademitu.com'da değil, portal.akademitu.com kökünde yaşar; giriş ekranı ana sitede /login yolunda kalır. Bu iki değer kodda ELLE YAZILMAZ — src/lib/host.ts ve vercel.json buradan okur/eşleşir. Değiştirirseniz vercel.json'daki host koşullarını da güncelleyin.",
-    "domain": "https://portal.akademitu.com",
-    "host": "portal.akademitu.com",
+    "_note": "PANEL ALT ALAN ADI. Panel sherpakademi.com'da değil, portal.sherpakademi.com kökünde yaşar; giriş ekranı ana sitede /login yolunda kalır. Bu iki değer kodda ELLE YAZILMAZ — src/lib/host.ts ve vercel.json buradan okur/eşleşir. Değiştirirseniz vercel.json'daki host koşullarını da güncelleyin.",
+    "domain": "https://portal.sherpakademi.com",
+    "host": "portal.sherpakademi.com",
     "loginPath": "/login"
   },
   "contact": {
@@ -26,10 +26,10 @@
       "region": "İstanbul",
       "country": "TR"
     },
-    "whatsapp": "https://wa.me/905303699539?text=Merhaba! AkademITU için bilgi almak istiyorum."
+    "whatsapp": "https://wa.me/905303699539?text=Merhaba! Sherpa Akademi için bilgi almak istiyorum."
   },
   "social": {
-    "instagram": "https://www.instagram.com/akademitu",
+    "instagram": "https://www.instagram.com/sherpakademi",
     "youtube": "https://www.youtube.com/@akademitu",
     "twitter": "https://www.twitter.com/akademitu"
   },
@@ -46,24 +46,24 @@
       {
         "id": "privacy",
         "path": "/gizlilik-politikasi",
-        "title": "Gizlilik Politikası | akademITU",
-        "description": "akademITU gizlilik politikası ve KVKK aydınlatma metni: hangi kişisel verileri topluyoruz, neden işliyoruz ve haklarınızı nasıl kullanırsınız.",
+        "title": "Gizlilik Politikası | Sherpa Akademi",
+        "description": "Sherpa Akademi gizlilik politikası ve KVKK aydınlatma metni: hangi kişisel verileri topluyoruz, neden işliyoruz ve haklarınızı nasıl kullanırsınız.",
         "changefreq": "yearly",
         "priority": 0.3
       },
       {
         "id": "terms",
         "path": "/kullanim-kosullari",
-        "title": "Kullanım Koşulları | akademITU",
-        "description": "akademITU internet sitesi kullanım koşulları: hizmet kapsamı, kullanıcı yükümlülükleri, fikri mülkiyet hakları ve sorumluluğun sınırlandırılması.",
+        "title": "Kullanım Koşulları | Sherpa Akademi",
+        "description": "Sherpa Akademi internet sitesi kullanım koşulları: hizmet kapsamı, kullanıcı yükümlülükleri, fikri mülkiyet hakları ve sorumluluğun sınırlandırılması.",
         "changefreq": "yearly",
         "priority": 0.3
       }
     ],
     "_notFoundNote": "404 BİLEREK `pages` DİZİSİNİN DIŞINDA. scripts/generate-seo.ts o diziyi olduğu gibi sitemap.xml'e çeviriyor; buraya bir girdi eklemek /404'ü sitemap'e yazmak olurdu. Kardeş anahtar olarak duruyor ki hem NotFoundPage hem scripts/prerender.ts aynı metni okusun ve ikisi ayrışmasın.",
     "notFound": {
-      "title": "Sayfa Bulunamadı | akademITU",
-      "description": "Aradığınız sayfa bulunamadı. akademITU ana sayfasından YKS ve LGS koçluk paketlerimize ulaşabilirsiniz."
+      "title": "Sayfa Bulunamadı | Sherpa Akademi",
+      "description": "Aradığınız sayfa bulunamadı. Sherpa Akademi ana sayfasından YKS ve LGS koçluk paketlerimize ulaşabilirsiniz."
     }
   },
   "legal": {

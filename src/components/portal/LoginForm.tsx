@@ -102,11 +102,11 @@ export const LoginForm: React.FC = () => {
       );
 
       /*
-       * Panel BAŞKA BİR HOST'TA: portal.akademitu.com. react-router oraya
+       * Panel BAŞKA BİR HOST'TA: portal.sherpakademi.com. react-router oraya
        * gidemez, tam sayfa yüklemesi gerekiyor.
        *
        * Oturumun yeni host'ta da tanınmasını sağlayan şey çerezin
-       * Domain=.akademitu.com ile yazılmış olması (bkz. server/cookies.ts) —
+       * Domain=.sherpakademi.com ile yazılmış olması (bkz. server/cookies.ts) —
        * jeton URL'de TAŞINMAZ. Kılavuzun "handoff token" yöntemine gerek yok,
        * çünkü iki host aynı kayıtlı alan adı ve aynı sunucu altında.
        *

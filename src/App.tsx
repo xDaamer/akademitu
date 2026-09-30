@@ -115,8 +115,8 @@ export default function App() {
   /*
    * HANGİ HOST, HANGİ SAYFALAR (bkz. src/lib/host.ts)
    * -------------------------------------------------------------------------
-   * 'portal' -> portal.akademitu.com: yalnızca panel, kökte.
-   * 'main'   -> akademitu.com: pazarlama sayfaları + /login.
+   * 'portal' -> portal.sherpakademi.com: yalnızca panel, kökte.
+   * 'main'   -> sherpakademi.com: pazarlama sayfaları + /login.
    * 'both'   -> localhost / önizleme: ikisi birden, panel /panel yolunda.
    *
    * Host sekmenin ömrü boyunca değişmediği için bir kez okunuyor.
@@ -236,7 +236,7 @@ export default function App() {
       <SpeedInsights />
       {/*
         KURULUŞ + SİTE ŞEMASI. Panel host'unda YAYINLANMAZ:
-        portal.akademitu.com tamamen noindex (vercel.json'daki X-Robots-Tag) ve
+        portal.sherpakademi.com tamamen noindex (vercel.json'daki X-Robots-Tag) ve
         orada kuruluş/site şeması basmak, dizine girmemesi istenen bir adresi
         kanonik site gibi gösterirdi.
       */}
@@ -264,7 +264,7 @@ export default function App() {
       {/*
         ROUTE AĞACI HOST'A GÖRE KURULUYOR.
         -----------------------------------------------------------------------
-        Panel portal.akademitu.com KÖKÜNDE, giriş ekranı akademitu.com/login'de.
+        Panel portal.sherpakademi.com KÖKÜNDE, giriş ekranı sherpakademi.com/login'de.
         Eski /portal ve /portal/panel adresleri bir süre canlıda yayındaydı ve
         yer imlerinde/paylaşımlarda duruyor olabilir; hepsi yeni karşılığına
         yönlendiriliyor. Aynı yönlendirmeler Vercel kenarında da (vercel.json)
@@ -393,7 +393,7 @@ export default function App() {
 
           {/*
             Panel alt sayfalarının ANA SİTEDE yazılmış hâlleri. Canlı panel
-            adresleri portal.akademitu.com/ogretmen ve /yorumlar; birileri bu
+            adresleri portal.sherpakademi.com/ogretmen ve /yorumlar; birileri bu
             yolları ana siteye yazarsa 404 yerine doğru host'a gitmeli —
             /portal/panel için zaten yapılanın aynısı.
             'both' modunda bu yollar ayrı ayrı mount edilmiyor: orada panelin

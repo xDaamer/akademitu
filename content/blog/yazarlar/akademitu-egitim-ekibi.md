@@ -1,7 +1,7 @@
 ---
-fullName: "akademITU Eğitim Ekibi"
+fullName: "Sherpa Akademi Eğitim Ekibi"
 jobTitle: "YKS ve LGS Hazırlık Kadrosu"
-credentials: "akademITU, YKS ve LGS hazırlığında birebir online özel ders ve koçluk veren bir eğitim ekibidir. Bu içerikler ekibin ders deneyimine dayanır; sınav formatı ve takvim bilgileri ÖSYM ile MEB'in yayımladığı kılavuzlara dayandırılır."
+credentials: "Sherpa Akademi, YKS ve LGS hazırlığında birebir online özel ders ve koçluk veren bir eğitim ekibidir. Bu içerikler ekibin ders deneyimine dayanır; sınav formatı ve takvim bilgileri ÖSYM ile MEB'in yayımladığı kılavuzlara dayandırılır."
 avatar: ""
 linkedin: ""
 expertise:
@@ -11,7 +11,7 @@ expertise:
   - Eğitim koçluğu
 ---
 
-akademITU, derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve
+Sherpa Akademi, derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve
 koçluk veriyor. Blogdaki yazılar ders veren kadronun deneyimine dayanıyor.
 
 Sınav formatı, soru sayısı ve takvim gibi bilgilerin kaynağı ÖSYM ve MEB'in

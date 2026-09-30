@@ -25,7 +25,7 @@ export const PortalBrandPanel: React.FC = () => {
       <div className="pointer-events-none absolute left-1/4 top-1/3 h-[30rem] w-[30rem] -translate-y-1/4 rounded-full bg-[#2a3080]/60 blur-3xl" />
 
       <p className="relative z-10 text-sm font-semibold tracking-tight text-white/60">
-        akademITU
+        Sherpa Akademi
       </p>
 
       <div className="relative z-10 max-w-lg">
@@ -51,7 +51,7 @@ export const PortalBrandPanel: React.FC = () => {
       </div>
 
       <p className="relative z-10 text-xs text-white/40">
-        © {new Date().getFullYear()} akademITU. Tüm hakları saklıdır.
+        © {new Date().getFullYear()} Sherpa Akademi. Tüm hakları saklıdır.
       </p>
     </aside>
   );

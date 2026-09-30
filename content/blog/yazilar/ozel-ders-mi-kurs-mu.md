@@ -271,6 +271,6 @@ nasıl kullanılacağını,
 [haftalık çalışma programı nasıl hazırlanır](/blog/haftalik-calisma-programi-nasil-hazirlanir)
 yazısı da düzenin nasıl kurulacağını anlatıyor.
 
-akademITU birebir online özel ders ve koçluk veriyor; ilk görüşme ücretsiz ve
+Sherpa Akademi birebir online özel ders ve koçluk veriyor; ilk görüşme ücretsiz ve
 taahhüt içermiyor. Ama yukarıdaki listeler kursun daha uygun olduğunu
 gösteriyorsa, doğru karar odur.

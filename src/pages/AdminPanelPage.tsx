@@ -12,7 +12,7 @@ import { AdminPayments } from '../components/portal/admin/AdminPayments';
 import type { Hesap } from '../components/portal/admin/AdminUI';
 
 /*
- * YÖNETİM PANELİ — portal.akademitu.com/yonetim
+ * YÖNETİM PANELİ — portal.sherpakademi.com/yonetim
  * ===========================================================================
  * Hesap açma, ders atama, ücret girme. Bu üçü daha önce Supabase Dashboard
  * ve elle SQL gerektiriyordu.
@@ -69,8 +69,8 @@ export const AdminPanelPage: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Yönetim Paneli | akademITU"
-        description="akademITU yönetim paneli."
+        title="Yönetim Paneli | Sherpa Akademi"
+        description="Sherpa Akademi yönetim paneli."
         origin={yerel ? SITE_URL : need.portal.domain}
         path={yerel ? `/panel${ADMIN_PATH}` : ADMIN_PATH}
         noIndex

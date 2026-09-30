@@ -79,7 +79,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
             href={`${SITE_URL}/`}
             className="rounded text-lg font-extrabold tracking-tight text-white transition-colors hover:text-[#B6D6CC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#191F61]"
           >
-            akademITU
+            Sherpa Akademi
           </a>
         )}
 

@@ -10,7 +10,7 @@ import { FieldShell, fieldInputClasses } from './Field';
 /*
  * TELEFON ALANI (+90 SABİT ÇİPİ)
  * ---------------------------------------------------------------------------
- * Ülke seçici YOK, bilinçli olarak: akademITU yalnızca Türkiye'ye hizmet
+ * Ülke seçici YOK, bilinçli olarak: Sherpa Akademi yalnızca Türkiye'ye hizmet
  * veriyor ve veritabanı kuralı da (`^0?5[0-9]{9}$`) sadece TR cep numarası
  * kabul ediyor. 50 ülkelik bir açılır liste, hiçbiri seçilemeyecekken
  * kullanıcıya seçim varmış izlenimi verirdi.

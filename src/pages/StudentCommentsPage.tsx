@@ -88,7 +88,7 @@ export const StudentCommentsPage: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Koçun Yorumları | akademITU"
+        title="Koçun Yorumları | Sherpa Akademi"
         description="Derslerine öğretmenlerinin bıraktığı yorumlar."
         origin={yerel ? SITE_URL : need.portal.domain}
         path={yerel ? `/panel${COMMENTS_PATH}` : COMMENTS_PATH}

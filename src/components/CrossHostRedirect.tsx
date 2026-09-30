@@ -6,8 +6,8 @@ import { isCrossHost } from '../lib/host';
  * BAŞKA HOST'A YÖNLENDİRME
  * ---------------------------------------------------------------------------
  * react-router'ın <Navigate> bileşeni yalnızca uygulama İÇİNDE gezinir; ona
- * "https://portal.akademitu.com/" vermek işe yaramaz (yolu göreli sanar).
- * akademitu.com ile portal.akademitu.com arası geçiş tam sayfa yüklemesidir.
+ * "https://portal.sherpakademi.com/" vermek işe yaramaz (yolu göreli sanar).
+ * sherpakademi.com ile portal.sherpakademi.com arası geçiş tam sayfa yüklemesidir.
  *
  * Bu bileşen hedefe bakıp doğru aracı seçer: tam URL ise window.location,
  * göreli yol ise <Navigate>. Böylece aynı JSX yerelde (tek host, göreli yol)

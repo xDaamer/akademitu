@@ -530,7 +530,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         )}
                         <img
                           src={logoWhite}
-                          alt="akademITU Logo"
+                          alt="Sherpa Akademi Logo"
                           className="h-10 w-auto object-contain"
                         />
                         <div className="flex items-center gap-1.5">
@@ -804,7 +804,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                       )}
                       <img
                         src={logoWhite}
-                        alt="akademITU Logo"
+                        alt="Sherpa Akademi Logo"
                         className="h-11 sm:h-12 w-auto object-contain shrink-0"
                       />
                       <div className="min-w-0">

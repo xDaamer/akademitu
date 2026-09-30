@@ -438,7 +438,7 @@ sürecin bütününde dağınıklık varsa koçluk daha isabetli oluyor. İkisi 
 fark [özel ders mi kurs mu](/blog/ozel-ders-mi-kurs-mu) yazısında ayrıca
 karşılaştırılıyor.
 
-akademITU bu iki hizmeti de veriyor; ilk görüşme ücretsiz ve taahhüt içermiyor.
+Sherpa Akademi bu iki hizmeti de veriyor; ilk görüşme ücretsiz ve taahhüt içermiyor.
 Ama şunu açıkça söylemek gerekir: destek, çalışmanın yerine geçmez. İyi bir
 koç ya da öğretmen harcanan saati daha verimli hâle getirir, o saatin yerini
 almaz.

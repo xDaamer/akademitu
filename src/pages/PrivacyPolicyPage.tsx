@@ -31,7 +31,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <section>
             <h2 className="font-bold text-lg text-[#191F61] mb-2">1. Veri Sorumlusu</h2>
             <p>
-              6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, akademITU olarak
+              6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, Sherpa Akademi olarak
               kişisel verileriniz veri sorumlusu sıfatıyla tarafımızca aşağıda açıklanan kapsamda işlenmektedir.
             </p>
           </section>

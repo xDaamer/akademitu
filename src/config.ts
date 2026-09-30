@@ -7,7 +7,7 @@ import need from '../need.json';
 /**
  * KANONİK SİTE ADRESİ
  * -------------------------------------------------------------------------
- * Tek kaynak `need.json`'dır. Kod içinde "https://www.akademitu.com" yazmayın —
+ * Tek kaynak `need.json`'dır. Kod içinde "https://www.sherpakademi.com" yazmayın —
  * eskiden canonical/sitemap www'suz, JSON-LD www'lu yazılmıştı ve kodda iki
  * farklı "doğru" adres dolaşıyordu. Sondaki `/` yoktur; kullanan taraf ekler.
  */

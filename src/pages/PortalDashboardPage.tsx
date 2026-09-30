@@ -13,11 +13,11 @@ import { trTarih } from '../components/portal/TeacherLessonList';
 import { PanelHeader } from '../components/portal/PanelHeader';
 
 /*
- * PANEL — portal.akademitu.com KÖKÜ
+ * PANEL — portal.sherpakademi.com KÖKÜ
  * ===========================================================================
  * Panel ana siteden ayrı bir alt alan adında yaşıyor; giriş ekranı ise
- * akademitu.com/login'de kaldı (bkz. src/lib/host.ts). İkisi aynı Vercel
- * projesinden servis ediliyor, oturum çerezi Domain=.akademitu.com ile
+ * sherpakademi.com/login'de kaldı (bkz. src/lib/host.ts). İkisi aynı Vercel
+ * projesinden servis ediliyor, oturum çerezi Domain=.sherpakademi.com ile
  * ikisinde de geçerli (bkz. server/cookies.ts).
  *
  * Veriler /api/portal/ozet'ten geliyor — tek istek, dört bölüm. Sunucu o
@@ -226,13 +226,13 @@ export const PortalDashboardPage: React.FC = () => {
     <>
       {/*
         origin: panel kendi alt alan adında yaşıyor, adresi ana siteninki
-        değil. path "/" çünkü portal.akademitu.com'un kökü. ('both' modunda —
+        değil. path "/" çünkü portal.sherpakademi.com'un kökü. ('both' modunda —
         localhost/önizleme — ayrı bir host olmadığı için ana origin ve /panel
         yolu doğru cevap.)
       */}
       <PageMeta
-        title="Panel | akademITU"
-        description="akademITU öğrenci ve veli paneli."
+        title="Panel | Sherpa Akademi"
+        description="Sherpa Akademi öğrenci ve veli paneli."
         origin={routingMode() === 'both' ? SITE_URL : need.portal.domain}
         path={routingMode() === 'both' ? '/panel' : '/'}
         noIndex
@@ -300,13 +300,18 @@ export const PortalDashboardPage: React.FC = () => {
                       })}
                     </div>
 
-                    {/* MASAÜSTÜ: pazartesi-pazar 7 sütun. */}
+                    {/*
+                      MASAÜSTÜ: pazartesi-pazar 7 sütun. min-h ile sütunlar
+                      dersi olan günle olmayan gün arasında göze çarpan bir
+                      yükseklik farkı olmadan, gerçek bir takvim gibi aşağı
+                      doğru genişliyor.
+                    */}
                     <div className="hidden gap-2 lg:grid lg:grid-cols-7">
                       {gunler.map((gun, i) => {
                         const dersler = gunlereGore.get(gun) ?? [];
 
                         return (
-                          <div key={gun} className="min-w-0">
+                          <div key={gun} className="min-w-0 min-h-[220px] rounded-2xl border border-slate-100 bg-slate-50/50 p-2">
                             <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
                               {GUN_ADLARI[i]}
                               <span className="block font-medium normal-case text-slate-400">

@@ -21,7 +21,7 @@ interface FooterProps {
 const sectionLinks = [
   { id: 'ana-sayfa', label: 'Ana Sayfa' },
   { id: 'paketler', label: 'Paketler & Fiyatlar' },
-  { id: 'neden-biz', label: 'Neden akademITU?' },
+  { id: 'neden-biz', label: 'Neden Sherpa Akademi?' },
   { id: 'sss', label: 'Sıkça Sorulan Sorular' },
 ];
 
@@ -66,7 +66,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
                   alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
               <img
                 src={logoBlue}
-                alt="akademITU"
+                alt="Sherpa Akademi"
                 width={512}
                 height={512}
                 className="h-11 md:h-12 w-auto object-contain"
@@ -161,7 +161,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
 
         {/* TELİF HAKKI VE ALT BİLGİ */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4 text-center sm:text-left">
-          <p>© {new Date().getFullYear()} akademITU. Tüm hakları saklıdır.</p>
+          <p>© {new Date().getFullYear()} Sherpa Akademi. Tüm hakları saklıdır.</p>
           <div className="flex items-center gap-4">
             {/* Blog statik olarak üretiliyor ve router'ın route ağacında yok;
                 <Link> yerine düz <a> (bkz. Header.tsx'teki uzun not). */}

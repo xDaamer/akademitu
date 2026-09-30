@@ -84,7 +84,7 @@ export const FAQSection: React.FC = () => {
             YKS ve LGS Koçluğu Hakkında Sıkça Sorulan Sorular
           </h2>
           <p className="mt-2 text-slate-600 text-sm sm:text-base">
-            akademITU koçluk ve özel ders sistemi hakkında bilmek istediğiniz her şey.
+            Sherpa Akademi koçluk ve özel ders sistemi hakkında bilmek istediğiniz her şey.
           </p>
         </div>
 

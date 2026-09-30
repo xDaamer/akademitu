@@ -195,7 +195,7 @@ const ROTALAR: Rota[] = [
     cikti: "app.html",
     render: null,
     title: `${need.site.name} Panel`,
-    description: "akademITU öğrenci ve öğretmen paneli.",
+    description: `${need.site.name} öğrenci ve öğretmen paneli.`,
     canonical: null,
     robots: INDEKSLENMEZ,
     hreflang: false,

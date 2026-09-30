@@ -1,5 +1,6 @@
 import { Diagnostics } from "./frontmatter.js";
 import { asciiFold, slugify } from "./slug.js";
+import need from "../../need.json" with { type: "json" };
 
 /**
  * EDİTORYAL KURALLAR — FAZ 2'nin makineye devredilebilen kısmı
@@ -269,7 +270,7 @@ export interface EditorialContext {
 }
 
 /** Faz 2 §3.6: marka eki dahil 50-60 karakter hedefleniyor. */
-export const BRAND_SUFFIX = " | akademITU";
+export const BRAND_SUFFIX = ` | ${need.site.name}`;
 
 export function renderedTitle(seoTitle: string, title: string): string {
   const base = seoTitle || title;

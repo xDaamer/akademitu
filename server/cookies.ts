@@ -66,6 +66,17 @@ function cookieDomain(req: Request): string | undefined {
   if (explicit) return explicit;
 
   const host = (req.get("host") || "").split(":")[0].toLowerCase();
+
+  /*
+   * REBRAND GEÇİŞİ (2026-09-30): sherpakademi.com'a taşınıyoruz, akademitu.com
+   * eski domain'i 301 ile yönlendirecek. Redirect stabil olana kadar iki
+   * domain de gerçek trafik alabiliyor, o yüzden ikisi de tanınıyor. Redirect
+   * bir süre sorunsuz çalıştıktan sonra alttaki akademitu.com dalı ayrı bir
+   * temizlik commit'inde kaldırılabilir.
+   */
+  if (host === "sherpakademi.com" || host.endsWith(".sherpakademi.com")) {
+    return ".sherpakademi.com";
+  }
   if (host === "akademitu.com" || host.endsWith(".akademitu.com")) {
     return ".akademitu.com";
   }

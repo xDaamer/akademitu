@@ -56,7 +56,7 @@ interface PageMetaProps {
   noIndex?: boolean;
   /**
    * Adresin ait olduğu host. Varsayılan ana site (SITE_URL); panel
-   * portal.akademitu.com'da yaşadığı için oradaki sayfalar kendi origin'ini
+   * portal.sherpakademi.com'da yaşadığı için oradaki sayfalar kendi origin'ini
    * verir. Verilmezse panelin og:url'i ana sayfayı gösterirdi.
    */
   origin?: string;

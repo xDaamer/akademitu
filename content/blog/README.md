@@ -26,7 +26,7 @@ Adı `_` ile başlayan dosyalar atlanır — şablonlar bu yüzden `_sablon.md`.
 
 1. Yazının türüne uyan şablonu kopyalayın:
    `cp _sablon-veri.md tyt-matematik-konu-dagilimi.md`
-   Dosya adı doğrudan adres olur → `akademitu.com/blog/tyt-matematik-konu-dagilimi`
+   Dosya adı doğrudan adres olur → `sherpakademi.com/blog/tyt-matematik-konu-dagilimi`
 2. Frontmatter'ı doldurun, iskeletteki H2'leri yazın.
 3. `npm run blog:check` çalıştırın.
 4. Hata yoksa commit + push.

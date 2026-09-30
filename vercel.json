@@ -16,7 +16,17 @@
     { "source": "/login", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "https://www.akademitu.com/login", "permanent": true },
     { "source": "/panel", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "/", "permanent": true },
     { "source": "/portal", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "/", "permanent": true },
-    { "source": "/portal/:path*", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "/", "permanent": true }
+    { "source": "/portal/:path*", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "/", "permanent": true },
+
+    { "source": "/portal", "has": [{ "type": "host", "value": "^(www\\.)?sherpakademi\\.com$" }], "destination": "/login", "permanent": true },
+    { "source": "/portal/kayit", "has": [{ "type": "host", "value": "^(www\\.)?sherpakademi\\.com$" }], "destination": "/login", "permanent": true },
+    { "source": "/portal/panel", "has": [{ "type": "host", "value": "^(www\\.)?sherpakademi\\.com$" }], "destination": "https://portal.sherpakademi.com/", "permanent": true },
+    { "source": "/panel", "has": [{ "type": "host", "value": "^(www\\.)?sherpakademi\\.com$" }], "destination": "https://portal.sherpakademi.com/", "permanent": true },
+
+    { "source": "/login", "has": [{ "type": "host", "value": "^portal\\.sherpakademi\\.com$" }], "destination": "https://www.sherpakademi.com/login", "permanent": true },
+    { "source": "/panel", "has": [{ "type": "host", "value": "^portal\\.sherpakademi\\.com$" }], "destination": "/", "permanent": true },
+    { "source": "/portal", "has": [{ "type": "host", "value": "^portal\\.sherpakademi\\.com$" }], "destination": "/", "permanent": true },
+    { "source": "/portal/:path*", "has": [{ "type": "host", "value": "^portal\\.sherpakademi\\.com$" }], "destination": "/", "permanent": true }
   ],
   "headers": [
     {
@@ -36,6 +46,11 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
     {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "^portal\\.sherpakademi\\.com$" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
       "source": "/login",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
     }
@@ -44,6 +59,7 @@
     { "source": "/api/(.*)", "destination": "/api/[...path]" },
 
     { "source": "/((?!api/).*)", "has": [{ "type": "host", "value": "^portal\\.akademitu\\.com$" }], "destination": "/app.html" },
+    { "source": "/((?!api/).*)", "has": [{ "type": "host", "value": "^portal\\.sherpakademi\\.com$" }], "destination": "/app.html" },
 
     { "source": "/login", "destination": "/app.html" },
     { "source": "/panel", "destination": "/app.html" },

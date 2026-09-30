@@ -80,13 +80,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                 alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
             <img
               src={logoWhite}
-              alt="akademITU"
+              alt="Sherpa Akademi"
               width={512}
               height={512}
               className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105"
             />
-            <span className="text-2xl font-extrabold tracking-tight text-[#191F61]">
-              akademITU
+            {/* "Sherpa Akademi" eski "akademITU"dan belirgin şekilde uzun;
+                375px'te logo + yazı + ikonlar dar sığıyordu (bkz. aşağıdaki not),
+                bu yüzden mobilde küçük, md+'de eski boyut. */}
+            <span className="text-base sm:text-lg md:text-2xl font-extrabold tracking-tight text-[#191F61] whitespace-nowrap">
+              Sherpa Akademi
             </span>
           </a>
 
@@ -155,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
               CTA ile yarışmaması için bilinçli olarak sessiz bırakıldı;
               ücretsiz deneme dersi hâlâ sayfanın birincil eylemi.
 
-              Telefonda metin yerine ikon: 375px'te logo + "akademITU" yazısı
+              Telefonda metin yerine ikon: 375px'te logo + "Sherpa Akademi" yazısı
               + menü düğmesi zaten ~271px yer kaplıyor, "Giriş yap" metni
               yanlarına sığmayıp yatay kaydırma yaratıyordu. İkon 44x44
               dokunma hedefiyle sığıyor; mobil menü panelinin altında ayrıca
@@ -275,7 +278,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
                     className="h-10 w-auto object-contain"
                   />
                   <span className="text-lg font-extrabold tracking-tight text-[#191F61]">
-                    akademITU
+                    Sherpa Akademi
                   </span>
                 </div>
 

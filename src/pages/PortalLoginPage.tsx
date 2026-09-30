@@ -10,16 +10,16 @@ import { useAuth } from '../context/AuthContext';
 import { panelHrefForRole } from '../lib/host';
 
 /*
- * PORTAL GİRİŞ KAPISI (akademitu.com/login)
+ * PORTAL GİRİŞ KAPISI (sherpakademi.com/login)
  * ===========================================================================
  * Sayfa sitenin Header/Footer'ını almaz (bkz. App.tsx): burası pazarlama
  * sayfası değil, ürünün ilk ekranı. Menü, WhatsApp düğmesi ve yapışkan CTA
  * çubuğu giriş yapmaya çalışan birinin işine yaramaz, dikkat dağıtır.
  *
  * GİRİŞ ANA SİTEDE KALIR, PANEL ALT ALAN ADINA TAŞINDI. Sebep: giriş sayfası
- * kullanıcının bildiği adresten (akademitu.com) ulaşılabilir olmalı; panelin
+ * kullanıcının bildiği adresten (sherpakademi.com) ulaşılabilir olmalı; panelin
  * kendisi ise pazarlama sitesinden ayrı bir ürün yüzeyi. Başarılı girişten
- * sonra portal.akademitu.com'a tam sayfa geçiş yapılıyor (bkz. LoginForm).
+ * sonra portal.sherpakademi.com'a tam sayfa geçiş yapılıyor (bkz. LoginForm).
  *
  * noIndex: panel girişi arama sonuçlarında görünmemeli. need.json'daki
  * seo.pages listesine de eklenmiyor — oraya eklenirse sitemap'e girer.
@@ -52,8 +52,8 @@ export const PortalLoginPage: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Giriş Yap | akademITU Panel"
-        description="akademITU öğrenci ve veli paneline telefon numaran ve şifrenle giriş yap."
+        title="Giriş Yap | Sherpa Akademi Panel"
+        description="Sherpa Akademi öğrenci ve veli paneline telefon numaran ve şifrenle giriş yap."
         path="/login"
         noIndex
       />
@@ -85,7 +85,7 @@ export const PortalLoginPage: React.FC = () => {
             */}
             <div className="mb-7 text-center">
               <span className="text-sm font-bold tracking-tight text-slate-500">
-                akademITU
+                Sherpa Akademi
               </span>
             </div>
 
