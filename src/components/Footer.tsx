@@ -72,7 +72,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
                 className="h-11 md:h-12 w-auto object-contain"
               />
               <span className="text-2xl font-extrabold tracking-tight text-white">
-                akadem<span className="text-white">ITU</span>
+                Sherpa Akademi
               </span>
             </div>
             <p className="text-slate-300 text-sm leading-relaxed">
