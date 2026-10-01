@@ -78,10 +78,13 @@ export const PortalLoginPage: React.FC = () => {
 
           <div className="mx-auto my-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
             {/*
-              Logo görseli kaldırıldı; marka adı metin olarak kaldı.
-              Mobilde sol panel gizlendiği için kartın üstündeki bu satır,
-              kişinin hangi siteye giriş yaptığını gösteren tek yer — bu yüzden
-              tamamen çıkarılmadı.
+              Burada işaret DEĞİL, yalnızca marka adı var. Eskiden gerekçe
+              "logonun lacivert kare zemini beyaz kartta kutu gibi duruyor"du;
+              o kısıt kalktı (artık açık zeminler için logo-navy.png var), ama
+              karar aynı bırakıldı: sol panel zaten işareti büyük büyük
+              gösteriyor, aynı ekranda ikinci kez tekrarlamak gereksiz.
+              Mobilde sol panel gizlendiği için bu satır kişinin hangi siteye
+              giriş yaptığını gösteren TEK yer — bu yüzden tamamen çıkarılmadı.
             */}
             <div className="mb-7 text-center">
               <span className="text-sm font-bold tracking-tight text-slate-500">

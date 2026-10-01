@@ -8,13 +8,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=4" />
-    <!-- favicon.png 512x512'dir; boyut beyanı dosyanın gerçeğiyle uyuşmalı,
-         aksi halde tarayıcı 32x32 sanıp 34 KB'lık dosyayı sekme ikonu için indirir.
-         Küçük boyutlar favicon.ico'dan gelir; o dosya 16/32/48/64 girdisi taşır. -->
-    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png?v=4" />
-    <link rel="shortcut icon" href="/favicon.ico?v=4" />
-    <link rel="apple-touch-icon" href="/favicon.png?v=4" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=5" />
+    <!-- Sekme ikonu .ico'dan gelir: 16/32/48/64 girdisi taşıyor ve tarayıcı
+         kendi ölçeğine uyanı seçiyor. Aşağıdaki PNG yüksek DPI yedeği; boyut
+         beyanı dosyanın GERÇEĞİYLE uyuşmalı, aksi halde tarayıcı onu küçük
+         sanıp sekme için indirir. -->
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=5" />
+    <link rel="shortcut icon" href="/favicon.ico?v=5" />
+    <!-- AYRI DOSYA, favicon.png DEĞİL. iOS ana ekran ikonunu yuvarlatıp kendi
+         zeminine basar ve SAYDAMLIĞI SİYAHA çevirir; bu dosya bu yüzden alfa
+         kanalı hiç olmayan, 180x180'lik opak lacivert bir kare. 512'lik bir
+         ikon buraya konursa iOS onu her seferinde indirip küçültür. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=5" />
 
     <!-- Primary Meta Tags -->
     <title>{{site.title}}</title>

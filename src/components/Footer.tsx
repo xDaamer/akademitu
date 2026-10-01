@@ -63,12 +63,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               {/* width/height: görsel inmeden yer ayrılır.
-                  alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
+                  alt BOŞ: marka adı hemen yanda gerçek metin olarak duruyor,
+                  dolayısıyla işaret dekoratif. Burada alt="Sherpa Akademi"
+                  yazıyordu ve ekran okuyucu adı iki kez okuyordu. Header ve
+                  mobil menü zaten aynı sebeple boş alt kullanıyor. */}
               <img
                 src={logoGradient}
-                alt="Sherpa Akademi"
-                width={400}
-                height={400}
+                alt=""
+                width={256}
+                height={256}
                 className="h-11 md:h-12 w-auto object-contain"
               />
               <span className="text-2xl font-extrabold tracking-tight text-white">

@@ -9,8 +9,14 @@ import React, {
 import { Image as ImageIcon } from 'lucide-react';
 import { TEACHER_TICKER_PIXELS_PER_SECOND } from '../config';
 
-/** Yüklenemeyen görsellerin yerine geçen marka logosu (public/ kökünde). */
-const FALLBACK_IMAGE_URL = '/logo-white.png';
+/*
+ * Yüklenemeyen görsellerin yerine geçen marka işareti (public/ kökünde).
+ * GRADYAN varyant, lacivert olmayan değil: kart yarı saydam beyaz bir plaka
+ * ama altındaki hero lacivert, yani işaret lacivert bir yüzeyde duruyor.
+ * Dosya adı eskiden logo-white.png'ydi ve içeriğiyle çelişiyordu.
+ * Adın 'logo' içermesi şart — plaka seçimi aşağıda ada bakıyor.
+ */
+const FALLBACK_IMAGE_URL = '/logo-gradient.png';
 
 /** Tek bir görsel bu süre içinde yüklenmezse akış onsuz başlar. */
 const IMAGE_PRELOAD_TIMEOUT_MS = 3000;
@@ -544,7 +550,7 @@ interface TeacherPhotoProps {
  * DÜŞMEZ, görsel tamamen kırılır; bu yüzden varyant üretimi opsiyonel değil.
  *
  * Yalnızca /teachers/ altındaki gerçek fotoğraflar için srcset üretilir;
- * hata durumunda devreye giren /logo-white.png gibi yollar dokunulmadan geçer.
+ * hata durumunda devreye giren /logo-gradient.png gibi yollar dokunulmadan geçer.
  */
 function webpSrcSet(url: string): string | null {
   const match = url.match(/^(\/teachers\/[^/]+)\.(?:jpe?g|png)$/i);
