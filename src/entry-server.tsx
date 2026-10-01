@@ -12,7 +12,7 @@ import { AuthProvider } from './context/AuthContext';
  *
  * Neden düz `tsx` ile değil de Vite ile derleniyor: src/lib/host.ts
  * `import.meta.env.VITE_*` okuyor (Node'da TypeError) ve Header/Footer
- * `../assets/logo-white.png` gibi Vite asset import'ları yapıyor. Prerender
+ * `../assets/logo-gradient.png` gibi Vite asset import'ları yapıyor. Prerender
  * edilen <img src>'in istemci build'iyle AYNI content-hash'e düşmesi şart,
  * yoksa sayfada var olmayan bir dosyaya işaret eden görseller kalır.
  *

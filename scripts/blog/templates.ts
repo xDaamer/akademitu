@@ -110,8 +110,8 @@ ${options.prev ? `<link rel="prev" href="${esc(options.prev)}">\n` : ""}${option
 <meta name="twitter:title" content="${esc(fullTitle)}">
 <meta name="twitter:description" content="${esc(options.description)}">
 <meta name="twitter:image" content="${esc(ogImage)}">
-<link rel="icon" type="image/x-icon" href="/favicon.ico?v=3">
-<link rel="icon" type="image/png" sizes="512x512" href="/favicon.png?v=3">
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=4">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon.png?v=4">
 <link rel="alternate" type="application/rss+xml" title="${esc(BRAND)} Blog" href="${rssPath()}">
 <meta name="theme-color" content="#191F61">
 <link rel="preconnect" href="https://fonts.googleapis.com">

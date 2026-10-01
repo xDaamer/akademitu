@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, MapPin } from 'lucide-react';
-import logoBlue from '../assets/logo-blue.png';
+import logoGradient from '../assets/logo-gradient.png';
 import need from '../../need.json';
 import { Button } from './ui/Button';
 
@@ -65,10 +65,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
               {/* width/height: görsel inmeden yer ayrılır.
                   alt'ta "Logo" demiyoruz — ekran okuyucu zaten "görsel" diyor. */}
               <img
-                src={logoBlue}
+                src={logoGradient}
                 alt="Sherpa Akademi"
-                width={512}
-                height={512}
+                width={400}
+                height={400}
                 className="h-11 md:h-12 w-auto object-contain"
               />
               <span className="text-2xl font-extrabold tracking-tight text-white">

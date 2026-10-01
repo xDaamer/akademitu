@@ -4,7 +4,7 @@ import { Menu, X, UserRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/Button';
 import { BrandWordmark } from './ui/BrandWordmark';
-import logoMint from '../assets/logo-mint.png';
+import logoNavy from '../assets/logo-navy.png';
 
 interface HeaderProps {
   onOpenTrialForm: () => void;
@@ -77,12 +77,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             }}
             className="flex shrink-0 items-center gap-3 group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059] focus-visible:ring-offset-2"
           >
-            {/* Logonun kendi lacivert kare zemini bu beyaz çubukla uyumsuz
-                durur, o yüzden yalnızca zemini şeffaflaştırılmış mint ikon
-                kullanılıyor (bkz. src/assets/logo-mint.png). 375px'te bile
-                dar sığıyordu (bkz. aşağıdaki not), o yüzden mobilde küçük,
-                md+'de daha büyük. */}
-            <img src={logoMint} alt="" className="h-7 sm:h-8 md:h-9 w-auto object-contain" />
+            {/* Markanın iki işaret varyantı var ve seçimi ZEMİN belirler:
+                - logo-gradient.png — şeffaf zemin, mavi gradyan işaret. Lacivert
+                  yüzeyler için (footer, panel çubuğu, giriş ekranının sol paneli).
+                - logo-navy.png — şeffaf zemin, tek renk #191F61 işaret. Bu beyaz
+                  çubuk gibi AÇIK yüzeyler için; gradyan sürüm burada soluk kalıyor.
+                İkisi de kare zeminsiz: çubuk beyaz, lacivert bir kare yama gibi
+                dururdu. 375px'te bile dar sığıyordu (bkz. aşağıdaki not), o yüzden
+                mobilde küçük, md+'de daha büyük. */}
+            <img src={logoNavy} alt="" className="h-7 sm:h-8 md:h-9 w-auto object-contain" />
             <BrandWordmark className="text-xs sm:text-sm md:text-base" />
           </a>
 
@@ -265,7 +268,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTrialForm, activeSection }
             >
               <div className="flex items-center justify-between border-b border-slate-100 px-5 h-20 shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <img src={logoMint} alt="" className="h-8 w-auto object-contain" />
+                  <img src={logoNavy} alt="" className="h-8 w-auto object-contain" />
                   <BrandWordmark className="text-base" />
                 </div>
 

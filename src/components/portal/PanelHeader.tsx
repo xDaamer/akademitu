@@ -4,7 +4,7 @@ import { ArrowLeft, LogOut } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { SITE_URL } from '../../config';
-import logo from '../../assets/logo-white.png';
+import logo from '../../assets/logo-gradient.png';
 
 /*
  * PANEL BAŞLIĞI — ÜÇ PANELİN ORTAK ÜST ÇUBUĞU
