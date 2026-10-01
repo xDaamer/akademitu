@@ -38,7 +38,7 @@ ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
 
 -- Örnek Veriler Ekle
 INSERT INTO public.testimonials (student_name, student_grade, content, rating, display_order) VALUES
-('Ayşe Yıldız', '12. Sınıf', 'AkademITU sayesinde matematik konularını çok iyi anladım. Hocalar çok ilgi gösteriyor.', 5, 1),
+('Ayşe Yıldız', '12. Sınıf', 'Sherpa Akademi sayesinde matematik konularını çok iyi anladım. Hocalar çok ilgi gösteriyor.', 5, 1),
 ('Mehmet Demir', 'LGS Hazırlık', 'Özel ders paketiyle hedefime ulaştım. Tavsiye ederim!', 5, 2),
 ('Zeynep Kaya', '11. Sınıf', 'Koçluk programı sayesinde çalışma metodumu buldum. Başarısı kat kat arttı.', 5, 3),
 ('Ali Şahin', 'YKS Hazırlık', 'Hocaların deneyimi ve sabırları takdire değer. Pil zamanımda böyle bir destek arıyordum.', 5, 4),
