@@ -9,13 +9,14 @@ import { PanelHeader } from '../components/portal/PanelHeader';
 import { AdminAccounts } from '../components/portal/admin/AdminAccounts';
 import { AdminLessons } from '../components/portal/admin/AdminLessons';
 import { AdminPayments } from '../components/portal/admin/AdminPayments';
+import { AdminLeads } from '../components/portal/admin/AdminLeads';
 import type { Hesap } from '../components/portal/admin/AdminUI';
 
 /*
  * YÖNETİM PANELİ — portal.sherpakademi.com/yonetim
  * ===========================================================================
- * Hesap açma, ders atama, ücret girme. Bu üçü daha önce Supabase Dashboard
- * ve elle SQL gerektiriyordu.
+ * Hesap açma, ders atama, ücret girme ve form başvurularını görme. Bunlar
+ * daha önce Supabase Dashboard ve elle SQL gerektiriyordu.
  *
  * VERİ /api/admin/* ÜZERİNDEN GELİYOR ve o modül diğer iki panelden FARKLI
  * bir yetki modeli kullanıyor: servis rolü, yani RLS emniyet ağı devrede
@@ -28,12 +29,13 @@ import type { Hesap } from '../components/portal/admin/AdminUI';
  * görünmezdi.
  */
 
-type Sekme = 'hesaplar' | 'dersler' | 'odemeler';
+type Sekme = 'hesaplar' | 'dersler' | 'odemeler' | 'basvurular';
 
 const SEKMELER: { ad: Sekme; etiket: string }[] = [
   { ad: 'hesaplar', etiket: 'Hesaplar' },
   { ad: 'dersler', etiket: 'Dersler' },
   { ad: 'odemeler', etiket: 'Ödemeler' },
+  { ad: 'basvurular', etiket: 'Başvurular' },
 ];
 
 export const AdminPanelPage: React.FC = () => {
@@ -79,7 +81,13 @@ export const AdminPanelPage: React.FC = () => {
       <div className="min-h-dvh bg-slate-50">
         <PanelHeader rozet={{ metin: 'Yönetim', ton: 'altin' }} />
 
-        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        {/* Başvurular sekmesi on kolonlu bir tablo; 5xl'de yarısı yatay
+            kaydırmaya kalıyordu. Diğer sekmeler form ağırlıklı, dar kalıyor. */}
+        <main
+          className={`mx-auto px-4 py-8 sm:px-6 sm:py-10 ${
+            sekme === 'basvurular' ? 'max-w-7xl' : 'max-w-5xl'
+          }`}
+        >
           <div className="mb-6">
             <h1 className="text-3xl font-extrabold tracking-tight text-[#191F61] sm:text-4xl">
               Yönetim{ilkAd ? ` — ${ilkAd}` : ''}
@@ -99,7 +107,7 @@ export const AdminPanelPage: React.FC = () => {
           )}
 
           {/* Sekmeler: role="tablist" değil basit düğmeler — tam ARIA sekme
-              deseni klavye ok tuşu yönetimi gerektiriyor ve üç düğme için
+              deseni klavye ok tuşu yönetimi gerektiriyor ve dört düğme için
               yarım uygulanmış bir desen, hiç uygulanmamış olandan kötüdür. */}
           <div className="mb-6 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1">
             {SEKMELER.map((s) => (
@@ -128,6 +136,7 @@ export const AdminPanelPage: React.FC = () => {
           )}
           {sekme === 'dersler' && <AdminLessons hesaplar={hesaplar} />}
           {sekme === 'odemeler' && <AdminPayments hesaplar={hesaplar} />}
+          {sekme === 'basvurular' && <AdminLeads />}
         </main>
       </div>
     </>

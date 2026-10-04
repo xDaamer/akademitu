@@ -176,6 +176,24 @@ async function calistir() {
   kontrol("GET /api/admin/ozet -> 200", r.status === 200, `${r.status}`);
   const oncekiSayi = r.body?.accounts?.length ?? 0;
 
+  /* Form başvuruları: salt okunur, test veri YAZMIYOR. Toplamın sayfadaki
+     satırdan az olmaması ve filtrenin toplamı büyütmemesi, sayfalama ile
+     filtrenin sunucuda gerçekten uygulandığını gösteriyor. */
+  r = await istek(yonetici.kavanoz, "/api/admin/basvurular");
+  kontrol("GET /api/admin/basvurular -> 200", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+  const basvuruToplam: number = r.body?.total ?? -1;
+  kontrol(
+    "Başvuru listesi ve toplam tutarlı",
+    Array.isArray(r.body?.leads) && basvuruToplam >= r.body.leads.length && r.body.leads.length <= 50,
+    `${r.body?.leads?.length} satır / toplam ${basvuruToplam}`,
+  );
+  r = await istek(yonetici.kavanoz, "/api/admin/basvurular?adim=2&q=a,phone.neq.x");
+  kontrol(
+    "Filtre + virgüllü arama -> 200 ve toplamı büyütmüyor",
+    r.status === 200 && (r.body?.total ?? Infinity) <= basvuruToplam,
+    `${r.status} toplam ${r.body?.total}`,
+  );
+
   /* Yönetici, diğer iki panelin uçlarına GİREMEZ: rol kapısı tek rol kabul
      ediyor ve bu bilinçli (bkz. CLAUDE.md > admin bölümü). */
   for (const yol of ["/api/portal/ozet", "/api/teacher/schedule"]) {
@@ -514,7 +532,7 @@ async function calistir() {
     ["Öğretmen", ogretmen.kavanoz],
     ["Öğrenci", ogrenci.kavanoz],
   ] as const) {
-    for (const yol of ["/api/admin/ozet", "/api/admin/dersler", "/api/admin/odemeler"]) {
+    for (const yol of ["/api/admin/ozet", "/api/admin/dersler", "/api/admin/odemeler", "/api/admin/basvurular"]) {
       const x = await istek(kav, yol);
       kontrol(`${ad} -> ${yol} ENGELLENİYOR (403)`, x.status === 403, `${x.status}`);
     }
@@ -541,6 +559,7 @@ async function calistir() {
     "/api/portal/yorumlar",
     "/api/teacher/schedule",
     "/api/admin/ozet",
+    "/api/admin/basvurular",
   ]) {
     const x = await istek(bos, yol);
     kontrol(`Oturumsuz ${yol} -> 401`, x.status === 401, `${x.status}`);

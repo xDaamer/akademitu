@@ -6,8 +6,8 @@ import { requireSession, requireUserType, type SessionLocals } from "../roles.js
 /*
  * YÖNETİM PANELİ — /api/admin/*
  * ===========================================================================
- * Hesap açma, ders atama, ücret girme. Bu ucları yalnızca user_type='admin'
- * olan kullanıcı görebiliyor.
+ * Hesap açma, ders atama, ücret girme, form başvurularını görme. Bu ucları
+ * yalnızca user_type='admin' olan kullanıcı görebiliyor.
  *
  * ---------------------------------------------------------------------------
  * BU MODÜL serviceClient() KULLANIYOR — VE BU, KURALIN İHLALİ DEĞİL İSTİSNASI
@@ -805,6 +805,130 @@ router.delete("/odemeler/:id", async (req, res) => {
     return res.json({ success: true });
   } catch (err: any) {
     console.error("[Admin] ödeme silme istisnası:", err?.message || err);
+    return res.status(500).json({ success: false, error: GENERIC_ERROR });
+  }
+});
+
+/* ================================================================ BAŞVURULAR */
+
+/*
+ * Sitedeki iki adımlı formdan gelen başvurular (public.leads). Bu tablo
+ * kimseye ait değil: anon ve authenticated'ın üzerinde HİÇBİR yetkisi yok
+ * (supabase-portal-auth.sql), satırları /api/leads servis rolüyle yazıyor.
+ * Okumanın da tek yolu servis rolü, yani bu uç yukarıdaki istisnanın
+ * kapsamına doğal olarak giriyor — RLS'in eleyebileceği bir "sahip" yok.
+ *
+ * SALT OKUNUR. Düzenleme/silme ucu bilerek yok: başvuru, formu dolduran
+ * kişinin beyanı ve yöneticinin onu değiştirmesi için bir sebep yok.
+ *
+ * `website` (bal küpü) ve `first_seen_lead_id` seçilmiyor: ilki dolu olan
+ * satır zaten hiç yazılmıyor (server.ts reddediyor), ikincisinin panelde
+ * karşılığı `is_repeat_submission` bayrağı.
+ */
+
+const BASVURU_SAYFA_BOYUTU = 50;
+const BASVURU_SINAVLARI = new Set(["YKS", "LGS", "Diğer"]);
+
+/**
+ * Arama metni PostgREST'in `or=(...)` sözdiziminin İÇİNE yazılıyor. Virgül,
+ * nokta ve parantez orada ayırıcı; `*` ve `%` joker. Temizlenmeden geçen bir
+ * "a,phone.neq.x" filtreyi değiştirir. Yalnızca harf, rakam ve boşluk kalıyor
+ * — ad ve telefon aramak için gereken her şey bu.
+ */
+function aramaMetni(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const temiz = value
+    .replace(/[^\p{L}\p{N} ]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+  return temiz.length >= 2 ? temiz : null;
+}
+
+/** BAŞVURULARI LİSTELE — GET /api/admin/basvurular?sayfa=&q=&sinav=&adim= */
+router.get("/basvurular", async (req, res) => {
+  const { userId: yapanId } = res.locals as unknown as SessionLocals;
+  const admin = serviceClient();
+  if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
+
+  const sayfa = Math.min(Math.max(Number.parseInt(String(req.query.sayfa ?? "1"), 10) || 1, 1), 10_000);
+  const bas = (sayfa - 1) * BASVURU_SAYFA_BOYUTU;
+
+  try {
+    let sorgu = admin
+      .from("leads")
+      /* Tek literal olmalı: birleştirilmiş string supabase-js'in satır tipini
+         çıkarmasını engelliyor. */
+      .select(
+        "id, created_at, updated_at, full_name, phone, exam_type, step, student_full_name, parent_full_name, user_role, grade_class, selected_subjects, is_repeat_submission",
+        { count: "exact" },
+      )
+      /* `id` eşitlik bozucu: adım 1 damgayı sunucudan alıyor ve aynı
+         milisaniyeye düşen iki başvuru sayfa sınırında yer değiştirmesin. */
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(bas, bas + BASVURU_SAYFA_BOYUTU - 1);
+
+    if (typeof req.query.sinav === "string" && BASVURU_SINAVLARI.has(req.query.sinav)) {
+      sorgu = sorgu.eq("exam_type", req.query.sinav);
+    }
+    if (req.query.adim === "1" || req.query.adim === "2") {
+      sorgu = sorgu.eq("step", Number(req.query.adim));
+    }
+
+    const arama = aramaMetni(req.query.q);
+    if (arama) {
+      /* Boşluklar da joker oluyor: "ahmet yılmaz" -> *ahmet*yılmaz*, yani
+         araya ikinci bir ad girse de ("Ahmet Can Yılmaz") eşleşiyor. URL'de
+         boşluk taşımamanın da yolu bu. */
+      const desen = arama.split(" ").join("*");
+      const kosullar = ["full_name", "student_full_name", "parent_full_name"].map(
+        (kolon) => `${kolon}.ilike.*${desen}*`,
+      );
+      /* Telefon "05321234567" biçiminde saklanıyor; yönetici "0532 123 45"
+         yazsa da eşleşsin diye aramadaki rakamlar bitişik aranıyor. */
+      const rakamlar = arama.replace(/\D/g, "");
+      if (rakamlar.length >= 3) kosullar.push(`phone.ilike.*${rakamlar}*`);
+      sorgu = sorgu.or(kosullar.join(","));
+    }
+
+    const { data, error, count } = await sorgu;
+    if (error) {
+      console.error("[Admin] başvurular okunamadı:", error.message);
+      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    }
+
+    /* Başkalarının kişisel verisine (telefon, çocuğun adı) erişim, kim ne
+       zaman baktı sorusunu cevaplanabilir kılmak için kayda giriyor. Arama
+       metni YAZILMIYOR: bir telefon numarası olabilir. */
+    auditLog(req, "ADMIN_LEADS_VIEWED", {
+      userId: yapanId,
+      detay: { sayfa, adet: data?.length ?? 0 },
+    });
+
+    return res.json({
+      success: true,
+      total: count ?? 0,
+      page: sayfa,
+      pageSize: BASVURU_SAYFA_BOYUTU,
+      leads: (data ?? []).map((l) => ({
+        id: l.id,
+        createdAt: l.created_at,
+        updatedAt: l.updated_at,
+        fullName: l.full_name,
+        phone: l.phone,
+        examType: l.exam_type,
+        step: l.step,
+        studentFullName: l.student_full_name || null,
+        parentFullName: l.parent_full_name || null,
+        userRole: l.user_role || null,
+        gradeClass: l.grade_class || null,
+        subjects: Array.isArray(l.selected_subjects) ? l.selected_subjects : [],
+        isRepeat: Boolean(l.is_repeat_submission),
+      })),
+    });
+  } catch (err: any) {
+    console.error("[Admin] başvuru listesi istisnası:", err?.message || err);
     return res.status(500).json({ success: false, error: GENERIC_ERROR });
   }
 });

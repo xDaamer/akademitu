@@ -64,6 +64,10 @@ export type AuditAction =
   | "ADMIN_LESSON_DELETED"
   | "ADMIN_PAYMENT_WRITE"
   | "ADMIN_PAYMENT_DELETED"
+  /* Başvuru listesine bakmak. Diğer yönetim okumaları kayda girmiyor;
+     bu giriyor çünkü veri hesabı olmayan kişilere ait (formu dolduranın
+     telefonu, çocuğun adı) ve onlar bu panelin varlığından habersiz. */
+  | "ADMIN_LEADS_VIEWED"
   | "FORBIDDEN_ROLE";
 
 function clientIp(req: Request): string {

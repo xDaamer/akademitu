@@ -135,6 +135,30 @@ export function tarihSaat(iso: string): string {
   }).format(new Date(iso));
 }
 
+/* Başvuru tablosu tarihi ve saati ayrı kolonlarda gösteriyor. */
+export function sadeceTarih(iso: string): string {
+  return new Intl.DateTimeFormat('tr-TR', {
+    timeZone: TZ,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(iso));
+}
+
+export function sadeceSaat(iso: string): string {
+  return new Intl.DateTimeFormat('tr-TR', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}
+
+/** "05321234567" -> "0532 123 45 67". Tanınmayan biçim olduğu gibi döner. */
+export function telefonGoster(tel: string): string {
+  if (!/^05\d{9}$/.test(tel)) return tel;
+  return `${tel.slice(0, 4)} ${tel.slice(4, 7)} ${tel.slice(7, 9)} ${tel.slice(9)}`;
+}
+
 export function paraBirimi(tutar: number, birim: string): string {
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
