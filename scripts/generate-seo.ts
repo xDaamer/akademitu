@@ -1,8 +1,12 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import need from "../need.json" with { type: "json" };
 
-const publicDir = path.join(import.meta.url.replace("file://", ""), "../../public");
+/* fileURLToPath, `.replace("file://", "")` değil: URL yolu yüzde-kodlu, yani
+   boşluk ya da Türkçe karakter içeren bir klasörde "%20" diye kalıp ENOENT
+   veriyordu. generate-images.ts aynı yolu zaten böyle çözüyor. */
+const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
 
 // Generate sitemap.xml
 const sitemapEntries = need.seo.pages
