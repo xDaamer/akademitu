@@ -17,6 +17,10 @@
 -- sonra bu dosyayı SQL Editor'de çalıştırıp bu notu gerçek sonuçla
 -- güncelleyin.
 --
+-- 33-35 numaralı testler 2026-10-09'da öğretmen açıklaması için eklendi
+-- (supabase-teacher-descriptions.sql): öğretmen ve öğrenci tabloyu OKUYAMAZ
+-- ve YAZAMAZ, üçü de RED bekliyor. HENÜZ ÇALIŞTIRILMADI.
+--
 -- ---------------------------------------------------------------------------
 -- NEDEN BURADA, ARAYÜZDE DEĞİL
 -- ---------------------------------------------------------------------------
@@ -68,6 +72,11 @@ INSERT INTO public.profiles (id, full_name, phone, user_type) VALUES
   ((SELECT id FROM k WHERE ad='ogretmenB'), 'Ogretmen B',  '05550000002', 'teacher'),
   ((SELECT id FROM k WHERE ad='ogrenci1'),  'Ogrenci Bir', '05550000003', 'student'),
   ((SELECT id FROM k WHERE ad='ogrenci2'),  'Ogrenci Iki', '05550000004', 'student');
+
+-- 33-35 icin: A'nin yoneticinin yazdigi bir aciklamasi var (supabase-teacher-
+-- descriptions.sql uygulanmis olmali, yoksa dosya burada durur).
+INSERT INTO public.teacher_descriptions (teacher_id, description)
+VALUES ((SELECT id FROM k WHERE ad='ogretmenA'), 'TYT Matematik');
 
 CREATE TEMP TABLE d (ad text PRIMARY KEY, id uuid);
 INSERT INTO d VALUES ('A1','11111111-0000-0000-0000-000000000001'),
@@ -345,6 +354,33 @@ BEGIN
 
   SELECT count(*) INTO n FROM public.profiles;
   INSERT INTO sonuc VALUES (16,'Ogrenci2 kac profil goruyor','1 (kendi)', n::text, n=1);
+
+  -- =========================================== ÖĞRETMEN AÇIKLAMASI (33-35)
+  -- supabase-teacher-descriptions.sql: tablo authenticated'a HİÇ açık değil.
+  -- "0 satır" değil RED bekleniyor — öğretmen KENDİ açıklamasını da okuyamamalı.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub',tA,'role','authenticated')::text, true);
+  BEGIN
+    SELECT count(*) INTO n FROM public.teacher_descriptions WHERE teacher_id = tA;
+    INSERT INTO sonuc VALUES (33,'OgretmenA kendi aciklamasini okuma','RED', n||' satir okudu', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (33,'OgretmenA kendi aciklamasini okuma','RED','RED '||sqlstate, true);
+  END;
+
+  BEGIN
+    INSERT INTO public.teacher_descriptions (teacher_id, description) VALUES (tA, 'Kendi yazdi')
+    ON CONFLICT (teacher_id) DO UPDATE SET description = excluded.description;
+    INSERT INTO sonuc VALUES (34,'OgretmenA kendi aciklamasini yazma','RED','YAZDI!', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (34,'OgretmenA kendi aciklamasini yazma','RED','RED '||sqlstate, true);
+  END;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub',s1,'role','authenticated')::text, true);
+  BEGIN
+    SELECT count(*) INTO n FROM public.teacher_descriptions;
+    INSERT INTO sonuc VALUES (35,'Ogrenci ogretmen aciklamalarini okuma','RED', n||' satir okudu', false);
+  EXCEPTION WHEN others THEN
+    INSERT INTO sonuc VALUES (35,'Ogrenci ogretmen aciklamalarini okuma','RED','RED '||sqlstate, true);
+  END;
 
   PERFORM set_config('role','postgres',true);
 END $$;

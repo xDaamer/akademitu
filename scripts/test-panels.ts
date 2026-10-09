@@ -30,7 +30,8 @@
  * ----------------------------------------------------------------------------
  * Açtığı DERS ve ÖDEME kayıtlarını sonunda siler. Ders saati öğretmenin
  * programından seçiliyor (önümüzdeki iki haftadaki ilk boş yarım saat);
- * --teacher ile hazır bir öğretmen verilirse onun müsaitliğine dokunmaz. Açtığı HESAPLARI silmez —
+ * --teacher ile hazır bir öğretmen verilirse onun müsaitliğine ve
+ * açıklamasına dokunmaz. Açtığı HESAPLARI silmez —
  * panelde hesap silme bilerek yok (bkz. AdminAccounts.tsx); kimlikleri ekrana
  * yazar, gerekirse Supabase Dashboard'dan kaldırılır.
  *
@@ -169,6 +170,10 @@ const TEST_MUSAITLIK = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
   endMinute: 21 * 60,
 }));
 
+/* Betiğin açtığı öğretmenin açıklaması. Öğretmen uçlarının yanıtlarında bu
+   metin ARANIYOR: geçerse açıklama yöneticiden başkasına sızmış demektir. */
+const TEST_ACIKLAMA = "TEST aciklama: TYT Matematik, AYT Fizik";
+
 function gunEkle(tarih: string, n: number): string {
   const d = new Date(`${tarih}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -285,11 +290,14 @@ async function calistir() {
         password: URETILEN.password,
         userType: "teacher",
         availability: TEST_MUSAITLIK,
+        description: TEST_ACIKLAMA,
       },
     });
     kontrol("Öğretmen hesabı açıldı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
     kontrol("Kullanıcı adı kaydedildi", r.body?.account?.username === URETILEN.teacherUsername,
       `${r.body?.account?.username}`);
+    kontrol("Açıklama hesapla birlikte kaydedildi", r.body?.account?.description === TEST_ACIKLAMA,
+      `${r.body?.account?.description}`);
     ogretmenId = r.body?.account?.id;
     OGRETMEN = { phone: URETILEN.teacherPhone, password: URETILEN.password };
   }
@@ -448,6 +456,45 @@ async function calistir() {
       r.status === 200 && pazartesi.length === 1 && pazartesi[0].endMinute === 21 * 60,
       `${r.status} ${JSON.stringify(pazartesi)}`,
     );
+  }
+
+  /* ======================================================= ÖĞRETMEN AÇIKLAMASI */
+  console.log("\n3b) Öğretmen açıklaması");
+  const aciklamaOku = async () => {
+    const o = await istek(yonetici.kavanoz, "/api/admin/ozet");
+    return (o.body?.accounts ?? []).find((h: any) => h.id === ogretmenId)?.description;
+  };
+
+  r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogrenciId}/aciklama`, {
+    method: "PUT",
+    body: { description: "Ogrenciye aciklama" },
+  });
+  kontrol("Öğrenciye açıklama yazılamıyor (404)", r.status === 404, `${r.status}`);
+
+  /* Yazma testleri yine yalnızca betiğin kendi öğretmeninde. */
+  if (testOgretmeni) {
+    kontrol("Hesap listesi açıklamayı gösteriyor", (await aciklamaOku()) === TEST_ACIKLAMA);
+
+    r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/aciklama`, {
+      method: "PUT",
+      body: { description: "x".repeat(2001) },
+    });
+    kontrol("2000 karakteri aşan açıklama ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+    r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/aciklama`, {
+      method: "PUT",
+      body: { description: "   " },
+    });
+    kontrol("Boş açıklama KALDIRIYOR", r.status === 200 && r.body?.description === null,
+      `${r.status} -> ${r.body?.description}`);
+    kontrol("Kaldırılan açıklama listede null", (await aciklamaOku()) === null);
+
+    r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/aciklama`, {
+      method: "PUT",
+      body: { description: TEST_ACIKLAMA },
+    });
+    kontrol("Açıklama geri yazıldı", r.status === 200 && (await aciklamaOku()) === TEST_ACIKLAMA,
+      `${r.status}`);
   }
 
   /* ================================================================== DERSLER */
@@ -614,6 +661,18 @@ async function calistir() {
     (r.body?.lessons ?? []).some((d: any) => d.id === dersId),
     `${(r.body?.lessons ?? []).length} ders`,
   );
+
+  /* Açıklama yalnızca yöneticinin: öğretmenin kendi uçlarının hiçbirinde
+     geçmemeli. (Veritabanı katmanı ayrıca supabase-teacher-panel-tests.sql
+     33-35'te sınanıyor.) */
+  if (testOgretmeni) {
+    const me = await istek(ogretmen.kavanoz, "/api/auth/me");
+    const ozet = await istek(ogretmen.kavanoz, "/api/teacher/ozet");
+    kontrol(
+      "Öğretmen kendi açıklamasını GÖREMİYOR",
+      !JSON.stringify([r.body, me.body, ozet.body]).includes(TEST_ACIKLAMA),
+    );
+  }
 
   /* Tamamlanmamış derse yorum reddedilmeli. */
   r = await istek(ogretmen.kavanoz, `/api/teacher/lessons/${dersId}/comment`, {

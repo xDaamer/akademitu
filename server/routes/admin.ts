@@ -138,28 +138,57 @@ function epostaNormalize(value: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) ? e : null;
 }
 
+/*
+ * Öğretmen açıklaması: verdiği dersler, notlar — serbest metin. Boş metin
+ * "açıklamayı kaldır" demek; alanı boşaltmanın başka yolu yok ve tabloda boş
+ * satır tutulmuyor (teacher_descriptions_length).
+ */
+const ACIKLAMA_MAKS = 2000;
+
+function aciklamaNormalize(value: unknown): { hata: string } | { aciklama: string } {
+  if (typeof value !== "string") return { hata: "Açıklama gönderilmedi." };
+  const temiz = value.trim();
+  if (temiz.length > ACIKLAMA_MAKS) {
+    return { hata: `Açıklama en fazla ${ACIKLAMA_MAKS} karakter olabilir.` };
+  }
+  return { aciklama: temiz };
+}
+
 /* ==================================================================== ÖZET */
 
 /**
- * Panelin açılışta ihtiyaç duyduğu her şey: tüm hesaplar.
- * Dersler ve ödemeler ayrı uçlarda — onlar filtrelenerek çekiliyor ve
- * hesap listesinden çok daha hızlı büyüyor.
+ * Panelin açılışta ihtiyaç duyduğu her şey: tüm hesaplar ve öğretmenlerin
+ * açıklamaları. Dersler ve ödemeler ayrı uçlarda — onlar filtrelenerek
+ * çekiliyor ve hesap listesinden çok daha hızlı büyüyor.
  */
 router.get("/ozet", async (_req, res) => {
   const admin = serviceClient();
   if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
 
   try {
-    const { data: profiller, error } = await admin
-      .from("profiles")
-      .select("id, full_name, phone, username, user_type, created_at")
-      .order("user_type", { ascending: true })
-      .order("full_name", { ascending: true });
+    const [{ data: profiller, error }, aciklamalar] = await Promise.all([
+      admin
+        .from("profiles")
+        .select("id, full_name, phone, username, user_type, created_at")
+        .order("user_type", { ascending: true })
+        .order("full_name", { ascending: true }),
+      admin.from("teacher_descriptions").select("teacher_id, description"),
+    ]);
 
     if (error) {
       console.error("[Admin] profiller okunamadı:", error.message);
       return res.status(502).json({ success: false, error: GENERIC_ERROR });
     }
+
+    /* Açıklamalar okunamazsa liste YİNE açılıyor, açıklamasız. Yardımcı bir
+       alan yüzünden bütün panelin kilitlenmesi — tablo henüz yokken deploy
+       edilmesi dahil — bedelinden büyük bir hata olurdu. */
+    if (aciklamalar.error) {
+      console.error("[Admin] öğretmen açıklamaları okunamadı:", aciklamalar.error.message);
+    }
+    const aciklamaHaritasi = new Map(
+      (aciklamalar.data ?? []).map((a) => [a.teacher_id as string, a.description as string]),
+    );
 
     return res.json({
       success: true,
@@ -170,6 +199,7 @@ router.get("/ozet", async (_req, res) => {
         username: p.username,
         userType: p.user_type,
         createdAt: p.created_at,
+        description: p.user_type === "teacher" ? aciklamaHaritasi.get(p.id) ?? null : null,
       })),
     });
   } catch (err: any) {
@@ -244,6 +274,15 @@ router.post("/hesaplar", async (req, res) => {
     musaitlik = m.araliklar;
   }
 
+  /* Açıklama isteğe bağlı ve yalnızca öğretmende; o da auth kullanıcısından
+     ÖNCE doğrulanıyor. */
+  let aciklama = "";
+  if (userType === "teacher" && req.body?.description !== undefined) {
+    const a = aciklamaNormalize(req.body.description);
+    if ("hata" in a) return res.status(400).json({ success: false, error: a.hata });
+    aciklama = a.aciklama;
+  }
+
   try {
     /* Telefon çakışması ÖNCEDEN kontrol ediliyor: auth kullanıcısını açıp
        sonra profiles'ın UNIQUE kısıtına takılmak, geri alma gerektiren
@@ -316,6 +355,21 @@ router.post("/hesaplar", async (req, res) => {
         );
         return res.status(502).json({ success: false, error: GENERIC_ERROR });
       }
+
+      /* Açıklama da aynı kurala tabi: yazılamazsa hesap geri alınıyor.
+         Yönetici "açıldı" görüp açıklamanın sessizce kaybolduğunu ancak
+         listede fark ederdi; tekrar denemek, yarım bir hesabı düzeltmekten
+         kolay. */
+      if (aciklama) {
+        const aciklamaHatasi = await aciklamaYaz(admin, yeni.user.id, aciklama, yapanId);
+        if (aciklamaHatasi) {
+          console.error("[Admin] açıklama yazılamadı, hesap geri alınıyor:", aciklamaHatasi);
+          await admin.auth.admin.deleteUser(yeni.user.id).catch((e) =>
+            console.error("[Admin] geri alma da başarısız:", e?.message || e),
+          );
+          return res.status(502).json({ success: false, error: GENERIC_ERROR });
+        }
+      }
     }
 
     /* ŞİFRE DENETİM KAYDINA YAZILMIYOR — bkz. supabase-audit-log.sql. */
@@ -326,7 +380,7 @@ router.post("/hesaplar", async (req, res) => {
 
     return res.json({
       success: true,
-      account: { id: yeni.user.id, fullName, phone, username, userType },
+      account: { id: yeni.user.id, fullName, phone, username, userType, description: aciklama || null },
     });
   } catch (err: any) {
     console.error("[Admin] hesap açma istisnası:", err?.message || err);
@@ -570,6 +624,74 @@ router.put("/ogretmenler/:id/musaitlik", async (req, res) => {
     return res.json({ success: true, availability: m.araliklar });
   } catch (err: any) {
     console.error("[Admin] müsaitlik istisnası:", err?.message || err);
+    return res.status(500).json({ success: false, error: GENERIC_ERROR });
+  }
+});
+
+/* ======================================================= ÖĞRETMEN AÇIKLAMASI */
+
+/*
+ * public.teacher_descriptions (supabase-teacher-descriptions.sql): öğretmenin
+ * verdiği dersler ve yöneticinin notları. YALNIZCA YÖNETİCİ görür — tablo
+ * anon ve authenticated'a kapalı, öğretmen kendi açıklamasını da okuyamıyor.
+ * Ayrı bir okuma ucu yok: açıklamalar /ozet ile hesap listesine geliyor.
+ */
+
+/** Açıklamayı yazar; boşsa satırı siler. Başarıda null, hatada mesaj döner. */
+async function aciklamaYaz(
+  admin: NonNullable<ReturnType<typeof serviceClient>>,
+  ogretmenId: string,
+  aciklama: string,
+  yapanId: string,
+): Promise<string | null> {
+  /* Tek ifade (upsert), DELETE+INSERT değil: iki ayrı istek arasında bir hata
+     açıklamayı tamamen silmiş bırakırdı. */
+  const { error } = aciklama
+    ? await admin.from("teacher_descriptions").upsert(
+        {
+          teacher_id: ogretmenId,
+          description: aciklama,
+          updated_at: new Date().toISOString(),
+          updated_by: yapanId,
+        },
+        { onConflict: "teacher_id" },
+      )
+    : await admin.from("teacher_descriptions").delete().eq("teacher_id", ogretmenId);
+  return error ? error.message : null;
+}
+
+/**
+ * AÇIKLAMAYI DEĞİŞTİR — PUT /api/admin/ogretmenler/:id/aciklama
+ * Gövde: { description: string }. Boş metin açıklamayı kaldırıyor.
+ */
+router.put("/ogretmenler/:id/aciklama", async (req, res) => {
+  const { userId: yapanId } = res.locals as unknown as SessionLocals;
+  const { id } = req.params;
+  const admin = serviceClient();
+  if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
+  if (!UUID_BICIMI.test(id)) return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+
+  const a = aciklamaNormalize(req.body?.description);
+  if ("hata" in a) return res.status(400).json({ success: false, error: a.hata });
+
+  try {
+    if (!(await ogretmenMi(admin, id))) {
+      return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+    }
+
+    const hata = await aciklamaYaz(admin, id, a.aciklama, yapanId);
+    if (hata) {
+      console.error("[Admin] açıklama yazılamadı:", hata);
+      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    }
+
+    auditLog(req, "ADMIN_TEACHER_DESCRIPTION_WRITE", {
+      userId: yapanId,
+      detay: { hesapId: id, uzunluk: a.aciklama.length },
+    });
+    return res.json({ success: true, description: a.aciklama || null });
+  } catch (err: any) {
+    console.error("[Admin] açıklama istisnası:", err?.message || err);
     return res.status(500).json({ success: false, error: GENERIC_ERROR });
   }
 });

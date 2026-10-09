@@ -19,7 +19,13 @@ export interface Hesap {
   username: string | null;
   userType: 'student' | 'teacher' | 'admin';
   createdAt?: string;
+  /* Yalnızca öğretmende: verdiği dersler, notlar. Sadece yöneticiye gelir
+     (public.teacher_descriptions); öğretmen kendi açıklamasını göremez. */
+  description?: string | null;
 }
+
+/** Sunucudaki sınırla aynı (server/routes/admin.ts, ACIKLAMA_MAKS). */
+export const ACIKLAMA_MAKS = 2000;
 
 export const ROL_ETIKET: Record<Hesap['userType'], string> = {
   student: 'Öğrenci',
@@ -54,6 +60,10 @@ export const Girdi: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (pro
 
 export const Secim: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
   <select {...props} className={`${GIRDI_SINIF} ${props.className ?? ''}`} />
+);
+
+export const MetinAlani: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (props) => (
+  <textarea {...props} className={`${GIRDI_SINIF} resize-y ${props.className ?? ''}`} />
 );
 
 /** Bölüm kabuğu — üç sekme de aynı çerçeveyi kullanıyor. */

@@ -63,6 +63,9 @@ export type AuditAction =
   /* Öğretmenin müsait saatlerini değiştirmek. Detaya yalnızca aralık SAYISI
      yazılıyor; saatlerin kendisi tabloda zaten var, kayıt kopyası değil. */
   | "ADMIN_AVAILABILITY_WRITE"
+  /* Öğretmen açıklamasını yazmak ya da kaldırmak. Detaya metnin kendisi
+     DEĞİL, yalnızca uzunluğu yazılıyor (0 = kaldırıldı). */
+  | "ADMIN_TEACHER_DESCRIPTION_WRITE"
   | "ADMIN_PAYMENT_WRITE"
   | "ADMIN_PAYMENT_DELETED"
   /* Başvuru listesine bakmak. Diğer yönetim okumaları kayda girmiyor;

@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
-import { UserPlus, KeyRound, Users, CalendarClock } from 'lucide-react';
+import { UserPlus, KeyRound, Users, CalendarClock, FileText } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { apiFetch, ApiRequestError } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
-import { Alan, Girdi, Secim, Kutu, Uyari, Bos, ROL_ETIKET, type Hesap } from './AdminUI';
+import {
+  Alan,
+  Girdi,
+  Secim,
+  MetinAlani,
+  Kutu,
+  Uyari,
+  Bos,
+  ROL_ETIKET,
+  ACIKLAMA_MAKS,
+  type Hesap,
+} from './AdminUI';
 import { MusaitlikDuzenleyici } from './AdminAvailability';
 import type { Aralik } from '../../../lib/dersSaati';
 
@@ -20,6 +31,11 @@ import type { Aralik } from '../../../lib/dersSaati';
  * hiç ders atanamaz. Mevcut öğretmenlerin müsaitliği satırlarındaki
  * "Müsaitlik" düğmesinden değiştiriliyor.
  *
+ * ÖĞRETMEN AÇIKLAMASI (2026-10-09): verdiği dersler ve notlar. İsteğe bağlı;
+ * hesap açarken ya da satırdaki "Açıklama" düğmesinden yazılıyor ve satırın
+ * altında görünüyor. Yalnızca yöneticiler görür — bu bir arayüz gizlemesi
+ * değil, tablo öğretmene veritabanında kapalı (supabase-teacher-descriptions.sql).
+ *
  * HESAP SİLME YOK ve bu bilinçli: bir auth kullanıcısını silmek ders
  * geçmişini de etkileyen, geri dönüşü olmayan bir iş. Yanlış satıra basmanın
  * bedeli, panelde kazanılan rahatlıktan büyük. Erişimi kesmek gerekirse
@@ -33,6 +49,7 @@ const BOS_FORM = {
   password: '',
   userType: 'student' as Hesap['userType'],
   availability: [] as Aralik[],
+  description: '',
 };
 
 export const AdminAccounts: React.FC<{
@@ -55,6 +72,9 @@ export const AdminAccounts: React.FC<{
      okunuyor. */
   const [musaitlikAcik, setMusaitlikAcik] = useState<string | null>(null);
   const [musaitlikTaslak, setMusaitlikTaslak] = useState<Aralik[] | null>(null);
+  /* Açıklaması düzenlenen öğretmen. Metin listeden geliyor, ayrı okuma yok. */
+  const [aciklamaAcik, setAciklamaAcik] = useState<string | null>(null);
+  const [aciklamaTaslak, setAciklamaTaslak] = useState('');
 
   const ogretmenEksik = form.userType === 'teacher' && form.availability.length === 0;
 
@@ -66,14 +86,16 @@ export const AdminAccounts: React.FC<{
     try {
       /* Boş kullanıcı adı hiç GÖNDERİLMİYOR: sunucu boş string'i "biçim
          geçersiz" sayardı. Alan isteğe bağlı, yokluğu bir hata değil. */
-      /* Müsaitlik yalnızca öğretmen hesabında gönderiliyor; başka rolde
-         sunucu zaten yok sayıyor ama gereksiz veri taşımaya gerek yok. */
+      /* Müsaitlik ve açıklama yalnızca öğretmen hesabında gönderiliyor; başka
+         rolde sunucu zaten yok sayıyor ama gereksiz veri taşımaya gerek yok. */
+      const ogretmen = form.userType === 'teacher';
       await apiFetch('/api/admin/hesaplar', {
         method: 'POST',
         body: {
           ...form,
           username: form.username.trim() || undefined,
-          availability: form.userType === 'teacher' ? form.availability : undefined,
+          availability: ogretmen ? form.availability : undefined,
+          description: ogretmen && form.description.trim() ? form.description : undefined,
         },
       });
       /* Şifre ekranda TEKRAR GÖSTERİLMİYOR: yönetici onu zaten kendi yazdı.
@@ -105,9 +127,38 @@ export const AdminAccounts: React.FC<{
     }
   }
 
+  function aciklamaAc(h: Hesap) {
+    setDuzenlenen(null);
+    setSifreAcik(null);
+    setMusaitlikAcik(null);
+    setAciklamaAcik(aciklamaAcik === h.id ? null : h.id);
+    setAciklamaTaslak(h.description ?? '');
+  }
+
+  async function aciklamaKaydet(id: string) {
+    setMesgul(true);
+    setHata(null);
+    setBasari(null);
+    try {
+      /* Boş metin sunucuda açıklamayı KALDIRIYOR — "sil" düğmesi ayrıca yok. */
+      await apiFetch(`/api/admin/ogretmenler/${id}/aciklama`, {
+        method: 'PUT',
+        body: { description: aciklamaTaslak },
+      });
+      setBasari(aciklamaTaslak.trim() ? 'Açıklama kaydedildi.' : 'Açıklama kaldırıldı.');
+      setAciklamaAcik(null);
+      onDegisti();
+    } catch (err) {
+      setHata(err instanceof ApiRequestError ? err.message : 'Açıklama kaydedilemedi.');
+    } finally {
+      setMesgul(false);
+    }
+  }
+
   async function musaitlikAc(id: string) {
     setDuzenlenen(null);
     setSifreAcik(null);
+    setAciklamaAcik(null);
     if (musaitlikAcik === id) {
       setMusaitlikAcik(null);
       return;
@@ -245,6 +296,23 @@ export const AdminAccounts: React.FC<{
             </div>
           )}
 
+          {form.userType === 'teacher' && (
+            <Alan
+              etiket="Açıklama (isteğe bağlı)"
+              ipucu="Yalnızca yöneticiler görür; öğretmen göremez."
+              genis
+            >
+              <MetinAlani
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Verdiği dersler: TYT-AYT Matematik, LGS Fen Bilimleri…"
+                rows={3}
+                maxLength={ACIKLAMA_MAKS}
+                disabled={mesgul}
+              />
+            </Alan>
+          )}
+
           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
             <Button type="submit" disabled={mesgul || ogretmenEksik}>
               {mesgul ? 'Açılıyor...' : 'Hesabı aç'}
@@ -298,10 +366,16 @@ export const AdminAccounts: React.FC<{
 
                   <div className="ml-auto flex gap-1.5">
                     {h.userType === 'teacher' && (
-                      <Button variant="ghost" size="sm" onClick={() => void musaitlikAc(h.id)}>
-                        <CalendarClock className="h-4 w-4" />
-                        <span className="hidden sm:inline">Müsaitlik</span>
-                      </Button>
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => aciklamaAc(h)}>
+                          <FileText className="h-4 w-4" />
+                          <span className="hidden sm:inline">Açıklama</span>
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => void musaitlikAc(h.id)}>
+                          <CalendarClock className="h-4 w-4" />
+                          <span className="hidden sm:inline">Müsaitlik</span>
+                        </Button>
+                      </>
                     )}
                     <Button
                       variant="ghost"
@@ -309,6 +383,7 @@ export const AdminAccounts: React.FC<{
                       onClick={() => {
                         setSifreAcik(null);
                         setMusaitlikAcik(null);
+                        setAciklamaAcik(null);
                         setDuzenlenen(duzenlenen === h.id ? null : h.id);
                         setDuzenForm({
                           fullName: h.fullName,
@@ -326,6 +401,7 @@ export const AdminAccounts: React.FC<{
                       onClick={() => {
                         setDuzenlenen(null);
                         setMusaitlikAcik(null);
+                        setAciklamaAcik(null);
                         setSifreAcik(sifreAcik === h.id ? null : h.id);
                         setYeniSifre('');
                       }}
@@ -335,6 +411,42 @@ export const AdminAccounts: React.FC<{
                     </Button>
                   </div>
                 </div>
+
+                {/* Açıklama düzenleyici kapalıyken satırın altında. Yoksa hiçbir
+                    şey gösterilmiyor: boş bir "açıklama yok" satırı her
+                    öğretmeni listede bir satır uzatırdı. */}
+                {h.userType === 'teacher' && h.description && aciklamaAcik !== h.id && (
+                  <p className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                    {h.description}
+                  </p>
+                )}
+
+                {aciklamaAcik === h.id && (
+                  <div className="mt-3 border-t border-slate-200 pt-3">
+                    <Alan
+                      etiket="Açıklama"
+                      ipucu="Yalnızca yöneticiler görür. Boş bırakıp kaydederseniz kaldırılır."
+                    >
+                      <MetinAlani
+                        value={aciklamaTaslak}
+                        onChange={(e) => setAciklamaTaslak(e.target.value)}
+                        placeholder="Verdiği dersler: TYT-AYT Matematik, LGS Fen Bilimleri…"
+                        rows={3}
+                        maxLength={ACIKLAMA_MAKS}
+                        disabled={mesgul}
+                        autoFocus
+                      />
+                    </Alan>
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm" onClick={() => aciklamaKaydet(h.id)} disabled={mesgul}>
+                        {mesgul ? 'Kaydediliyor...' : 'Açıklamayı kaydet'}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setAciklamaAcik(null)}>
+                        Vazgeç
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {duzenlenen === h.id && (
                   <div className="mt-3 grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4">
