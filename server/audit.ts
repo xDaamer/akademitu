@@ -60,6 +60,9 @@ export type AuditAction =
   | "ADMIN_PASSWORD_RESET"
   | "ADMIN_LESSON_WRITE"
   | "ADMIN_LESSON_DELETED"
+  /* Öğretmenin müsait saatlerini değiştirmek. Detaya yalnızca aralık SAYISI
+     yazılıyor; saatlerin kendisi tabloda zaten var, kayıt kopyası değil. */
+  | "ADMIN_AVAILABILITY_WRITE"
   | "ADMIN_PAYMENT_WRITE"
   | "ADMIN_PAYMENT_DELETED"
   /* Başvuru listesine bakmak. Diğer yönetim okumaları kayda girmiyor;

@@ -11,6 +11,7 @@ import { routingMode, studentCommentsPath } from '../lib/host';
 import { GUN_ADLARI, gunEkle, gunEtiketi } from '../lib/haftaTarih';
 import { trTarih } from '../components/portal/TeacherLessonList';
 import { PanelHeader } from '../components/portal/PanelHeader';
+import { DenemeRozeti } from '../components/portal/DenemeRozeti';
 
 /*
  * PANEL — portal.sherpakademi.com KÖKÜ
@@ -37,6 +38,7 @@ interface Ders {
   starts_at: string;
   status: 'scheduled' | 'completed' | 'cancelled';
   kind: 'ders' | 'koclu';
+  is_trial: boolean;
 }
 
 interface Yorum {
@@ -104,6 +106,7 @@ const DersKarti: React.FC<{ ders: Ders }> = ({ ders }) => {
             Koçluk
           </span>
         )}
+        {ders.is_trial && <DenemeRozeti />}
       </div>
       <p className="truncate text-sm font-bold text-[#191F61]" title={ders.subject}>
         {ders.subject}

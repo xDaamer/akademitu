@@ -28,7 +28,9 @@
  *
  * NE YAZAR, NE SİLER
  * ----------------------------------------------------------------------------
- * Açtığı DERS ve ÖDEME kayıtlarını sonunda siler. Açtığı HESAPLARI silmez —
+ * Açtığı DERS ve ÖDEME kayıtlarını sonunda siler. Ders saati öğretmenin
+ * programından seçiliyor (önümüzdeki iki haftadaki ilk boş yarım saat);
+ * --teacher ile hazır bir öğretmen verilirse onun müsaitliğine dokunmaz. Açtığı HESAPLARI silmez —
  * panelde hesap silme bilerek yok (bkz. AdminAccounts.tsx); kimlikleri ekrana
  * yazar, gerekirse Supabase Dashboard'dan kaldırılır.
  *
@@ -160,6 +162,53 @@ const URETILEN = {
   password: `Test${DAMGA}aA!`,
 };
 
+/* Betiğin açtığı öğretmenin müsaitliği: her gün 09:00-21:00. */
+const TEST_MUSAITLIK = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
+  weekday,
+  startMinute: 9 * 60,
+  endMinute: 21 * 60,
+}));
+
+function gunEkle(tarih: string, n: number): string {
+  const d = new Date(`${tarih}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function trAn(tarih: string, dakika: number): string {
+  const hh = String(Math.floor(dakika / 60)).padStart(2, "0");
+  const mm = String(dakika % 60).padStart(2, "0");
+  return new Date(`${tarih}T${hh}:${mm}:00+03:00`).toISOString();
+}
+
+/**
+ * Öğretmenin programından ilk boş saati bulur — ders atama ekranının
+ * yaptığının aynısı, sunucunun kendi program ucundan. Önümüzdeki iki hafta
+ * taranıyor ki ders her zaman gelecekte olsun.
+ */
+async function bosSaatBul(kavanoz: Kavanoz, ogretmenId: string, sureDk: number): Promise<string | null> {
+  const trBugun = new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+  for (const ek of [7, 14]) {
+    const r = await istek(kavanoz, `/api/admin/ogretmenler/${ogretmenId}/program?week=${gunEkle(trBugun, ek)}`);
+    if (r.status !== 200) return null;
+    const { weekStart, availability, lessons } = r.body;
+    for (let g = 0; g < 7; g++) {
+      const tarih = gunEkle(weekStart, g);
+      for (const a of availability.filter((x: any) => x.weekday === g + 1)) {
+        for (let dk = a.startMinute; dk + sureDk <= a.endMinute; dk += 30) {
+          const bas = new Date(trAn(tarih, dk)).getTime();
+          const bit = bas + sureDk * 60_000;
+          const dolu = lessons.some(
+            (l: any) => new Date(l.startsAt).getTime() < bit && bas < new Date(l.endsAt).getTime(),
+          );
+          if (!dolu) return new Date(bas).toISOString();
+        }
+      }
+    }
+  }
+  return null;
+}
+
 async function calistir() {
   console.log(`\nPanel testleri — ${BASE}\n`);
 
@@ -214,6 +263,19 @@ async function calistir() {
   let ogrenciId: string | undefined;
 
   if (!OGRETMEN) {
+    /* Müsaitliksiz öğretmen hesabı reddediliyor — auth kullanıcısı açılmadan
+       ÖNCE, yani bu deneme arkasında hesap bırakmıyor. */
+    r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
+      method: "POST",
+      body: {
+        fullName: "TEST Ogretmen",
+        phone: URETILEN.teacherPhone,
+        password: URETILEN.password,
+        userType: "teacher",
+      },
+    });
+    kontrol("Müsait saatsiz öğretmen hesabı ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
     r = await istek(yonetici.kavanoz, "/api/admin/hesaplar", {
       method: "POST",
       body: {
@@ -222,6 +284,7 @@ async function calistir() {
         username: URETILEN.teacherUsername,
         password: URETILEN.password,
         userType: "teacher",
+        availability: TEST_MUSAITLIK,
       },
     });
     kontrol("Öğretmen hesabı açıldı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
@@ -340,26 +403,98 @@ async function calistir() {
   ogretmenId ??= hepsi.find((h: any) => h.phone === OGRETMEN!.phone)?.id;
   ogrenciId ??= hepsi.find((h: any) => h.phone === OGRENCI!.phone)?.id;
 
-  /* ================================================================== DERSLER */
-  console.log("\n3) Ders atama");
-  const simdi = Date.now();
-  const baslangic = new Date(simdi + 2 * 3600_000).toISOString();
-  const bitis = new Date(simdi + 3 * 3600_000).toISOString();
+  /* =============================================================== MÜSAİTLİK */
+  console.log("\n3) Öğretmen müsaitliği");
+  const testOgretmeni = !argOku("teacher");
 
-  r = await istek(yonetici.kavanoz, "/api/admin/dersler", {
-    method: "POST",
-    body: {
-      studentId: ogrenciId,
-      teacherId: ogretmenId,
-      subject: "TEST TYT Matematik",
-      startsAt: baslangic,
-      endsAt: bitis,
-      kind: "ders",
-      status: "scheduled",
-    },
+  r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/musaitlik`);
+  kontrol("Müsaitlik okunuyor (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+  if (testOgretmeni) {
+    kontrol("Hesap açarken girilen 7 aralık kaydedilmiş", r.body?.availability?.length === 7,
+      `${r.body?.availability?.length}`);
+  }
+
+  r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogrenciId}/program`);
+  kontrol("Öğrencinin 'programı' YOK (404)", r.status === 404, `${r.status}`);
+
+  /* Yazma testleri yalnızca betiğin kendi öğretmeninde: gerçek bir
+     öğretmenin müsaitliğine dokunulmuyor. */
+  if (testOgretmeni) {
+    r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/musaitlik`, {
+      method: "PUT",
+      body: { availability: [{ weekday: 1, startMinute: 545, endMinute: 600 }] },
+    });
+    kontrol("Yarım saate oturmayan aralık ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+    r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/musaitlik`, {
+      method: "PUT",
+      body: { availability: [] },
+    });
+    kontrol("Boş müsaitlik ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+    r = await istek(yonetici.kavanoz, `/api/admin/ogretmenler/${ogretmenId}/musaitlik`, {
+      method: "PUT",
+      body: {
+        availability: [
+          ...TEST_MUSAITLIK.filter((a) => a.weekday !== 1),
+          { weekday: 1, startMinute: 9 * 60, endMinute: 12 * 60 },
+          { weekday: 1, startMinute: 11 * 60, endMinute: 21 * 60 },
+        ],
+      },
+    });
+    const pazartesi = (r.body?.availability ?? []).filter((a: any) => a.weekday === 1);
+    kontrol(
+      "Çakışan aralıklar BİRLEŞTİRİLİYOR",
+      r.status === 200 && pazartesi.length === 1 && pazartesi[0].endMinute === 21 * 60,
+      `${r.status} ${JSON.stringify(pazartesi)}`,
+    );
+  }
+
+  /* ================================================================== DERSLER */
+  console.log("\n4) Ders atama");
+  const baslangic = await bosSaatBul(yonetici.kavanoz, ogretmenId!, 50);
+  kontrol("Öğretmenin programında boş saat bulundu", Boolean(baslangic), `${baslangic}`);
+
+  const dersGovdesi = (startsAt: string | null, ekstra: Record<string, unknown> = {}) => ({
+    studentId: ogrenciId,
+    teacherId: ogretmenId,
+    subject: "TEST TYT Matematik",
+    startsAt,
+    kind: "ders",
+    status: "scheduled",
+    ...ekstra,
   });
+
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler", { method: "POST", body: dersGovdesi(baslangic) });
   kontrol("Ders atandı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
   const dersId = r.body?.id;
+
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler", { method: "POST", body: dersGovdesi(baslangic) });
+  kontrol("Aynı saate ikinci ders ENGELLENİYOR (409)", r.status === 409, `${r.status} ${r.body?.error ?? ""}`);
+
+  const ceyrekGecesi = new Date(new Date(baslangic!).getTime() + 15 * 60_000).toISOString();
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler", { method: "POST", body: dersGovdesi(ceyrekGecesi) });
+  kontrol("Saat başı/buçuk olmayan başlangıç ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+
+  if (testOgretmeni) {
+    /* Test öğretmeni 09:00-21:00 müsait; aynı gün 03:00 dışarıda. */
+    const gece = trAn(new Date(new Date(baslangic!).getTime() + 3 * 3600_000).toISOString().slice(0, 10), 3 * 60);
+    r = await istek(yonetici.kavanoz, "/api/admin/dersler", { method: "POST", body: dersGovdesi(gece) });
+    kontrol("Müsaitlik dışındaki saat ENGELLENİYOR (400)", r.status === 400, `${r.status}`);
+  }
+
+  /* Deneme dersi: süre 25 dk ve istemcinin gönderdiği bitiş YOK SAYILIYOR. */
+  const denemeSaati = await bosSaatBul(yonetici.kavanoz, ogretmenId!, 25);
+  r = await istek(yonetici.kavanoz, "/api/admin/dersler", {
+    method: "POST",
+    body: dersGovdesi(denemeSaati, {
+      subject: "TEST deneme dersi",
+      isTrial: true,
+      endsAt: new Date(new Date(denemeSaati!).getTime() + 3 * 3600_000).toISOString(),
+    }),
+  });
+  kontrol("Deneme dersi atandı (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
+  const denemeId = r.body?.id;
 
   /* Rol doğrulaması: veritabanı bunu yapmıyor, route yapıyor. */
   r = await istek(yonetici.kavanoz, "/api/admin/dersler", {
@@ -375,9 +510,25 @@ async function calistir() {
     Boolean(listeDers?.studentName && listeDers?.teacherName),
     `${listeDers?.studentName} / ${listeDers?.teacherName}`,
   );
+  const dakika = (d: any) => (new Date(d?.endsAt).getTime() - new Date(d?.startsAt).getTime()) / 60_000;
+  kontrol("Normal ders 50 dk (bitişi sunucu hesapladı)", dakika(listeDers) === 50 && listeDers?.isTrial === false,
+    `${dakika(listeDers)} dk`);
+  const listeDeneme = (r.body?.lessons ?? []).find((d: any) => d.id === denemeId);
+  kontrol("Deneme dersi 25 dk ve işaretli", dakika(listeDeneme) === 25 && listeDeneme?.isTrial === true,
+    `${dakika(listeDeneme)} dk, isTrial=${listeDeneme?.isTrial}`);
+
+  r = await istek(yonetici.kavanoz, `/api/admin/dersler/${denemeId}`, { method: "DELETE" });
+  kontrol("Deneme dersi silindi", r.status === 200, `${r.status}`);
+
+  /* Saati değişmeyen düzenleme kuralları yeniden uygulamıyor; konu değişiyor. */
+  r = await istek(yonetici.kavanoz, `/api/admin/dersler/${dersId}`, {
+    method: "PATCH",
+    body: dersGovdesi(baslangic, { subject: "TEST TYT Matematik (düzenlendi)" }),
+  });
+  kontrol("Ders konusu düzenlendi (200)", r.status === 200, `${r.status} ${r.body?.error ?? ""}`);
 
   /* =================================================================== ÜCRET */
-  console.log("\n4) Ücret girme");
+  console.log("\n5) Ücret girme");
   r = await istek(yonetici.kavanoz, "/api/admin/odemeler", {
     method: "POST",
     body: {
@@ -410,7 +561,7 @@ async function calistir() {
   kontrol("Ödeme düzenlendi (200)", r.status === 200, `${r.status}`);
 
   /* ================================================================ ÖĞRETMEN */
-  console.log("\n5) Öğretmen paneli");
+  console.log("\n6) Öğretmen paneli");
   const ogretmen = await girisYap(OGRETMEN!, "Öğretmen");
   if (!ogretmen) {
     console.error("  Panelden açılan hesapla giriş yapılamadı — Admin API akışı bozuk.");
@@ -504,7 +655,7 @@ async function calistir() {
   kontrol("Başkasının dersine yorum ENGELLENİYOR (403)", r.status === 403, `${r.status}`);
 
   /* ================================================================= ÖĞRENCİ */
-  console.log("\n6) Öğrenci paneli");
+  console.log("\n7) Öğrenci paneli");
   const ogrenci = await girisYap(OGRENCI!, "Öğrenci");
   if (!ogrenci) {
     console.error("  Öğrenci girişi başarısız.");
@@ -527,12 +678,18 @@ async function calistir() {
     `${yorumlu?.comment?.text ?? "YOK"}`);
 
   /* =========================================================== ROL İZOLASYONU */
-  console.log("\n7) Rol izolasyonu");
+  console.log("\n8) Rol izolasyonu");
   for (const [ad, kav] of [
     ["Öğretmen", ogretmen.kavanoz],
     ["Öğrenci", ogrenci.kavanoz],
   ] as const) {
-    for (const yol of ["/api/admin/ozet", "/api/admin/dersler", "/api/admin/odemeler", "/api/admin/basvurular"]) {
+    for (const yol of [
+      "/api/admin/ozet",
+      "/api/admin/dersler",
+      "/api/admin/odemeler",
+      "/api/admin/basvurular",
+      `/api/admin/ogretmenler/${ogretmenId}/program`,
+    ]) {
       const x = await istek(kav, yol);
       kontrol(`${ad} -> ${yol} ENGELLENİYOR (403)`, x.status === 403, `${x.status}`);
     }
@@ -552,7 +709,7 @@ async function calistir() {
     ogretmenOgrenciUcu.status === 403, `${ogretmenOgrenciUcu.status}`);
 
   /* ================================================================ OTURUMSUZ */
-  console.log("\n8) Oturumsuz");
+  console.log("\n9) Oturumsuz");
   const bos = new Kavanoz();
   for (const yol of [
     "/api/portal/ozet",
@@ -566,7 +723,7 @@ async function calistir() {
   }
 
   /* ================================================================== TEMİZLİK */
-  console.log("\n9) Temizlik");
+  console.log("\n10) Temizlik");
   r = await istek(yonetici.kavanoz, `/api/admin/dersler/${dersId}`, { method: "DELETE" });
   kontrol("Test dersi silindi", r.status === 200, `${r.status}`);
   r = await istek(yonetici.kavanoz, `/api/admin/odemeler/${odemeId}`, { method: "DELETE" });

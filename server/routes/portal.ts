@@ -95,7 +95,7 @@ router.get("/ozet", async (req, res) => {
     const [dersler, odemeler, notlar, gecmisDersler] = await Promise.all([
       supabase
         .from("lessons")
-        .select("id, subject, teacher_name, starts_at, status, kind")
+        .select("id, subject, teacher_name, starts_at, status, kind, is_trial")
         .eq("user_id", userId)
         .gte("starts_at", `${pazartesi}T00:00:00${TR_OFFSET}`)
         .lt("starts_at", `${sonrakiPazartesi}T00:00:00${TR_OFFSET}`)

@@ -2,17 +2,25 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { CalendarPlus, ListChecks, Trash2 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { apiFetch, ApiRequestError } from '../../../lib/api';
-import {
-  Alan, Girdi, Secim, Kutu, Uyari, Bos,
-  isoyaCevir, girdiyeCevir, tarihSaat, type Hesap,
-} from './AdminUI';
+import { Alan, Girdi, Secim, Kutu, Uyari, Bos, tarihSaat, type Hesap } from './AdminUI';
+import { OgretmenProgrami } from './AdminTeacherSchedule';
+import { DenemeRozeti } from '../DenemeRozeti';
+import { GUN_ADLARI, gunEtiketi } from '../../../lib/haftaTarih';
+import { dakikaMetni, dersSuresi, trGunDakika } from '../../../lib/dersSaati';
 
 /*
  * DERS ATAMA
  * ===========================================================================
- * Bir ders bir ÖĞRENCİYE ve (isteğe bağlı) bir ÖĞRETMENE bağlanıyor.
- * Öğretmen boş bırakılabilir — dersin kime atanacağı sonradan belli olan
- * durumlar var ve zorunlu tutmak, dersi hiç girmemeye yol açardı.
+ * Bir ders bir ÖĞRENCİYE ve bir ÖĞRETMENE bağlanıyor. Saat serbest bir
+ * tarih-saat girdisi DEĞİL (2026-10-09'a kadar öyleydi): öğretmen seçilince
+ * onun haftalık programı açılıyor ve ders, müsait saatlerinin içinde saat
+ * başı ya da buçukta başlayan bir hücreye tıklanarak yerleştiriliyor
+ * (OgretmenProgrami). Süre seçilmiyor — "Deneme dersi" işaretliyse 25 dk,
+ * değilse 50 dk; bitiş saatini sunucu hesaplıyor.
+ *
+ * Bu yüzden öğretmen artık ZORUNLU. Eskiden boş bırakılabiliyordu; o
+ * dönemden kalan öğretmensiz dersler saatine dokunulmadan düzenlenebiliyor
+ * (konu, durum) — sunucu saat kurallarını yalnızca saat değişince uyguluyor.
  *
  * ROL DOĞRULAMASI SUNUCUDA: "öğrenci" alanına bir öğretmen seçilemez.
  * Buradaki açılır listelerin role göre filtrelenmiş olması bir kolaylık,
@@ -31,6 +39,7 @@ interface Ders {
   subject: string;
   startsAt: string;
   endsAt: string | null;
+  isTrial: boolean;
   kind: 'ders' | 'koclu';
   status: 'scheduled' | 'completed' | 'cancelled';
 }
@@ -45,11 +54,18 @@ const BOS_FORM = {
   studentId: '',
   teacherId: '',
   subject: '',
+  /* ISO; programdan bir hücre seçilince doluyor. */
   startsAt: '',
-  endsAt: '',
+  isTrial: false,
   kind: 'ders' as Ders['kind'],
   status: 'scheduled' as Ders['status'],
 };
+
+/** "Salı, 14 Ekim · 12:30–13:20 (50 dk)" */
+function saatOzeti(iso: string, sureDk: number): string {
+  const { tarih, weekday, minute } = trGunDakika(iso);
+  return `${GUN_ADLARI[weekday - 1]}, ${gunEtiketi(tarih)} · ${dakikaMetni(minute)}–${dakikaMetni(minute + sureDk)} (${sureDk} dk)`;
+}
 
 export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
   const [dersler, setDersler] = useState<Ders[]>([]);
@@ -59,9 +75,14 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
   const [mesgul, setMesgul] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState<string | null>(null);
+  /* Kaydetme/silmeden sonra öğretmen programını yeniden çektirmek için. */
+  const [programSurumu, setProgramSurumu] = useState(0);
+  /* Düzenlenen dersin haftası; program o haftadan açılsın. null: bu hafta. */
+  const [programHaftasi, setProgramHaftasi] = useState<string | null>(null);
 
   const ogrenciler = hesaplar.filter((h) => h.userType === 'student');
   const ogretmenler = hesaplar.filter((h) => h.userType === 'teacher');
+  const sure = dersSuresi(form.isTrial);
 
   const getir = useCallback(async () => {
     setYukleniyor(true);
@@ -86,12 +107,13 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
     setHata(null);
     setBasari(null);
 
+    /* Bitiş GÖNDERİLMİYOR: sunucu isTrial'dan hesaplıyor. */
     const govde = {
       studentId: form.studentId,
       teacherId: form.teacherId || null,
       subject: form.subject,
-      startsAt: form.startsAt ? isoyaCevir(form.startsAt) : '',
-      endsAt: form.endsAt ? isoyaCevir(form.endsAt) : null,
+      startsAt: form.startsAt,
+      isTrial: form.isTrial,
       kind: form.kind,
       status: form.status,
     };
@@ -104,8 +126,11 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
         await apiFetch('/api/admin/dersler', { method: 'POST', body: govde });
         setBasari('Ders eklendi.');
       }
-      setForm(BOS_FORM);
+      /* Öğrenci ve öğretmen seçili kalıyor: aynı ikiliye arka arkaya birkaç
+         ders atamak olağan iş. Saat ve konu sıfırlanıyor. */
+      setForm({ ...BOS_FORM, studentId: form.studentId, teacherId: form.teacherId });
       setDuzenlenenId(null);
+      setProgramSurumu((n) => n + 1);
       await getir();
     } catch (err) {
       setHata(err instanceof ApiRequestError ? err.message : 'Ders kaydedilemedi.');
@@ -130,6 +155,7 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
         setDuzenlenenId(null);
         setForm(BOS_FORM);
       }
+      setProgramSurumu((n) => n + 1);
       await getir();
     } catch (err) {
       setHata(err instanceof ApiRequestError ? err.message : 'Ders silinemedi.');
@@ -140,12 +166,13 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
 
   function duzenle(d: Ders) {
     setDuzenlenenId(d.id);
+    setProgramHaftasi(trGunDakika(d.startsAt).tarih);
     setForm({
       studentId: d.studentId,
       teacherId: d.teacherId ?? '',
       subject: d.subject,
-      startsAt: girdiyeCevir(d.startsAt),
-      endsAt: girdiyeCevir(d.endsAt),
+      startsAt: d.startsAt,
+      isTrial: d.isTrial,
       kind: d.kind,
       status: d.status,
     });
@@ -178,12 +205,16 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
             </Secim>
           </Alan>
 
-          <Alan etiket="Öğretmen" ipucu="Boş bırakılabilir.">
+          {/* Düzenlemede zorunlu değil: bu kurallardan önce girilmiş
+              öğretmensiz bir dersin konusu ya da durumu değiştirilebilsin.
+              Saat değişirse sunucu öğretmeni yine şart koşuyor. */}
+          <Alan etiket="Öğretmen">
             <Secim
               value={form.teacherId}
-              onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
+              onChange={(e) => setForm({ ...form, teacherId: e.target.value, startsAt: '' })}
+              required={!duzenlenenId}
             >
-              <option value="">— atanmadı —</option>
+              <option value="">Seçin...</option>
               {ogretmenler.map((o) => (
                 <option key={o.id} value={o.id}>{o.fullName}</option>
               ))}
@@ -196,23 +227,6 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
               placeholder="TYT Matematik — Problemler"
               required
-            />
-          </Alan>
-
-          <Alan etiket="Başlangıç">
-            <Girdi
-              type="datetime-local"
-              value={form.startsAt}
-              onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-              required
-            />
-          </Alan>
-
-          <Alan etiket="Bitiş" ipucu="Boş bırakılabilir.">
-            <Girdi
-              type="datetime-local"
-              value={form.endsAt}
-              onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
             />
           </Alan>
 
@@ -237,8 +251,50 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
             </Secim>
           </Alan>
 
+          {/* Süre buradan türetiliyor. Değişince seçili saat sıfırlanıyor:
+              25 dk'ya sığan bir hücre 50 dk'ya sığmayabilir ve ızgara
+              hücreleri yeni süreye göre yeniden hesaplıyor. */}
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-3 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.isTrial}
+              onChange={(e) => setForm({ ...form, isTrial: e.target.checked, startsAt: '' })}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#191F61]"
+            />
+            <span>
+              <span className="block text-sm font-bold text-[#191F61]">Deneme dersi</span>
+              <span className="block text-xs text-slate-500">
+                İşaretliyse ders 25 dakika, değilse 50 dakika sürer.
+              </span>
+            </span>
+          </label>
+
+          <div className="sm:col-span-2">
+            {form.teacherId ? (
+              <OgretmenProgrami
+                key={form.teacherId}
+                ogretmenId={form.teacherId}
+                sureDk={sure}
+                secili={form.startsAt || null}
+                onSec={(iso) => setForm({ ...form, startsAt: iso })}
+                haricDersId={duzenlenenId}
+                ilkHafta={programHaftasi}
+                yenile={programSurumu}
+              />
+            ) : (
+              <Bos>Ders saatini seçmek için önce öğretmeni seçin; öğretmenin haftalık programı burada açılır.</Bos>
+            )}
+            <p className="mt-2 text-sm font-semibold text-[#191F61]" aria-live="polite">
+              {form.startsAt ? (
+                <>Seçilen saat: {saatOzeti(form.startsAt, sure)}</>
+              ) : (
+                <span className="text-slate-500">Programdan bir saat seçin.</span>
+              )}
+            </p>
+          </div>
+
           <div className="flex gap-2 sm:col-span-2">
-            <Button type="submit" disabled={mesgul || ogrenciler.length === 0}>
+            <Button type="submit" disabled={mesgul || ogrenciler.length === 0 || !form.startsAt}>
               {mesgul ? 'Kaydediliyor...' : duzenlenenId ? 'Değişikliği kaydet' : 'Dersi ekle'}
             </Button>
             {duzenlenenId && (
@@ -247,6 +303,7 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
                 variant="ghost"
                 onClick={() => {
                   setDuzenlenenId(null);
+                  setProgramHaftasi(null);
                   setForm(BOS_FORM);
                 }}
               >
@@ -283,6 +340,7 @@ export const AdminLessons: React.FC<{ hesaplar: Hesap[] }> = ({ hesaplar }) => {
                         {d.studentName ?? 'Bilinmeyen öğrenci'}
                       </span>
                       <span className="truncate text-sm text-slate-600">{d.subject}</span>
+                      {d.isTrial && <DenemeRozeti />}
                       {d.kind === 'koclu' && (
                         <span className="rounded-full bg-[#B6D6CC]/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#2a5d4f]">
                           Koçluk

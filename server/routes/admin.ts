@@ -2,6 +2,17 @@ import express from "express";
 import { serviceClient } from "../supabase.js";
 import { auditLog } from "../audit.js";
 import { requireSession, requireUserType, type SessionLocals } from "../roles.js";
+import { TR_OFFSET, haftaBasi, haftaSonrasi } from "../weekUtils.js";
+import {
+  type Aralik,
+  adimaOturuyor,
+  bitisHesapla,
+  cakisiyor,
+  dersBitisi,
+  dersSuresi,
+  musaitlikIcinde,
+  musaitlikNormalize,
+} from "../dersSaati.js";
 
 /*
  * YÖNETİM PANELİ — /api/admin/*
@@ -182,6 +193,12 @@ router.get("/ozet", async (_req, res) => {
  *
  * 1 olup 2 olmazsa ortada giriş yapamayan yetim bir auth kullanıcısı kalır;
  * o yüzden 2 başarısız olursa 1 GERİ ALINIYOR (aşağıdaki deleteUser).
+ *
+ * ÖĞRETMEN HESABINDA ÜÇÜNCÜ ADIM: müsait saatler (en az bir aralık, zorunlu).
+ * Ders atama artık öğretmenin programından yapılıyor; müsaitliği olmayan bir
+ * öğretmene hiç ders atanamaz. Bu adım da başarısız olursa hesap aynı
+ * şekilde geri alınıyor — profiles auth.users'a CASCADE ile bağlı, yani
+ * deleteUser profili de götürüyor.
  */
 router.post("/hesaplar", async (req, res) => {
   const { userId: yapanId } = res.locals as unknown as SessionLocals;
@@ -213,6 +230,18 @@ router.post("/hesaplar", async (req, res) => {
       success: false,
       error: "Kullanıcı adı 3-30 karakter olmalı; sadece küçük harf, rakam, nokta, alt çizgi ve tire.",
     });
+  }
+
+  /* Müsaitlik auth kullanıcısı açılmadan ÖNCE doğrulanıyor: sonradan
+     reddetmek geri alma gerektirirdi. Öğretmen dışındaki rollerde yok sayılır. */
+  let musaitlik: Aralik[] = [];
+  if (userType === "teacher") {
+    const m = musaitlikNormalize(req.body?.availability);
+    if ("hata" in m) return res.status(400).json({ success: false, error: m.hata });
+    if (m.araliklar.length === 0) {
+      return res.status(400).json({ success: false, error: "Öğretmenin en az bir müsait saat aralığı olmalı." });
+    }
+    musaitlik = m.araliklar;
   }
 
   try {
@@ -271,6 +300,22 @@ router.post("/hesaplar", async (req, res) => {
         console.error("[Admin] geri alma da başarısız:", e?.message || e),
       );
       return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    }
+
+    if (userType === "teacher") {
+      const { error: musaitlikHatasi } = await admin.rpc("set_teacher_availability", {
+        p_teacher: yeni.user.id,
+        p_slots: musaitlik,
+      });
+      if (musaitlikHatasi) {
+        /* Aynı geri alma: müsaitliği olmayan bir öğretmen hesabı, bu ekranın
+           "müsait saatler zorunlu" kuralını delmiş olurdu. */
+        console.error("[Admin] müsaitlik yazılamadı, hesap geri alınıyor:", musaitlikHatasi.message);
+        await admin.auth.admin.deleteUser(yeni.user.id).catch((e) =>
+          console.error("[Admin] geri alma da başarısız:", e?.message || e),
+        );
+        return res.status(502).json({ success: false, error: GENERIC_ERROR });
+      }
     }
 
     /* ŞİFRE DENETİM KAYDINA YAZILMIYOR — bkz. supabase-audit-log.sql. */
@@ -436,27 +481,218 @@ router.post("/hesaplar/:id/sifre", async (req, res) => {
   }
 });
 
+/* ======================================================= ÖĞRETMEN MÜSAİTLİĞİ */
+
+/*
+ * Öğretmenin haftalık müsait saatleri (public.teacher_availability,
+ * supabase-teacher-availability.sql). Hesap açılırken zorunlu; sonradan bu
+ * uçlarla değiştiriliyor. Tablo yalnızca servis rolüne açık — öğretmen kendi
+ * müsaitliğini yazamıyor, okuyamıyor da (şimdilik gereken de bu kadar).
+ */
+
+/** Hesap gerçekten bir öğretmen mi. Değilse uçlar 404 dönüyor. */
+async function ogretmenMi(admin: NonNullable<ReturnType<typeof serviceClient>>, id: string) {
+  const { data, error } = await admin.from("profiles").select("id, user_type").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.user_type === "teacher";
+}
+
+async function musaitlikOku(
+  admin: NonNullable<ReturnType<typeof serviceClient>>,
+  ogretmenId: string,
+): Promise<Aralik[]> {
+  const { data, error } = await admin
+    .from("teacher_availability")
+    .select("weekday, start_minute, end_minute")
+    .eq("teacher_id", ogretmenId)
+    .order("weekday", { ascending: true })
+    .order("start_minute", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((a) => ({
+    weekday: a.weekday,
+    startMinute: a.start_minute,
+    endMinute: a.end_minute,
+  }));
+}
+
+/** MÜSAİTLİĞİ OKU — GET /api/admin/ogretmenler/:id/musaitlik */
+router.get("/ogretmenler/:id/musaitlik", async (req, res) => {
+  const { id } = req.params;
+  const admin = serviceClient();
+  if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
+  if (!UUID_BICIMI.test(id)) return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+
+  try {
+    if (!(await ogretmenMi(admin, id))) {
+      return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+    }
+    return res.json({ success: true, availability: await musaitlikOku(admin, id) });
+  } catch (err: any) {
+    console.error("[Admin] müsaitlik okunamadı:", err?.message || err);
+    return res.status(502).json({ success: false, error: GENERIC_ERROR });
+  }
+});
+
+/**
+ * MÜSAİTLİĞİ DEĞİŞTİR — PUT /api/admin/ogretmenler/:id/musaitlik
+ * Listenin TAMAMI gönderiliyor ve eskisinin yerine geçiyor (tek işlemde,
+ * set_teacher_availability RPC'si). Mevcut dersler bundan ETKİLENMEZ:
+ * müsaitliği daralan bir öğretmenin önceden atanmış dersi yerinde kalır.
+ */
+router.put("/ogretmenler/:id/musaitlik", async (req, res) => {
+  const { userId: yapanId } = res.locals as unknown as SessionLocals;
+  const { id } = req.params;
+  const admin = serviceClient();
+  if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
+  if (!UUID_BICIMI.test(id)) return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+
+  const m = musaitlikNormalize(req.body?.availability);
+  if ("hata" in m) return res.status(400).json({ success: false, error: m.hata });
+  if (m.araliklar.length === 0) {
+    return res.status(400).json({ success: false, error: "Öğretmenin en az bir müsait saat aralığı olmalı." });
+  }
+
+  try {
+    if (!(await ogretmenMi(admin, id))) {
+      return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+    }
+
+    const { error } = await admin.rpc("set_teacher_availability", { p_teacher: id, p_slots: m.araliklar });
+    if (error) {
+      console.error("[Admin] müsaitlik yazılamadı:", error.message);
+      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    }
+
+    auditLog(req, "ADMIN_AVAILABILITY_WRITE", {
+      userId: yapanId,
+      detay: { hesapId: id, aralikSayisi: m.araliklar.length },
+    });
+    return res.json({ success: true, availability: m.araliklar });
+  } catch (err: any) {
+    console.error("[Admin] müsaitlik istisnası:", err?.message || err);
+    return res.status(500).json({ success: false, error: GENERIC_ERROR });
+  }
+});
+
+/**
+ * ÖĞRETMENİN HAFTASI — GET /api/admin/ogretmenler/:id/program?week=YYYY-MM-DD
+ *
+ * Ders atama ekranının ızgarası: o haftanın müsaitliği ve DOLU saatleri.
+ * Hafta sınırları /api/teacher/schedule ile aynı yerden (weekUtils), yani
+ * yöneticinin gördüğü hafta öğretmenin kendi panelindekiyle aynı.
+ * İptal edilmiş dersler gelmiyor — saati doldurmuyorlar.
+ */
+router.get("/ogretmenler/:id/program", async (req, res) => {
+  const { id } = req.params;
+  const admin = serviceClient();
+  if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
+  if (!UUID_BICIMI.test(id)) return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+
+  const pazartesi = haftaBasi(req.query.week);
+  const sonrakiPazartesi = haftaSonrasi(pazartesi);
+
+  try {
+    if (!(await ogretmenMi(admin, id))) {
+      return res.status(404).json({ success: false, error: "Öğretmen bulunamadı." });
+    }
+
+    const [musaitlik, derslerSonuc] = await Promise.all([
+      musaitlikOku(admin, id),
+      admin
+        .from("lessons")
+        .select("id, user_id, subject, starts_at, ends_at, status, is_trial")
+        .eq("teacher_id", id)
+        .neq("status", "cancelled")
+        .gte("starts_at", `${pazartesi}T00:00:00${TR_OFFSET}`)
+        .lt("starts_at", `${sonrakiPazartesi}T00:00:00${TR_OFFSET}`)
+        .order("starts_at", { ascending: true }),
+    ]);
+
+    if (derslerSonuc.error) {
+      console.error("[Admin] öğretmen programı okunamadı:", derslerSonuc.error.message);
+      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    }
+
+    const dersler = derslerSonuc.data ?? [];
+    const ogrenciIdleri = [...new Set(dersler.map((d) => d.user_id))];
+    const adlar = new Map<string, string>();
+    if (ogrenciIdleri.length) {
+      const { data: kisiler } = await admin.from("profiles").select("id, full_name").in("id", ogrenciIdleri);
+      for (const k of kisiler ?? []) adlar.set(k.id, k.full_name);
+    }
+
+    return res.json({
+      success: true,
+      weekStart: pazartesi,
+      availability: musaitlik,
+      lessons: dersler.map((d) => ({
+        id: d.id,
+        studentName: adlar.get(d.user_id) ?? null,
+        subject: d.subject,
+        startsAt: d.starts_at,
+        endsAt: dersBitisi(d.starts_at, d.ends_at),
+        status: d.status,
+        isTrial: d.is_trial,
+      })),
+    });
+  } catch (err: any) {
+    console.error("[Admin] öğretmen programı istisnası:", err?.message || err);
+    return res.status(500).json({ success: false, error: GENERIC_ERROR });
+  }
+});
+
 /* =================================================================== DERSLER */
 
-/** Ders gövdesini doğrular. Hata varsa mesajı, yoksa satırı döndürür. */
+/** PATCH'te karşılaştırma için okunan mevcut ders. */
+interface MevcutDers {
+  id: string;
+  teacher_id: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  status: string;
+  is_trial: boolean;
+}
+
+/**
+ * Ders gövdesini doğrular. Hata varsa mesajı (ve HTTP kodunu), yoksa satırı
+ * döndürür.
+ *
+ * SAAT KURALLARI (yalnızca saat "değiştiyse" uygulanıyor, aşağıya bkz.):
+ *   - öğretmen zorunlu — saat onun programından seçiliyor
+ *   - başlangıç saat başı ya da buçuk (Türkiye saati)
+ *   - süre istemciden ALINMIYOR: deneme 25 dk, normal 50 dk, ends_at burada
+ *   - dersin tamamı öğretmenin o günkü müsait aralıklarından birine sığmalı
+ *   - öğretmenin VE öğrencinin iptal edilmemiş başka bir dersiyle çakışmamalı
+ *
+ * NE ZAMAN "DEĞİŞTİ" SAYILIYOR: yeni ders, ya da düzenlemede başlangıç,
+ * öğretmen ya da deneme bayrağı farklıysa, ya da iptal edilmiş ders geri
+ * açılıyorsa. Saati değişmeyen bir düzenleme (yalnızca konu ya da durum)
+ * kuralları atlıyor — yoksa bu kurallardan ÖNCE girilmiş bir ders (14:15'te
+ * başlayan, öğretmensiz, müsaitlik tanımlanmamış) bir daha hiç
+ * düzenlenemez, iptal bile edilemezdi.
+ *
+ * YARIŞ DURUMU: çakışma kontrolü ile yazma arasında ikinci bir yönetici aynı
+ * saati alabilir. Veritabanında bir exclusion kısıtı yok (eski veride
+ * çakışmalar olabilir ve kısıt eklenemez); tek yöneticili bir panelde kabul
+ * edilen bir boşluk.
+ */
 async function dersGovdesi(
-  admin: ReturnType<typeof serviceClient>,
+  admin: NonNullable<ReturnType<typeof serviceClient>>,
   body: any,
-): Promise<{ hata: string } | { satir: Record<string, unknown> }> {
+  mevcut: MevcutDers | null,
+): Promise<{ hata: string; kod?: number } | { satir: Record<string, unknown> }> {
   const studentId = typeof body?.studentId === "string" ? body.studentId : "";
   const teacherId = body?.teacherId ? String(body.teacherId) : null;
   const subject = metin(body?.subject, 120);
   const startsAt = zaman(body?.startsAt);
-  const endsAt = body?.endsAt ? zaman(body.endsAt) : null;
+  const isTrial = body?.isTrial === true;
   const kind = typeof body?.kind === "string" ? body.kind : "ders";
   const status = typeof body?.status === "string" ? body.status : "scheduled";
 
   if (!UUID_BICIMI.test(studentId)) return { hata: "Öğrenci seçilmedi." };
   if (teacherId && !UUID_BICIMI.test(teacherId)) return { hata: "Öğretmen seçimi geçersiz." };
   if (!subject) return { hata: "Ders konusu gerekli." };
-  if (!startsAt) return { hata: "Başlangıç tarihi geçersiz." };
-  if (body?.endsAt && !endsAt) return { hata: "Bitiş tarihi geçersiz." };
-  if (endsAt && endsAt <= startsAt) return { hata: "Bitiş, başlangıçtan sonra olmalı." };
+  if (!startsAt) return { hata: "Programdan bir ders saati seçin." };
   if (!DERS_TURLERI.has(kind)) return { hata: "Geçersiz ders türü." };
   if (!DERS_DURUMLARI.has(status)) return { hata: "Geçersiz ders durumu." };
 
@@ -466,7 +702,7 @@ async function dersGovdesi(
    * öğretmen yanlışlıkla "öğrenci" alanına yazılabilir ve o ders kimsenin
    * panelinde doğru görünmezdi.
    */
-  const { data: kisiler } = await admin!
+  const { data: kisiler } = await admin
     .from("profiles")
     .select("id, full_name, user_type")
     .in("id", teacherId ? [studentId, teacherId] : [studentId]);
@@ -483,6 +719,58 @@ async function dersGovdesi(
     ogretmenAdi = ogretmen.full_name;
   }
 
+  const saatDegisti =
+    !mevcut ||
+    new Date(mevcut.starts_at).getTime() !== new Date(startsAt).getTime() ||
+    mevcut.teacher_id !== teacherId ||
+    mevcut.is_trial !== isTrial ||
+    (mevcut.status === "cancelled" && status !== "cancelled");
+
+  let endsAt: string | null = mevcut?.ends_at ?? null;
+
+  if (saatDegisti) {
+    if (!teacherId) return { hata: "Öğretmen seçilmedi. Ders saati öğretmenin programından seçiliyor." };
+    if (!adimaOturuyor(startsAt)) {
+      return { hata: "Dersler yalnızca saat başı ya da buçukta başlayabilir." };
+    }
+
+    const sure = dersSuresi(isTrial);
+    endsAt = bitisHesapla(startsAt, sure);
+
+    const musaitlik = await musaitlikOku(admin, teacherId);
+    if (!musaitlikIcinde(musaitlik, startsAt, sure)) {
+      return { hata: `Bu saat öğretmenin müsait saatlerinin dışında (${sure} dk'lık ders sığmıyor).` };
+    }
+
+    /*
+     * Çakışma: öğretmenin ya da öğrencinin iptal edilmemiş başka bir dersi.
+     * Alt sınır bir gün önce — en uzun ders bile o kadar geriye taşmaz, ve
+     * sorgu bütün geçmişi taramasın. Kimlikler UUID_BICIMI'nden geçti, yani
+     * or() sözdizimine güvenle giriyor.
+     */
+    if (status !== "cancelled") {
+      const birGunOnce = new Date(new Date(startsAt).getTime() - 24 * 60 * 60 * 1000).toISOString();
+      let sorgu = admin
+        .from("lessons")
+        .select("id, user_id, teacher_id, starts_at, ends_at")
+        .neq("status", "cancelled")
+        .gt("starts_at", birGunOnce)
+        .lt("starts_at", endsAt)
+        .or(`teacher_id.eq.${teacherId},user_id.eq.${studentId}`);
+      if (mevcut) sorgu = sorgu.neq("id", mevcut.id);
+
+      const { data: digerleri, error } = await sorgu;
+      if (error) throw new Error(error.message);
+
+      for (const d of digerleri ?? []) {
+        if (!cakisiyor(startsAt, endsAt, d.starts_at, dersBitisi(d.starts_at, d.ends_at))) continue;
+        return d.teacher_id === teacherId
+          ? { hata: "Öğretmenin bu saatte başka bir dersi var.", kod: 409 }
+          : { hata: "Öğrencinin bu saatte başka bir dersi var.", kod: 409 };
+      }
+    }
+  }
+
   return {
     satir: {
       user_id: studentId,
@@ -494,6 +782,7 @@ async function dersGovdesi(
       teacher_name: ogretmenAdi,
       starts_at: startsAt,
       ends_at: endsAt,
+      is_trial: isTrial,
       kind,
       status,
     },
@@ -508,7 +797,7 @@ router.get("/dersler", async (req, res) => {
   try {
     let sorgu = admin
       .from("lessons")
-      .select("id, user_id, teacher_id, subject, teacher_name, starts_at, ends_at, kind, status")
+      .select("id, user_id, teacher_id, subject, teacher_name, starts_at, ends_at, kind, status, is_trial")
       .order("starts_at", { ascending: false })
       .limit(200);
 
@@ -554,6 +843,7 @@ router.get("/dersler", async (req, res) => {
         subject: d.subject,
         startsAt: d.starts_at,
         endsAt: d.ends_at,
+        isTrial: d.is_trial,
         kind: d.kind,
         status: d.status,
       })),
@@ -570,10 +860,12 @@ router.post("/dersler", async (req, res) => {
   const admin = serviceClient();
   if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
 
-  const dogrulama = await dersGovdesi(admin, req.body);
-  if ("hata" in dogrulama) return res.status(400).json({ success: false, error: dogrulama.hata });
-
   try {
+    const dogrulama = await dersGovdesi(admin, req.body, null);
+    if ("hata" in dogrulama) {
+      return res.status(dogrulama.kod ?? 400).json({ success: false, error: dogrulama.hata });
+    }
+
     const { data, error } = await admin
       .from("lessons")
       .insert(dogrulama.satir)
@@ -601,10 +893,25 @@ router.patch("/dersler/:id", async (req, res) => {
   if (!admin) return res.status(503).json({ success: false, error: NOT_CONFIGURED });
   if (!UUID_BICIMI.test(id)) return res.status(400).json({ success: false, error: "Ders bulunamadı." });
 
-  const dogrulama = await dersGovdesi(admin, req.body);
-  if ("hata" in dogrulama) return res.status(400).json({ success: false, error: dogrulama.hata });
-
   try {
+    /* Mevcut ders okunuyor: saat kurallarının uygulanıp uygulanmayacağı
+       neyin DEĞİŞTİĞİNE bağlı (bkz. dersGovdesi). */
+    const { data: mevcut, error: okumaHatasi } = await admin
+      .from("lessons")
+      .select("id, teacher_id, starts_at, ends_at, status, is_trial")
+      .eq("id", id)
+      .maybeSingle();
+    if (okumaHatasi) {
+      console.error("[Admin] ders okunamadı:", okumaHatasi.message);
+      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    }
+    if (!mevcut) return res.status(404).json({ success: false, error: "Ders bulunamadı." });
+
+    const dogrulama = await dersGovdesi(admin, req.body, mevcut);
+    if ("hata" in dogrulama) {
+      return res.status(dogrulama.kod ?? 400).json({ success: false, error: dogrulama.hata });
+    }
+
     /* `.eq("id", id)` — servis rolüyle çalışıldığı için bunu unutmak TÜM
        dersleri güncellemek demek; RLS burada yakalamaz. */
     const { data, error } = await admin

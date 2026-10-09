@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { UserPlus, KeyRound, Users } from 'lucide-react';
+import { UserPlus, KeyRound, Users, CalendarClock } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { apiFetch, ApiRequestError } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import { Alan, Girdi, Secim, Kutu, Uyari, Bos, ROL_ETIKET, type Hesap } from './AdminUI';
+import { MusaitlikDuzenleyici } from './AdminAvailability';
+import type { Aralik } from '../../../lib/dersSaati';
 
 /*
  * HESAPLAR — açma, düzenleme, şifre sıfırlama
@@ -12,6 +14,11 @@ import { Alan, Girdi, Secim, Kutu, Uyari, Bos, ROL_ETIKET, type Hesap } from './
  * eskiden Supabase Dashboard + elle SQL gerektiren iki adımlı işin yerini
  * alıyor (auth kullanıcısı + profiles satırı); sunucu ikisini tek istekte ve
  * geri alınabilir şekilde yapıyor (bkz. server/routes/admin.ts).
+ *
+ * ÖĞRETMEN HESABI MÜSAİT SAATLER OLMADAN AÇILMIYOR (2026-10-09): ders atama
+ * öğretmenin programından yapılıyor ve müsaitliği olmayan bir öğretmene
+ * hiç ders atanamaz. Mevcut öğretmenlerin müsaitliği satırlarındaki
+ * "Müsaitlik" düğmesinden değiştiriliyor.
  *
  * HESAP SİLME YOK ve bu bilinçli: bir auth kullanıcısını silmek ders
  * geçmişini de etkileyen, geri dönüşü olmayan bir iş. Yanlış satıra basmanın
@@ -25,6 +32,7 @@ const BOS_FORM = {
   username: '',
   password: '',
   userType: 'student' as Hesap['userType'],
+  availability: [] as Aralik[],
 };
 
 export const AdminAccounts: React.FC<{
@@ -43,6 +51,12 @@ export const AdminAccounts: React.FC<{
   const [duzenForm, setDuzenForm] = useState<Partial<Hesap>>({});
   const [sifreAcik, setSifreAcik] = useState<string | null>(null);
   const [yeniSifre, setYeniSifre] = useState('');
+  /* Müsaitliği düzenlenen öğretmen ve taslak liste. Taslak null iken sunucudan
+     okunuyor. */
+  const [musaitlikAcik, setMusaitlikAcik] = useState<string | null>(null);
+  const [musaitlikTaslak, setMusaitlikTaslak] = useState<Aralik[] | null>(null);
+
+  const ogretmenEksik = form.userType === 'teacher' && form.availability.length === 0;
 
   async function hesapAc(e: React.FormEvent) {
     e.preventDefault();
@@ -52,9 +66,15 @@ export const AdminAccounts: React.FC<{
     try {
       /* Boş kullanıcı adı hiç GÖNDERİLMİYOR: sunucu boş string'i "biçim
          geçersiz" sayardı. Alan isteğe bağlı, yokluğu bir hata değil. */
+      /* Müsaitlik yalnızca öğretmen hesabında gönderiliyor; başka rolde
+         sunucu zaten yok sayıyor ama gereksiz veri taşımaya gerek yok. */
       await apiFetch('/api/admin/hesaplar', {
         method: 'POST',
-        body: { ...form, username: form.username.trim() || undefined },
+        body: {
+          ...form,
+          username: form.username.trim() || undefined,
+          availability: form.userType === 'teacher' ? form.availability : undefined,
+        },
       });
       /* Şifre ekranda TEKRAR GÖSTERİLMİYOR: yönetici onu zaten kendi yazdı.
          Kaydedilmiş bir şifreyi ekranda tutmak, panel açık unutulduğunda
@@ -80,6 +100,44 @@ export const AdminAccounts: React.FC<{
       onDegisti();
     } catch (err) {
       setHata(err instanceof ApiRequestError ? err.message : 'Hesap güncellenemedi.');
+    } finally {
+      setMesgul(false);
+    }
+  }
+
+  async function musaitlikAc(id: string) {
+    setDuzenlenen(null);
+    setSifreAcik(null);
+    if (musaitlikAcik === id) {
+      setMusaitlikAcik(null);
+      return;
+    }
+    setMusaitlikAcik(id);
+    setMusaitlikTaslak(null);
+    setHata(null);
+    try {
+      const veri = await apiFetch<{ availability: Aralik[] }>(`/api/admin/ogretmenler/${id}/musaitlik`);
+      setMusaitlikTaslak(veri.availability);
+    } catch (err) {
+      setHata(err instanceof ApiRequestError ? err.message : 'Müsait saatler alınamadı.');
+      setMusaitlikAcik(null);
+    }
+  }
+
+  async function musaitlikKaydet(id: string) {
+    if (!musaitlikTaslak) return;
+    setMesgul(true);
+    setHata(null);
+    setBasari(null);
+    try {
+      await apiFetch(`/api/admin/ogretmenler/${id}/musaitlik`, {
+        method: 'PUT',
+        body: { availability: musaitlikTaslak },
+      });
+      setBasari('Müsait saatler güncellendi.');
+      setMusaitlikAcik(null);
+    } catch (err) {
+      setHata(err instanceof ApiRequestError ? err.message : 'Müsait saatler kaydedilemedi.');
     } finally {
       setMesgul(false);
     }
@@ -170,10 +228,32 @@ export const AdminAccounts: React.FC<{
             </Secim>
           </Alan>
 
-          <div className="sm:col-span-2">
-            <Button type="submit" disabled={mesgul}>
+          {form.userType === 'teacher' && (
+            <div className="sm:col-span-2">
+              <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+                Müsait saatler
+              </p>
+              <p className="mb-3 text-xs text-slate-400">
+                Öğretmenin her hafta ders verebileceği saatler. Ders atarken yalnızca bu
+                saatlerin içine ders konabilir. En az bir aralık gerekli.
+              </p>
+              <MusaitlikDuzenleyici
+                value={form.availability}
+                onChange={(availability) => setForm({ ...form, availability })}
+                disabled={mesgul}
+              />
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+            <Button type="submit" disabled={mesgul || ogretmenEksik}>
               {mesgul ? 'Açılıyor...' : 'Hesabı aç'}
             </Button>
+            {ogretmenEksik && (
+              <span className="text-xs font-semibold text-amber-700">
+                Öğretmen hesabı için en az bir müsait saat aralığı ekleyin.
+              </span>
+            )}
           </div>
         </form>
       </Kutu>
@@ -217,11 +297,18 @@ export const AdminAccounts: React.FC<{
                   )}
 
                   <div className="ml-auto flex gap-1.5">
+                    {h.userType === 'teacher' && (
+                      <Button variant="ghost" size="sm" onClick={() => void musaitlikAc(h.id)}>
+                        <CalendarClock className="h-4 w-4" />
+                        <span className="hidden sm:inline">Müsaitlik</span>
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
                         setSifreAcik(null);
+                        setMusaitlikAcik(null);
                         setDuzenlenen(duzenlenen === h.id ? null : h.id);
                         setDuzenForm({
                           fullName: h.fullName,
@@ -238,6 +325,7 @@ export const AdminAccounts: React.FC<{
                       size="sm"
                       onClick={() => {
                         setDuzenlenen(null);
+                        setMusaitlikAcik(null);
                         setSifreAcik(sifreAcik === h.id ? null : h.id);
                         setYeniSifre('');
                       }}
@@ -292,6 +380,38 @@ export const AdminAccounts: React.FC<{
                         Vazgeç
                       </Button>
                     </div>
+                  </div>
+                )}
+
+                {musaitlikAcik === h.id && (
+                  <div className="mt-3 border-t border-slate-200 pt-3">
+                    {musaitlikTaslak === null ? (
+                      <p className="py-4 text-center text-sm text-slate-500">Yükleniyor...</p>
+                    ) : (
+                      <>
+                        <MusaitlikDuzenleyici
+                          value={musaitlikTaslak}
+                          onChange={setMusaitlikTaslak}
+                          disabled={mesgul}
+                        />
+                        <p className="mt-2 text-xs text-slate-400">
+                          Önceden atanmış dersler etkilenmez; yeni saatler yalnızca bundan sonraki
+                          ders atamalarında geçerli.
+                        </p>
+                        <div className="mt-3 flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => musaitlikKaydet(h.id)}
+                            disabled={mesgul || musaitlikTaslak.length === 0}
+                          >
+                            {mesgul ? 'Kaydediliyor...' : 'Müsait saatleri kaydet'}
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setMusaitlikAcik(null)}>
+                            Vazgeç
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 

@@ -84,7 +84,7 @@ router.get("/schedule", async (req, res) => {
      */
     const { data: dersler, error: derslerHatasi } = await supabase
       .from("lessons")
-      .select("id, user_id, subject, starts_at, ends_at, status, kind, teacher_name")
+      .select("id, user_id, subject, starts_at, ends_at, status, kind, is_trial, teacher_name")
       .eq("teacher_id", userId)
       .gte("starts_at", `${pazartesi}T00:00:00${TR_OFFSET}`)
       .lt("starts_at", `${sonrakiPazartesi}T00:00:00${TR_OFFSET}`)
@@ -153,6 +153,7 @@ router.get("/schedule", async (req, res) => {
         endsAt: d.ends_at,
         status: d.status,
         kind: d.kind,
+        isTrial: d.is_trial,
         studentId: d.user_id,
         studentName: adlar.get(d.user_id) ?? null,
         comment: yorumlar.get(d.id) ?? null,

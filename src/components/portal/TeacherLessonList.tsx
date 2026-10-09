@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, ChevronDown, ListChecks, Undo2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { apiFetch, ApiRequestError } from '../../lib/api';
+import { DenemeRozeti } from './DenemeRozeti';
 
 /*
  * HAFTANIN DERSLERİ — SATIR SATIR, TIKLANABİLİR
@@ -38,6 +39,7 @@ export interface ProgramDersi {
   endsAt: string | null;
   status: 'scheduled' | 'completed' | 'cancelled';
   kind: 'ders' | 'koclu';
+  isTrial: boolean;
   studentId: string;
   studentName: string | null;
   comment: Yorum | null;
@@ -161,6 +163,7 @@ const DersSatiri: React.FC<{
               {ders.studentName ?? 'İsimsiz öğrenci'}
             </span>
             <span className="truncate text-sm text-slate-600">{ders.subject}</span>
+            {ders.isTrial && <DenemeRozeti />}
             {bugunMu && (
               <span className="rounded-full bg-[#c5a059] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                 Bugün

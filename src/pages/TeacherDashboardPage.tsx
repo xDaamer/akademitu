@@ -9,6 +9,7 @@ import need from '../../need.json';
 import { routingMode, TEACHER_PATH } from '../lib/host';
 import { GUN_ADLARI, gunEkle, gunEtiketi } from '../lib/haftaTarih';
 import { PanelHeader } from '../components/portal/PanelHeader';
+import { DenemeRozeti } from '../components/portal/DenemeRozeti';
 import {
   TeacherLessonList,
   trTarih,
@@ -113,11 +114,14 @@ const DersKarti: React.FC<{ ders: ProgramDersi; saatGoster?: boolean }> = ({
       <p className="truncate text-xs text-slate-600" title={ders.subject}>
         {ders.subject}
       </p>
-      <span
-        className={`mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${durum.sinif}`}
-      >
-        {durum.metin}
-      </span>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        <span
+          className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${durum.sinif}`}
+        >
+          {durum.metin}
+        </span>
+        {ders.isTrial && <DenemeRozeti />}
+      </div>
     </div>
   );
 };
