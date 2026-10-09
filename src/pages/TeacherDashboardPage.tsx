@@ -14,7 +14,6 @@ import {
   trTarih,
   type ProgramDersi,
 } from '../components/portal/TeacherLessonList';
-import { TeacherLessonForm } from '../components/portal/TeacherLessonForm';
 
 /*
  * ÖĞRETMEN PANELİ — portal.sherpakademi.com/ogretmen
@@ -31,13 +30,11 @@ import { TeacherLessonForm } from '../components/portal/TeacherLessonForm';
  * durumda göremez. Hangi öğretmenin programı olduğu istemciden SORULMUYOR;
  * sunucu oturumdan biliyor.
  *
- * DERS EKLEME artık burada da var (eklendi 2026-09-24, TeacherLessonForm):
- * öğretmen kendi daha önce ders verdiği ya da yöneticinin atadığı
- * öğrencilere ders açabiliyor — admin panelindeki "ders ata" formunun dar
- * kapsamlı bir eşleniği. DERS SİLME hâlâ YOK ve hâlâ bilinçli: bir dersi
- * geri alınamaz şekilde kaldırmak yönetim işi olarak kalıyor (öğretmenin
- * elindeki tek geri alma yolu /status ucuyla 'completed'i 'scheduled'a
- * çevirmek).
+ * DERS EKLEME ve SİLME burada YOK, ikisi de bilinçli: dersi açmak da
+ * kaldırmak da yönetim işi (admin panelindeki "ders ata"). Öğretmen 2026-09-24
+ * ile 2026-10-09 arasında kendi öğrencilerine ders açabiliyordu; bu yetki
+ * geri alındı. Öğretmenin elindeki tek yazma, dersi /status ucuyla
+ * 'completed' ile 'scheduled' arasında çevirmek ve yorum yazmak.
  */
 
 /*
@@ -258,13 +255,6 @@ export const TeacherDashboardPage: React.FC = () => {
               {hata}
             </p>
           )}
-
-          {/* Yeni açılan ders görünür haftadaysa ızgarada hemen görünsün diye
-              aynı `getir` çağrılıyor — ayrı bir state tutmak iki kaynağı
-              senkron tutma yükü demek olurdu. */}
-          <div className="mb-6">
-            <TeacherLessonForm onEklendi={() => void getir(istenenHafta)} />
-          </div>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             {/* HAFTA GEZİNMESİ */}

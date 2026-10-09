@@ -10,10 +10,12 @@
 -- iptal dersi fixture'ı eklendikten sonra; dosyanın tamamı tek script
 -- olarak henüz koşulmadı — SQL Editor'de bir kez çalıştırıp doğrulayın.)
 --
--- 28-32 numaralı testler 2026-09-24'te lessons_insert_as_teacher politikası
--- için EKLENDİ (öğretmenin kendi öğrencisine ders açması) ve HENÜZ
--- ÇALIŞTIRILMADI — supabase-teacher-panel.sql'deki §5'i uyguladıktan sonra
--- bu dosyayı SQL Editor'de çalıştırıp bu notu gerçek sonuçla güncelleyin.
+-- 28-32 numaralı testler 2026-09-24'te öğretmenin kendi öğrencisine ders
+-- açması için eklendi. 2026-10-09'da o yetki kaldırıldı (supabase-teacher-
+-- panel.sql §5): artık BEŞİ DE RED bekliyor — 28 dahil, yetkinin gerçekten
+-- gittiğini kanıtlayan test o. HENÜZ ÇALIŞTIRILMADI — §5'i uyguladıktan
+-- sonra bu dosyayı SQL Editor'de çalıştırıp bu notu gerçek sonuçla
+-- güncelleyin.
 --
 -- ---------------------------------------------------------------------------
 -- NEDEN BURADA, ARAYÜZDE DEĞİL
@@ -281,18 +283,19 @@ BEGIN
     INSERT INTO sonuc VALUES (26,'Ogretmen ders silme','RED','RED '||sqlstate, true);
   END;
 
-  -- ============================================ ÖĞRETMENİN KENDİ DERSİNİ AÇMASI
-  -- lessons_insert_as_teacher + kolon bazlı GRANT INSERT — eklendi 2026-09-24.
+  -- ============================================ ÖĞRETMEN DERS AÇAMAZ
+  -- 2026-09-24'te açılan yetki 2026-10-09'da kaldırıldı (lessons'a INSERT
+  -- yetkisi ve lessons_insert_as_teacher yok). Beklenen: hepsi 42501.
   -- Hâlâ ÖĞRETMEN A kimliğindeyiz (yukarıdaki UPDATE testleriyle aynı context).
   BEGIN
     INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
     VALUES (s1, tA, 'Ogretmen A', 'Yeni ders', now() + interval '2 days', 'scheduled');
-    INSERT INTO sonuc VALUES (28,'OgretmenA kendi ogrencisine ders acma','izin','izin', true);
+    INSERT INTO sonuc VALUES (28,'OgretmenA kendi ogrencisine ders acma','RED','IZIN VERILDI!', false);
   EXCEPTION WHEN others THEN
-    INSERT INTO sonuc VALUES (28,'OgretmenA kendi ogrencisine ders acma','izin','RED '||sqlstate, false);
+    INSERT INTO sonuc VALUES (28,'OgretmenA kendi ogrencisine ders acma','RED','RED '||sqlstate, true);
   END;
 
-  -- Planin asil sinirlamasi: hic ortak dersi olmayan (OgretmenB'nin) ogrencisine acamaz.
+  -- Hic ortak dersi olmayan (OgretmenB'nin) ogrencisine.
   BEGIN
     INSERT INTO public.lessons (user_id, teacher_id, teacher_name, subject, starts_at, status)
     VALUES (s2, tA, 'Ogretmen A', 'Izinsiz ders', now() + interval '2 days', 'scheduled');

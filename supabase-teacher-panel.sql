@@ -20,6 +20,8 @@
 --   4. Öğretmen RLS politikaları   — asıl yetkilendirme sınırı burası
 --      (4b ayrıca KOLON BAZLI yetki içeriyor: öğretmen yalnızca `status`
 --       kolonunu yazabilir, dersin başka hiçbir alanını değil)
+--   5. Öğretmenin ders AÇMA yetkisi GERİ ALINIYOR (2026-10-09) — lessons'a
+--      INSERT yetkisi ve lessons_insert_as_teacher politikası kaldırılıyor
 --
 -- ---------------------------------------------------------------------------
 -- ÖNCE: BU ŞEMA PLANDAKİNDEN NEDEN FARKLI
@@ -594,48 +596,31 @@ DROP FUNCTION IF EXISTS public.ogrencim_mi(UUID);
 
 
 -- =========================================================================
--- 5) lessons — ÖĞRETMENİN KENDİ DERSİNİ AÇMASI (INSERT) — eklendi 2026-09-24
+-- 5) lessons — ÖĞRETMENİN DERS AÇMA YETKİSİ KALDIRILDI — 2026-10-09
 -- =========================================================================
--- Şimdiye kadar ders girişi yalnızca yönetim panelindeydi (server/routes/
--- admin.ts, serviceClient() ile). Artık öğretmen kendi panelinden de ders
--- açabiliyor (server/routes/teacher.ts > POST /api/teacher/dersler) — ama
--- HERKESE değil: yalnızca DAHA ÖNCE DERS VERDİĞİ ya da YÖNETİCİNİN ATADIĞI
--- öğrencilere. İkisi de aynı koşula indirgeniyor — "bu öğretmenle bu
--- öğrencinin ortak bir lessons satırı var mı" — çünkü admin bir öğrenciyi
--- bir öğretmene ATAMANIN tek yolu zaten böyle bir satır yazmak. Bu koşulu
--- 4d'deki private.ogrencim_mi(uuid) zaten cevaplıyor (profiles_select_as_
--- teacher'ın kullandığı fonksiyon), o yüzden burada tekrar yazılmıyor.
+-- 2026-09-24'te öğretmene kendi öğrencilerine ders açma yetkisi verilmişti
+-- (POST /api/teacher/dersler + lessons_insert_as_teacher politikası + sekiz
+-- kolonda GRANT INSERT). 2026-10-09'da geri alındı: ders açmak yeniden
+-- YALNIZCA yönetim panelinin işi (server/routes/admin.ts, serviceClient()).
 --
--- SONUÇ: yeni bir öğretmen hesabının HİÇ dersi yoksa (admin henüz kimseyi
--- atamadıysa) bu öğretmen kendi başına İLK dersi bile açamaz — bilerek.
--- Bootstrap admin'in işi, tıpkı hesap açmanın kendisi gibi.
+-- Uç ve form koddan silindi, ama bu tek başına yetmez: politika ve kolon
+-- yetkisi yerinde kalsaydı, kendi oturum jetonunu tarayıcıdan alan bir
+-- öğretmen PostgREST'e doğrudan INSERT atabilirdi. Asıl sınır her zaman
+-- burasıydı, kaldırma da burada yapılıyor.
 --
--- teacher.ts kendi route'unda da AYNI kontrolü yapıyor (kullanıcıya anlamlı
--- 403 döndürmek için), ama asıl sınır burası: route hatalı olsa bile bu
--- politika olmadan satır yazılamaz.
+-- TABLO seviyesinde REVOKE bilerek: Postgres'te tablo seviyesindeki REVOKE
+-- o tablonun KOLON yetkilerini de geri alır, yani 2026-09-24'teki kolon
+-- listesini tekrar saymaya gerek yok. authenticated'ın lessons'a hiçbir
+-- INSERT yetkisi olmamalı — öğrenci de öğretmen de ders yazamaz.
+-- 4b'deki GRANT UPDATE (status) bundan ETKİLENMEZ (farklı ayrıcalık).
 --
--- authenticated'a GENİŞ bir INSERT yetkisi verilmiyor — KOLON BAZLI, tıpkı
--- 4b'deki GRANT UPDATE (status) gibi: yalnızca aşağıdaki sekiz kolon.
--- id ve created_at listede YOK, ikisinin de veritabanı varsayılanı var.
-GRANT INSERT (user_id, teacher_id, teacher_name, subject, starts_at, ends_at, kind, status)
-  ON public.lessons TO authenticated;
-
--- status: 'cancelled' BİLEREK dışarıda — 4b'deki gerekçenin aynısı, iptal
--- ücretlendirmeyi de ilgilendiren bir yönetim kararı. kind: yalnızca
--- bilinen iki değer; tabloda bunun için bir CHECK yok (admin tarafı da
--- yalnızca route'ta doğruluyor), politika burada aynı disiplini kuruyor.
+-- İdempotent: hiç uygulanmamış bir ortamda iki satır da sessizce no-op.
+REVOKE INSERT ON public.lessons FROM authenticated;
 DROP POLICY IF EXISTS "lessons_insert_as_teacher" ON public.lessons;
-CREATE POLICY "lessons_insert_as_teacher" ON public.lessons
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    teacher_id = auth.uid()
-    AND private.ogrencim_mi(user_id)
-    AND status IN ('scheduled', 'completed')
-    AND kind IN ('ders', 'koclu')
-  );
 
--- Doğrulama (supabase-teacher-panel-tests.sql'e eklenmedi çünkü o dosya
--- panelin uçtan uca akışını test ediyor ve bu satır oraya organik olarak
--- girer — testteki öğretmen zaten kendi öğrencisine bu uçla ders açar):
--- beklenen: kendi öğrencin DEĞİLSE 0 satır/RLS reddi, öğrencinse 1 satır,
--- 'cancelled' ya da başka bir teacher_id ile denemek RLS reddi.
+-- Doğrulama — ikisi de 0 satır dönmeli:
+-- select * from information_schema.column_privileges
+--  where table_schema='public' and table_name='lessons'
+--    and grantee='authenticated' and privilege_type='INSERT';
+-- select policyname from pg_policies
+--  where schemaname='public' and tablename='lessons' and cmd='INSERT';
