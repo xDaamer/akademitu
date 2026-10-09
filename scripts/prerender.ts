@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
 import need from "../need.json" with { type: "json" };
+import { SHOW_TEACHER_TICKER } from "../src/config.ts";
 
 /**
  * PAZARLAMA SAYFALARINI STATİK HTML'E BASAR — `vite build`'den SONRA çalışır.
@@ -150,7 +151,9 @@ function pazarlamaRotasi(id: string, cikti: string): Rota {
     canonical: `${SITE}${sayfa.path}`,
     robots: INDEKSLENEBILIR,
     hreflang: true,
-    heroPreload: sayfa.path === "/",
+    /* Ön yüklenen görsel hoca şeridinin ilk karesi; şerit kapalıyken
+       (src/config.ts) indirilir ama hiç kullanılmaz. */
+    heroPreload: sayfa.path === "/" && SHOW_TEACHER_TICKER,
   };
 }
 

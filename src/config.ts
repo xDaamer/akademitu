@@ -27,6 +27,18 @@ export const SITE_URL: string = need.site.domain;
  */
 export const TEACHER_TICKER_PIXELS_PER_SECOND = 70;
 
+/**
+ * HERO'DAKİ HOCA GÖRSEL ŞERİDİ AÇIK MI
+ * -------------------------------------------------------------------------
+ * 2026-10-09'da GEÇİCİ olarak kapatıldı: hero tek sütuna iniyor ve metin
+ * kutunun tamamını kullanıyor. Şeridin kendisi silinmedi — TeacherTicker.tsx,
+ * public/teachers/ (görseller + config.json) ve index.css'teki stiller
+ * olduğu gibi duruyor. Geri açmak için bunu `true` yapmak yeterli; aynı
+ * bayrak scripts/prerender.ts'te ana sayfanın görsel ön yüklemesini de
+ * yönetiyor, yani ikinci bir yeri değiştirmeye gerek yok.
+ */
+export const SHOW_TEACHER_TICKER = false;
+
 /*
  * KALDIRILANLAR — bilerek silindi, geri eklemeyin:
  *
