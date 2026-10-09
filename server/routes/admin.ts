@@ -66,6 +66,34 @@ router.use(requireUserType("admin"));
 const GENERIC_ERROR = "İşlem tamamlanamadı. Lütfen tekrar deneyin.";
 const NOT_CONFIGURED = "Yönetim servisi şu anda kullanılamıyor.";
 
+/*
+ * ADIM ADIM HATA — yalnızca çok adımlı yazmalarda.
+ * ---------------------------------------------------------------------------
+ * Hesap açma dört adım (giriş kaydı, profil, müsaitlik, açıklama) ve hepsi
+ * aynı GENERIC_ERROR'la düşüyordu: 2026-10-09'da "hesap açılmıyor" şikâyeti
+ * hangi adımın patladığı bilinmeden geldi. Bu panel yalnızca yöneticiye açık,
+ * yani HANGİ ADIMIN düştüğünü söylemek bir sızıntı değil. Ham veritabanı
+ * mesajı yine istemciye gitmiyor (sunucu loguna gidiyor).
+ *
+ * Tablo/fonksiyon/kolon YOK hatası ayrıca tanınıyor: bu, kodun migration'dan
+ * önce deploy edildiği anlamına gelir ve çözümü tekrar denemek değil, ilgili
+ * SQL dosyasını çalıştırmaktır.
+ */
+const EKSIK_SEMA_KODLARI = new Set([
+  "42P01", // undefined_table
+  "42703", // undefined_column
+  "42883", // undefined_function
+  "PGRST202", // fonksiyon şema önbelleğinde yok
+  "PGRST204", // kolon şema önbelleğinde yok
+  "PGRST205", // tablo şema önbelleğinde yok
+]);
+
+function adimHatasi(adim: string, error: { code?: string } | null | undefined, sqlDosyasi: string): string {
+  return error?.code && EKSIK_SEMA_KODLARI.has(error.code)
+    ? `${adim} Veritabanı güncellemesi eksik: Supabase SQL Editor'de ${sqlDosyasi} çalıştırılmalı.`
+    : `${adim} Lütfen tekrar deneyin.`;
+}
+
 const UUID_BICIMI = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROLLER = new Set(["student", "teacher", "admin"]);
 const DERS_TURLERI = new Set(["ders", "koclu"]);
@@ -322,7 +350,7 @@ router.post("/hesaplar", async (req, res) => {
       const cakisma = authHatasi?.message?.toLowerCase().includes("already");
       return res.status(cakisma ? 409 : 502).json({
         success: false,
-        error: cakisma ? "Bu e-posta zaten kayıtlı." : GENERIC_ERROR,
+        error: cakisma ? "Bu e-posta zaten kayıtlı." : "Hesap açılamadı: giriş kaydı oluşturulamadı. Lütfen tekrar deneyin.",
       });
     }
 
@@ -338,7 +366,10 @@ router.post("/hesaplar", async (req, res) => {
       await admin.auth.admin.deleteUser(yeni.user.id).catch((e) =>
         console.error("[Admin] geri alma da başarısız:", e?.message || e),
       );
-      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+      return res.status(502).json({
+        success: false,
+        error: adimHatasi("Hesap açılamadı: profil kaydedilemedi.", profilHatasi, "supabase-teacher-panel.sql"),
+      });
     }
 
     if (userType === "teacher") {
@@ -353,7 +384,14 @@ router.post("/hesaplar", async (req, res) => {
         await admin.auth.admin.deleteUser(yeni.user.id).catch((e) =>
           console.error("[Admin] geri alma da başarısız:", e?.message || e),
         );
-        return res.status(502).json({ success: false, error: GENERIC_ERROR });
+        return res.status(502).json({
+          success: false,
+          error: adimHatasi(
+            "Hesap açılamadı: müsait saatler kaydedilemedi.",
+            musaitlikHatasi,
+            "supabase-teacher-availability.sql",
+          ),
+        });
       }
 
       /* Açıklama da aynı kurala tabi: yazılamazsa hesap geri alınıyor.
@@ -363,11 +401,18 @@ router.post("/hesaplar", async (req, res) => {
       if (aciklama) {
         const aciklamaHatasi = await aciklamaYaz(admin, yeni.user.id, aciklama, yapanId);
         if (aciklamaHatasi) {
-          console.error("[Admin] açıklama yazılamadı, hesap geri alınıyor:", aciklamaHatasi);
+          console.error("[Admin] açıklama yazılamadı, hesap geri alınıyor:", aciklamaHatasi.message);
           await admin.auth.admin.deleteUser(yeni.user.id).catch((e) =>
             console.error("[Admin] geri alma da başarısız:", e?.message || e),
           );
-          return res.status(502).json({ success: false, error: GENERIC_ERROR });
+          return res.status(502).json({
+            success: false,
+            error: adimHatasi(
+              "Hesap açılamadı: açıklama kaydedilemedi (açıklamayı boş bırakarak açabilirsiniz).",
+              aciklamaHatasi,
+              "supabase-teacher-descriptions.sql",
+            ),
+          });
         }
       }
     }
@@ -561,7 +606,9 @@ async function musaitlikOku(
     .eq("teacher_id", ogretmenId)
     .order("weekday", { ascending: true })
     .order("start_minute", { ascending: true });
-  if (error) throw new Error(error.message);
+  /* Hata nesnesi OLDUĞU GİBİ fırlatılıyor (new Error'a sarılmadan): kod
+     korunsun ki çağıran "tablo yok" durumunu tanıyabilsin (adimHatasi). */
+  if (error) throw error;
   return (data ?? []).map((a) => ({
     weekday: a.weekday,
     startMinute: a.start_minute,
@@ -583,7 +630,10 @@ router.get("/ogretmenler/:id/musaitlik", async (req, res) => {
     return res.json({ success: true, availability: await musaitlikOku(admin, id) });
   } catch (err: any) {
     console.error("[Admin] müsaitlik okunamadı:", err?.message || err);
-    return res.status(502).json({ success: false, error: GENERIC_ERROR });
+    return res.status(502).json({
+      success: false,
+      error: adimHatasi("Müsait saatler okunamadı.", err, "supabase-teacher-availability.sql"),
+    });
   }
 });
 
@@ -614,7 +664,10 @@ router.put("/ogretmenler/:id/musaitlik", async (req, res) => {
     const { error } = await admin.rpc("set_teacher_availability", { p_teacher: id, p_slots: m.araliklar });
     if (error) {
       console.error("[Admin] müsaitlik yazılamadı:", error.message);
-      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+      return res.status(502).json({
+        success: false,
+        error: adimHatasi("Müsait saatler kaydedilemedi.", error, "supabase-teacher-availability.sql"),
+      });
     }
 
     auditLog(req, "ADMIN_AVAILABILITY_WRITE", {
@@ -637,13 +690,13 @@ router.put("/ogretmenler/:id/musaitlik", async (req, res) => {
  * Ayrı bir okuma ucu yok: açıklamalar /ozet ile hesap listesine geliyor.
  */
 
-/** Açıklamayı yazar; boşsa satırı siler. Başarıda null, hatada mesaj döner. */
+/** Açıklamayı yazar; boşsa satırı siler. Başarıda null, hatada veritabanı hatası döner. */
 async function aciklamaYaz(
   admin: NonNullable<ReturnType<typeof serviceClient>>,
   ogretmenId: string,
   aciklama: string,
   yapanId: string,
-): Promise<string | null> {
+): Promise<{ message: string; code?: string } | null> {
   /* Tek ifade (upsert), DELETE+INSERT değil: iki ayrı istek arasında bir hata
      açıklamayı tamamen silmiş bırakırdı. */
   const { error } = aciklama
@@ -657,7 +710,7 @@ async function aciklamaYaz(
         { onConflict: "teacher_id" },
       )
     : await admin.from("teacher_descriptions").delete().eq("teacher_id", ogretmenId);
-  return error ? error.message : null;
+  return error ?? null;
 }
 
 /**
@@ -681,8 +734,11 @@ router.put("/ogretmenler/:id/aciklama", async (req, res) => {
 
     const hata = await aciklamaYaz(admin, id, a.aciklama, yapanId);
     if (hata) {
-      console.error("[Admin] açıklama yazılamadı:", hata);
-      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+      console.error("[Admin] açıklama yazılamadı:", hata.message);
+      return res.status(502).json({
+        success: false,
+        error: adimHatasi("Açıklama kaydedilemedi.", hata, "supabase-teacher-descriptions.sql"),
+      });
     }
 
     auditLog(req, "ADMIN_TEACHER_DESCRIPTION_WRITE", {
@@ -732,7 +788,10 @@ router.get("/ogretmenler/:id/program", async (req, res) => {
 
     if (derslerSonuc.error) {
       console.error("[Admin] öğretmen programı okunamadı:", derslerSonuc.error.message);
-      return res.status(502).json({ success: false, error: GENERIC_ERROR });
+      return res.status(502).json({
+        success: false,
+        error: adimHatasi("Öğretmenin programı okunamadı.", derslerSonuc.error, "supabase-teacher-availability.sql"),
+      });
     }
 
     const dersler = derslerSonuc.data ?? [];
@@ -759,7 +818,10 @@ router.get("/ogretmenler/:id/program", async (req, res) => {
     });
   } catch (err: any) {
     console.error("[Admin] öğretmen programı istisnası:", err?.message || err);
-    return res.status(500).json({ success: false, error: GENERIC_ERROR });
+    return res.status(500).json({
+      success: false,
+      error: adimHatasi("Öğretmenin programı okunamadı.", err, "supabase-teacher-availability.sql"),
+    });
   }
 });
 
