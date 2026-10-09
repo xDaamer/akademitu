@@ -15,11 +15,11 @@ import { FAQItem } from '../types';
 const faqs: FAQItem[] = [
   {
     question: 'Ücretsiz deneme dersi tam olarak nasıl gerçekleşiyor?',
-    answer: 'Ücretsiz deneme dersi talebinizi bıraktıktan sonra hedefinize ve seviyenize uygun derece hocası koçunuz sizinle iletişime geçer. 30-40 dakikalık online tanışma seansında seviye tespiti yapılır, beklentileriniz dinlenir ve örnek anlatım gerçekleşir. Hiçbir ücret veya taahhüt ödemezsiniz.',
+    answer: 'Ücretsiz deneme dersi talebinizi bıraktıktan sonra hedefinize ve seviyenize uygun hocanız sizinle iletişime geçer. 30-40 dakikalık online tanışma seansında seviye tespiti yapılır, eksik konularınız belirlenir, beklentileriniz dinlenir ve örnek anlatım gerçekleşir. Hiçbir ücret veya taahhüt ödemezsiniz.',
   },
   {
     question: 'Dersleriniz online mı yoksa yüz yüze mi?',
-    answer: 'Derslerimiz ve koçluk görüşmelerimiz interaktif dijital tahta, ekran paylaşımı ve HD kamera desteği ile tamamen online olarak yapılmaktadır. Bu sayede Türkiye’nin her yerinden derece hocalarına anında ulaşabilirsiniz.',
+    answer: 'Derslerimiz ve koçluk görüşmelerimiz interaktif dijital tahta, ekran paylaşımı ve HD kamera desteği ile tamamen online olarak yapılmaktadır. Bu sayede Türkiye’nin her yerinden birebir özel ders alabilir, eksiklerinizi evden çıkmadan kapatabilirsiniz.',
   },
   {
     question: 'Hangi derslerden özel ders alabilirim?',
@@ -31,7 +31,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: 'Eğitmen kadronuz kimlerden oluşuyor?',
-    answer: 'Eğitmenlerimizin tamamı YKS sınavında yüksek derece yapmış, eğitmenlik hizmeti verebilecek kalifiyede sosyal becerilere ve bilgiye sahip akademisyen adaylarından oluşmaktadır.',
+    answer: 'Eğitmenlerimiz, ders verdikleri alanda birebir ders deneyimi olan hocalardan oluşur. Her öğrenciyi ücretsiz deneme dersinde belirlenen seviyesine, eksiklerine ve hedefine göre en uygun hocayla eşleştiririz; böylece ders ilk dakikadan eksik olduğunuz konulara odaklanır.',
   },
   {
     question: 'Ders sonrasında veliler bilgilendiriliyor mu?',

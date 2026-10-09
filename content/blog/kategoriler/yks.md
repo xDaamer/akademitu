@@ -2,7 +2,7 @@
 name: YKS
 heading: YKS Hazırlık Yazıları
 seoTitle: "YKS Hazırlık Rehberi: TYT ve AYT Çalışma Yazıları"
-seoDescription: "TYT ve AYT için konu dağılımları, net hesaplama, deneme analizi ve tercih dönemi rehberleri. Derece yapmış hocaların kaleminden YKS yazıları."
+seoDescription: "TYT ve AYT için konu dağılımları, net hesaplama, deneme analizi ve tercih dönemi rehberleri. Birebir özel ders veren hocaların kaleminden YKS yazıları."
 sortOrder: 10
 ---
 

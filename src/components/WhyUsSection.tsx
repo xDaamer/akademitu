@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, BarChart3, Users, MessageSquare, Clock } from 'lucide-react';
+import { UserCheck, BarChart3, Users, MessageSquare, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { IS_SERVER } from '../lib/ssr';
 
@@ -10,9 +10,9 @@ interface WhyUsSectionProps {
 export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) => {
   const features = [
     {
-      icon: Award,
-      title: 'Derece Eğitmenleri',
-      description: 'YKS ve LGS sınavlarında derece yapmış, süreci bizzat deneyimlemiş mühendislik ve bilim öğrencileri ile çalışın.',
+      icon: UserCheck,
+      title: 'Birebir Özel Ders',
+      description: 'Ders tamamen sana ayrılır. Kalabalık sınıfta sorulamayan soru burada sorulur, anlatım senin hızına göre ilerler.',
     },
     {
       icon: BarChart3,
@@ -45,7 +45,7 @@ export const WhyUsSection: React.FC<WhyUsSectionProps> = ({ onOpenTrialForm }) =
             Neden Sherpa Akademi ile YKS-LGS Koçluğu?
           </h2>
           <p className="mt-3 text-slate-600 text-base sm:text-lg">
-            Sıradan dershaneler ve kalabalık sınıflar yerine doğrudan derece yapmış mentorlar ile hedefine ulaş.
+            Kalabalık sınıflar yerine birebir özel ders: eksiklerini tek tek kapat, hedefine kendi hızında ilerle.
           </p>
         </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Gift, Clock } from 'lucide-react';
+import { Target, Gift, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { IS_SERVER } from '../lib/ssr';
 
@@ -7,7 +7,7 @@ import { IS_SERVER } from '../lib/ssr';
 // kısa maddeler. Uydurma istatistik yok — sitenin zaten savunduğu gerçek
 // vaatlerin (taahhütsüz deneme dersi, esnek online dersler) özeti.
 const trustItems = [
-  { icon: Award, label: 'Derece Yapmış Koçlar' },
+  { icon: Target, label: 'Eksiğe Odaklı Birebir Ders' },
   { icon: Gift, label: 'İlk Ders %100 Ücretsiz' },
   { icon: Clock, label: 'Esnek Online Ders Saatleri' },
 ];

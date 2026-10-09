@@ -563,9 +563,9 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                     </div>
 
                     <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
-                      {currentStep === 1 && 'Derece koçlarımızla birebir tanışın, seviyenizi belirleyin ve ilk dersinizi hiçbir ücret ödemeden ve hiçbir taahhüt vermeden deneyimleyin.'}
+                      {currentStep === 1 && 'Hocanızla birebir tanışın, eksiklerinizi birlikte belirleyin ve ilk dersinizi hiçbir ücret ödemeden ve hiçbir taahhüt vermeden deneyimleyin.'}
                       {currentStep === 2 && 'Koçumuzun sizinle doğru ders programını hazırlayabilmesi için lütfen aşağıdaki detayları tamamlayın.'}
-                      {currentStep === 3 && 'Tebrikler! İletişim bilgileriniz bize ulaştı. Derece koçumuz en kısa sürede sizinle iletişime geçecektir.'}
+                      {currentStep === 3 && 'Tebrikler! İletişim bilgileriniz bize ulaştı. Koçumuz en kısa sürede sizinle iletişime geçecektir.'}
                     </p>
 
                     {/* STEP 1 FORM */}
@@ -729,7 +729,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                           Talebiniz Başarıyla Alındı!
                         </h3>
                         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                          Tebrikler <span className="font-bold text-[#191F61]">{studentFullName || fullName}</span>! Bilgileriniz derece koçumuza iletildi. En kısa sürede sizinle iletişime geçeceğiz.
+                          Tebrikler <span className="font-bold text-[#191F61]">{studentFullName || fullName}</span>! Bilgileriniz koçumuza iletildi. En kısa sürede sizinle iletişime geçeceğiz.
                         </p>
                         <Button fullWidth size="lg" onClick={handleReset}>
                           Tamamdır
@@ -834,7 +834,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                       </div>
 
                       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        Derece hocalarımızla birebir tanışın, seviyenizi belirleyin ve ilk dersinizi hiçbir ücret ödemeden ve hiçbir taahhüt vermeden deneyimleyin.
+                        Hocanızla birebir tanışın, eksiklerinizi birlikte belirleyin ve ilk dersinizi hiçbir ücret ödemeden ve hiçbir taahhüt vermeden deneyimleyin.
                       </p>
 
                       {error && (
@@ -1009,7 +1009,7 @@ export const PopUpForm: React.FC<PopUpFormProps> = ({
                         Talebiniz Başarıyla Alındı!
                       </h4>
                       <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-md mx-auto">
-                        Tebrikler <span className="font-bold text-[#191F61]">{studentFullName || fullName}</span>! Bilgileriniz derece koçumuza başarıyla ulaştı. En kısa sürede sizinle iletişime geçeceğiz.
+                        Tebrikler <span className="font-bold text-[#191F61]">{studentFullName || fullName}</span>! Bilgileriniz koçumuza başarıyla ulaştı. En kısa sürede sizinle iletişime geçeceğiz.
                       </p>
                       <Button
                         fullWidth

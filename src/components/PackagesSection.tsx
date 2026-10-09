@@ -40,7 +40,7 @@ const services = [
     id: 'deneme-dersi',
     name: 'Ücretsiz Deneme Dersi',
     description:
-      'Hedefinize ve seviyenize uygun derece koçunuz ile 30-40 dakikalık tanışma seansı. Hiçbir ücret veya taahhüt ödemezsiniz.',
+      'Hedefinize ve seviyenize uygun hocanızla 30-40 dakikalık tanışma seansı; eksikleriniz birlikte belirlenir. Hiçbir ücret veya taahhüt ödemezsiniz.',
     price: '0',
     unitText: 'ders',
   },
@@ -48,7 +48,7 @@ const services = [
     id: 'ozel-ders-paketi',
     name: 'Özel Ders Paketi',
     description:
-      'Haftalık belirlenmiş saatlerde derece hocalarımızdan online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.',
+      'Haftalık belirlenmiş saatlerde eksiklerinize odaklanan birebir online özel ders. İlerleme analizi ve haftalık veli bilgilendirmesi.',
     price: '950',
     unitText: 'ders',
   },
@@ -117,7 +117,7 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
             YKS ve LGS Özel Ders ve Koçluk Paketleri
           </h2>
           <p className="mt-3 text-slate-600 text-base sm:text-lg">
-            Derece hocalarımızla hedeflerine adım adım yaklaş. Sürpriz ücret yok!
+            Birebir özel derslerle eksiklerini kapat, hedefine adım adım yaklaş. Sürpriz ücret yok!
           </p>
         </div>
 
@@ -245,7 +245,7 @@ export const PackagesSection: React.FC<PackagesSectionProps> = ({ onOpenTrialFor
                   <div className="w-5 h-5 rounded-full bg-[#B6D6CC] text-[#191F61] flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
-                  <span className="text-sm text-slate-100 font-medium">Kişiye özel analiz ile başarı garantisi</span>
+                  <span className="text-sm text-slate-100 font-medium">Kişiye özel analizle eksik konu tespiti</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-[#B6D6CC] text-[#191F61] flex items-center justify-center shrink-0 mt-0.5">

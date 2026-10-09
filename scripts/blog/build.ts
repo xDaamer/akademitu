@@ -68,7 +68,7 @@ function blogListeleri(content: BlogContent) {
         ? `YKS ve LGS Hazırlık Rehberi | ${need.site.name} Blog`
         : `YKS ve LGS Hazırlık Rehberi — Sayfa ${page} | ${need.site.name} Blog`,
       description:
-        "YKS ve LGS hazırlığı için konu rehberleri, çalışma yöntemleri, deneme analizi ve veli rehberleri. Derece yapmış hocaların kaleminden.",
+        "YKS ve LGS hazırlığı için konu rehberleri, çalışma yöntemleri, deneme analizi ve veli rehberleri. Birebir özel ders veren hocaların kaleminden.",
       heading: "YKS ve LGS Hazırlık Rehberi",
       introHtml: renderInline(
         "Bu blogda sınav hazırlığının üç tarafı var: **ne çalışılacağı** (konu " +

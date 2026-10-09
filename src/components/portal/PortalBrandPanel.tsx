@@ -40,9 +40,9 @@ export const PortalBrandPanel: React.FC = () => {
           renklendirilmiş bir başlık değil bu.
         */}
         <h1 className="text-4xl font-extrabold leading-[1.15] tracking-tight text-balance text-white xl:text-5xl">
-          Derece hocalarıyla
+          Birebir özel ders
           <br />
-          çalışmak
+          almak
           <br />
           <span className="text-white/40">bir ayrıcalık değil.</span>
         </h1>

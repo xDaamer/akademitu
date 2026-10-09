@@ -16,6 +16,7 @@ graphify_cache/
 graphify.db
 graphify.sqlite*
 graphify-output/
+graphify-out/
 *.graph.json
 *.graph.html
 *.graph.svg

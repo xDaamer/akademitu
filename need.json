@@ -4,8 +4,8 @@
     "version": "2.1.2",
     "domain": "https://www.sherpakademi.com",
     "domainLocal": "www.sherpakademi.com",
-    "title": "YKS ve LGS Koçluğu | Derece Hocalarıyla Online Özel Ders",
-    "description": "Derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve koçluk. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
+    "title": "YKS ve LGS Özel Ders ve Koçluk | Eksiklerini Birebir Kapat",
+    "description": "YKS ve LGS için birebir online özel ders ve koçluk: eksiklerini sana özel planla kapat. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
     "keywords": "YKS koçluk, LGS koçluk, online YKS özel ders, online LGS özel ders, TYT matematik özel ders, AYT matematik özel ders, LGS matematik özel ders, üniversite hazırlık koçluğu",
     "language": "tr_TR",
     "themeColor": "#191F61",
@@ -38,8 +38,8 @@
       {
         "id": "home",
         "path": "/",
-        "title": "YKS ve LGS Koçluğu | Derece Hocalarıyla Online Özel Ders",
-        "description": "Derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve koçluk. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
+        "title": "YKS ve LGS Özel Ders ve Koçluk | Eksiklerini Birebir Kapat",
+        "description": "YKS ve LGS için birebir online özel ders ve koçluk: eksiklerini sana özel planla kapat. İlk ders ücretsiz, taahhüt yok. Ders başı 950 TL, şeffaf fiyat.",
         "changefreq": "weekly",
         "priority": 1
       },

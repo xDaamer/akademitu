@@ -448,7 +448,7 @@ export default function App() {
       {/* 3. FOOTER BÖLÜMÜ */}
       {!isPortal && <Footer onOpenTrialForm={handleOpenTrialForm} />}
 
-      {/* 4. ÇİFT MODLU DERECE KOÇLUĞU FORMU */}
+      {/* 4. ÇİFT MODLU DENEME DERSİ FORMU */}
       {/* formMode null iken hiç mount edilmiyor: parçanın indirilmesi de
           kullanıcı formu ilk kez açana kadar ertelenir. */}
       {formMode !== null && !isPortal && (

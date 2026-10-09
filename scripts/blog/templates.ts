@@ -460,7 +460,7 @@ export function listPage(options: ListOptions): string {
 
   ${ctaHtml(
     "Hazırlık planını birlikte kuralım",
-    "Derece yapmış hocalarla birebir online özel ders ve koçluk. İlk görüşme ücretsiz.",
+    "Eksiklerini birebir online özel dersle kapat. İlk görüşme ücretsiz, taahhüt yok.",
   )}
 </div>`;
 

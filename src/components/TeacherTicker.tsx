@@ -316,7 +316,7 @@ export const TeacherTicker: React.FC = () => {
     <div
       className="teacher-ticker relative h-full overflow-hidden"
       role="img"
-      aria-label="Derece hocalarımızdan kareler"
+      aria-label="Hocalarımızdan kareler"
     >
       <div className="grid grid-cols-2 gap-3 sm:gap-4 h-full">
         <ScrollColumn

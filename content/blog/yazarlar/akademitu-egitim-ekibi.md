@@ -11,8 +11,8 @@ expertise:
   - Eğitim koçluğu
 ---
 
-Sherpa Akademi, derece yapmış hocalarla YKS ve LGS için birebir online özel ders ve
-koçluk veriyor. Blogdaki yazılar ders veren kadronun deneyimine dayanıyor.
+Sherpa Akademi, YKS ve LGS'ye hazırlanan her seviyeden öğrenciye birebir online
+özel ders ve koçluk veriyor. Blogdaki yazılar ders veren kadronun deneyimine dayanıyor.
 
 Sınav formatı, soru sayısı ve takvim gibi bilgilerin kaynağı ÖSYM ve MEB'in
 kendi kılavuzlarıdır; her yazıda hangi bilginin nereden geldiği belirtilir ve

@@ -79,7 +79,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTrialForm }) => {
               </span>
             </div>
             <p className="text-slate-300 text-sm leading-relaxed">
-              Derece hocalarımız ile YKS ve LGS’de hayallerindeki liseye ve üniversiteye hazırlan. Birebir özel ders ve kişiselleştirilmiş koçluk.
+              Birebir özel derslerle eksiklerini kapat, YKS ve LGS’de hayalindeki liseye ya da üniversiteye hazırlan. Kişiselleştirilmiş koçlukla her adımda yanındayız.
             </p>
           </div>
 

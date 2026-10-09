@@ -24,13 +24,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenTrialForm }) => 
             
             {/*
               BAŞLIK
-              Title "YKS ve LGS Koçluğu ... Online Özel Ders" vaat ediyor;
-              H1 bunu doğrulamalı. Eski hâlde ("...Derece Hocaları ile
-              Hazırlan") ne "koçluk" ne "özel ders" geçiyordu — arayan kişi
-              SERP'te gördüğü ifadeyi sayfada bulamıyordu.
+              Title "YKS ve LGS Özel Ders ve Koçluk | ..." vaat ediyor;
+              H1 bunu doğrulamalı — arayan kişi SERP'te gördüğü ifadeyi
+              sayfada bulabilmeli. Vurgu 2026-10-09'da "derece hocaları"ndan
+              birebir özel derse taşındı: kadro artık derece yapmış
+              hocalarla sınırlı değil, o iddia geri eklenirse doğru olmaz.
             */}
             <h1 className="text-2xl sm:text-3xl md:text-3xl lg:text-5xl font-extrabold text-white leading-[1.18] tracking-tight">
-              Derece Hocalarıyla YKS ve LGS Koçluğu ve Birebir Özel Ders
+              Eksiklerini Birebir Kapat: YKS ve LGS Özel Ders ve Koçluk
             </h1>
 
             {/* AVANTAJ MADDELERİ
