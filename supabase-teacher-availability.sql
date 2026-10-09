@@ -1,10 +1,10 @@
 -- =============================================================================
 -- ÖĞRETMEN MÜSAİTLİĞİ + DENEME DERSİ — eklendi 2026-10-09
 -- =============================================================================
--- HENÜZ UYGULANMADI. Supabase SQL Editor'de bir kez çalıştırın; tamamı
--- idempotent (IF NOT EXISTS / OR REPLACE), tekrar çalıştırmak zararsız.
--- Kod bu dosyaya bağımlı: uygulanmadan push edilirse öğretmen hesabı açma
--- ve ders atama 502 döner.
+-- UYGULANDI 2026-10-09 (Supabase SQL Editor, kod deploy edildikten sonra).
+-- Tamamı idempotent (IF NOT EXISTS / OR REPLACE), tekrar çalıştırmak zararsız.
+-- Kod bu dosyaya bağımlı: yeni bir ortamda uygulanmadan deploy edilirse
+-- paneller ve öğretmen hesabı açma / ders atama hata döner.
 --
 -- BU DOSYA NE YAPIYOR:
 --   1. teacher_availability   — öğretmenin HAFTALIK müsait saat aralıkları
